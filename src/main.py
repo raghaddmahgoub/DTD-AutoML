@@ -1,14 +1,10 @@
-from utils.logger_config import logger
-from utils.reasoning_client import ReasoningClient
+from utils.logger import Logger
 
-class AutoMLAgent:
-    def __init__(self):
-        self.reasoner = ReasoningClient()
+logger = Logger()
 
-    def analyze_dataset(self, dataset_path: str):
-        logger.info(f"Starting analysis for dataset: {dataset_path}")
-        # Example prompt
-        prompt = f"Suggest preprocessing methods for dataset located at {dataset_path}"
-        response = self.reasoner.ask(prompt)
-        logger.info(f"Reasoning response: {response}")
-        return response
+logger.info("Starting AutoML agent initialization...")
+logger.warn("Low memory detected, continuing with reduced batch size.")
+try:
+    1 / 0
+except Exception as e:
+    logger.error("An unexpected error occurred while running training.", e)
