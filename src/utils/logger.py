@@ -1,10 +1,17 @@
-import os,sys
+import os
+import sys
 import traceback
 from datetime import datetime
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-from configs.settings import LOG_DIR, LOG_FILE
+# Get absolute project root (2 levels up from this file)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 
+# Define log directory and file paths (assets/logs/)
+LOG_DIR = os.path.join(PROJECT_ROOT, 'assets', 'logs')
+LOG_FILE = os.path.join(LOG_DIR, 'app.log')
+
+# Ensure project root is in sys.path for other imports if needed
+sys.path.append(PROJECT_ROOT)
 
 
 class Logger:
