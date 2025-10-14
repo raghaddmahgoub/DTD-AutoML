@@ -1,12 +1,12 @@
 #!/bin/bash
 set -e  # Exit on any error
 
-echo "🚀 Updating Python environment (gp-env)..."
+echo "📦 Updating requirements.txt with new dependencies..."
 
 # Move to project root
 cd "$(dirname "$0")"/../..
 
-# Ensure gp-env exists before freezing
+# Ensure gp-env exists
 if [ ! -d "gp-env" ]; then
     echo "❌ No existing gp-env found. Run setup.sh first."
     exit 1
@@ -19,34 +19,36 @@ else
     ACTIVATE_PATH="gp-env/bin/activate"       # macOS/Linux
 fi
 
-# Freeze dependencies
-echo "📋 Freezing current dependencies to requirements.txt..."
+# Activate environment
 source "$ACTIVATE_PATH"
-pip freeze > requirements.txt
-deactivate
 
-# Backup and recreate environment
-echo "♻️  Removing old environment..."
-rm -rf gp-env
+# Export current dependencies to a temp file
+TMP_REQ="temp_requirements.txt"
+pip freeze | sort > "$TMP_REQ"
 
-echo "🐍 Creating fresh gp-env..."
-python -m venv gp-env || { echo "❌ Failed to create venv"; exit 1; }
-
-# Detect new activate path
-if [ -f "gp-env/Scripts/activate" ]; then
-    ACTIVATE_PATH="gp-env/Scripts/activate"
-else
-    ACTIVATE_PATH="gp-env/bin/activate"
+# Make sure requirements.txt exists
+if [ ! -f "requirements.txt" ]; then
+    echo "📝 Creating new requirements.txt..."
+    touch requirements.txt
 fi
 
-# Activate and reinstall dependencies
-echo "🔹 Activating new environment..."
-source "$ACTIVATE_PATH"
+# Sort existing and compare
+sort requirements.txt -o requirements.txt
 
-echo "⬆️  Upgrading pip..."
-pip install --upgrade pip
+# Find packages not in existing requirements.txt
+NEW_REQ="new_requirements.txt"
+comm -23 "$TMP_REQ" requirements.txt > "$NEW_REQ"
 
-echo "📦 Installing from updated requirements.txt..."
-pip install -r requirements.txt
+# Append new ones if any
+if [ -s "$NEW_REQ" ]; then
+    echo "✨ Found new dependencies. Appending..."
+    cat "$NEW_REQ" >> requirements.txt
+else
+    echo "✅ No new dependencies to add."
+fi
 
-echo "✅ Environment updated and synchronized successfully!"
+# Clean up
+rm -f "$TMP_REQ" "$NEW_REQ"
+
+deactivate
+echo "✅ requirements.txt updated successfully!"
