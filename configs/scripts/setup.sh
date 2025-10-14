@@ -29,4 +29,18 @@ else
     echo "⚠️  No requirements.txt found in root directory!"
 fi
 
+# Ensure .gitignore exists and contains '*'
+if [ ! -f ".gitignore" ]; then
+    echo "📝 Creating .gitignore..."
+    echo "*" > .gitignore
+    echo "✅ Filled .gitignore with * (ignore all files)"
+else
+    if [ ! -s ".gitignore" ]; then
+        echo "*" > .gitignore
+        echo "✅ Filled empty .gitignore with *"
+    else
+        echo "ℹ️  .gitignore already exists and has content — not modified."
+    fi
+fi
+
 echo "✅ gp-env created successfully in project root!"
