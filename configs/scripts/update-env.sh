@@ -12,30 +12,41 @@ if [ ! -d "gp-env" ]; then
     exit 1
 fi
 
-# Activate current environment to freeze packages
+# Detect OS-specific activation path
+if [ -f "gp-env/Scripts/activate" ]; then
+    ACTIVATE_PATH="gp-env/Scripts/activate"   # Windows
+else
+    ACTIVATE_PATH="gp-env/bin/activate"       # macOS/Linux
+fi
+
+# Freeze dependencies
 echo "📋 Freezing current dependencies to requirements.txt..."
-source gp-env/bin/activate
+source "$ACTIVATE_PATH"
 pip freeze > requirements.txt
 deactivate
 
-# Optionally back up old environment
-if [ -d "gp-env" ]; then
-    echo "♻️  Removing old environment..."
-    rm -rf gp-env
-fi
+# Backup and recreate environment
+echo "♻️  Removing old environment..."
+rm -rf gp-env
 
-# Recreate environment
 echo "🐍 Creating fresh gp-env..."
 python -m venv gp-env || { echo "❌ Failed to create venv"; exit 1; }
 
-# Activate new env
-source gp-env/bin/activate
+# Detect new activate path
+if [ -f "gp-env/Scripts/activate" ]; then
+    ACTIVATE_PATH="gp-env/Scripts/activate"
+else
+    ACTIVATE_PATH="gp-env/bin/activate"
+fi
 
-# Upgrade pip and reinstall dependencies
+# Activate and reinstall dependencies
+echo "🔹 Activating new environment..."
+source "$ACTIVATE_PATH"
+
 echo "⬆️  Upgrading pip..."
 pip install --upgrade pip
 
 echo "📦 Installing from updated requirements.txt..."
 pip install -r requirements.txt
 
-echo "✅ Environment updated and
+echo "✅ Environment updated and synchronized successfully!"
