@@ -185,8 +185,15 @@
     }
   },
   "data_quality": {
-    "unique_per_row_columns": ["PassengerId", "Name"],
-    "columns_with_missing": ["Age", "Cabin", "Embarked"],
+    "unique_per_row_columns": [
+      "PassengerId",
+      "Name"
+    ],
+    "columns_with_missing": [
+      "Age",
+      "Cabin",
+      "Embarked"
+    ],
     "constant_columns": [],
     "near_constant_columns": [],
     "mixed_type_columns": []
@@ -217,17 +224,25 @@
   "eda_warnings": [
     {
       "type": "high_missingness",
-      "columns": ["Cabin"],
+      "columns": [
+        "Cabin"
+      ],
       "message": "Some columns have more than 50% missing values."
     },
     {
       "type": "high_cardinality_categoricals",
-      "columns": ["Name", "Ticket"],
+      "columns": [
+        "Name",
+        "Ticket"
+      ],
       "message": "Some categorical columns have very high cardinality, which may affect encoding and memory usage."
     },
     {
       "type": "unique_per_row_columns",
-      "columns": ["PassengerId", "Name"],
+      "columns": [
+        "PassengerId",
+        "Name"
+      ],
       "message": "Some columns have a unique value per row and likely represent identifiers rather than predictive features."
     }
   ]

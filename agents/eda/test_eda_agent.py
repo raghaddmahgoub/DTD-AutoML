@@ -1,13 +1,15 @@
 import pandas as pd
 from eda_agent import EDAAgent
+import os
 
-
-df = pd.read_csv("Titanic-Dataset.csv")
-
+filename = "car_prices.csv" 
+df_name = os.path.splitext(os.path.basename(filename))[0] 
+df = pd.read_csv(filename)
 
 eda = EDAAgent(
     df=df,
-    target_column="Survived"
+    target_column="Survived",
+    df_name=df_name
 )
 
 report = eda.run(run_type="raw")

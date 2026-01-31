@@ -11,9 +11,10 @@ class EDAAgent:
     This agent performs descriptive analysis only and produces
     a structured EDA report for downstream agents.
     """
-    def __init__(self, df: pd.DataFrame, target_column: Optional[str] = None):
+    def __init__(self, df: pd.DataFrame, target_column: Optional[str] = None, df_name: str = "dataset"):
         self.df = df
         self.target = target_column
+        self.df_name = df_name
         self.report: Dict[str, Any] = {}
 
     def _dataset_summary(self) -> Dict[str, Any]:
@@ -535,8 +536,8 @@ class EDAAgent:
         plan_path.mkdir(parents=True, exist_ok=True)
         output_path.mkdir(parents=True, exist_ok=True)
 
-        plan_file = plan_path / "preprocessing_context.json"
-        output_file = output_path / "preprocessing_context.json"
+        plan_file = plan_path / f"{self.df_name}_preprocessing_context.json"
+        output_file = output_path / f"{self.df_name}_preprocessing_context.json"
 
         plan_file.write_text(
             json.dumps(preprocessing_context, indent=2),
