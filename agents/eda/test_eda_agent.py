@@ -2,7 +2,7 @@ import pandas as pd
 from eda_agent import EDAAgent
 
 
-df = pd.read_csv("src/eda/car_prices.csv")
+df = pd.read_csv("car_prices.csv")
 
 
 eda = EDAAgent(

@@ -60,7 +60,7 @@ class EDAAgent:
         else:
             return "categorical"
 
-    def column_info(self) -> dict:
+    def column_info(self,k=5) -> dict:
         profiles = {}
         n_rows = len(self.df)
 
@@ -74,6 +74,7 @@ class EDAAgent:
                 "missing_count": int(series.isna().sum()),
                 "missing_ratio": float(series.isna().mean()),
                 "unique_count": int(series.nunique(dropna=True)),
+                "is_unique_per_row": int(series.nunique(dropna=True)) == n_rows,
             }
 
             # numerical columns
@@ -91,7 +92,7 @@ class EDAAgent:
             #categorical columns
             elif data_type == "categorical":
                 value_counts = series.value_counts(dropna=True)
-                top_k = value_counts.head(5).to_dict()
+                top_k = value_counts.head(k).to_dict()
 
                 profile.update({
                     "top_values": top_k,
@@ -145,6 +146,9 @@ class EDAAgent:
           value_counts = series.value_counts(dropna=True)
           total = value_counts.sum()
 
+        # k = the class label (the value itself)
+        # v = count of that class
+        
           class_distribution = {
               str(k): float(v / total)
               for k, v in value_counts.items()
@@ -170,27 +174,31 @@ class EDAAgent:
      """
      report: Dict[str, Any] = {}
      n_rows = len(self.df)
+     unique_per_row_columns = []
+     na_df = self.df.isna()
+     dup_mask = self.df.duplicated()
+
 
      # Missing Values
      missing_by_column = {
          col: {
-             "missing_count": int(self.df[col].isna().sum()),
-             "missing_ratio": float(self.df[col].isna().mean())
+             "missing_count": int(na_df[col].sum()),
+             "missing_ratio": float(na_df[col].mean())
          }
          for col in self.df.columns
-         if self.df[col].isna().any()
+         if na_df[col].any()
      }
 
      report["missing_values"] = {
-         "total_missing_cells": int(self.df.isna().sum().sum()),
+         "total_missing_cells": int(na_df.sum().sum()),
          "columns_with_missing": missing_by_column,
          "n_columns_with_missing": len(missing_by_column)
      }
 
      # Duplicate Rows
      report["duplicates"] = {
-         "duplicate_row_count": int(self.df.duplicated().sum()),
-         "duplicate_ratio": float(self.df.duplicated().mean())
+         "duplicate_row_count": int(dup_mask.sum()),
+         "duplicate_ratio": float(dup_mask.mean())
      }
 
      # Constant / Near-Constant Columns
@@ -198,17 +206,22 @@ class EDAAgent:
      near_constant_columns = {}
 
      for col in self.df.columns:
-         nunique = self.df[col].nunique(dropna=True)
+         series = self.df[col]
+         nunique = series.nunique(dropna=True)
 
          if nunique == 1:
              constant_columns.append(col)
+         elif nunique == n_rows:
+            unique_per_row_columns.append(col)
          elif nunique > 1:
-             top_freq = self.df[col].value_counts(dropna=True).iloc[0] / n_rows
+             counts = series.value_counts(dropna=True)
+             top_freq = counts.iloc[0] / n_rows
              if top_freq > 0.95:
                  near_constant_columns[col] = float(top_freq)
 
+
      report["low_variance_columns"] = {
-         "constant_columns": constant_columns,
+         "constant_columns": constant_columns, # Completely useless for ML
          "near_constant_columns": near_constant_columns
      }
 
@@ -218,13 +231,14 @@ class EDAAgent:
      mixed_type_columns = []
 
      for col in self.df.select_dtypes(include=["object"]).columns:
-         inferred_types = self.df[col].dropna().apply(type).nunique()
+         inferred_types = self.df[col].dropna().map(type).nunique()
          if inferred_types > 1:
              mixed_type_columns.append(col)
 
      report["type_issues"] = {
          "mixed_type_columns": mixed_type_columns
      }
+     report["unique_per_row_columns"] = unique_per_row_columns
 
      return report
 
@@ -246,7 +260,7 @@ class EDAAgent:
             corr_matrix = self.df[numeric_cols].corr()
 
             strong_pairs = []
-            CORR_THRESHOLD = 0.8  # descriptive only
+            CORR_THRESHOLD = 0.5  # descriptive only
 
             for i in range(len(numeric_cols)):
                 for j in range(i + 1, len(numeric_cols)):
@@ -310,7 +324,14 @@ class EDAAgent:
         self,
         dataset_summary: dict,
         column_profiles: dict,
+        unique_id_cols = None,
         target_analysis: Optional[dict] = None) -> list:
+        
+        if unique_id_cols is None:
+            unique_id_cols = [
+                col for col, stats in column_profiles.items()
+                if stats.get("is_unique_per_row", False)
+            ]
         """
         Generates high-level EDA warnings.
         Warnings are descriptive signals for downstream agents — not actions.
@@ -382,6 +403,12 @@ class EDAAgent:
                         "type": "class_imbalance",
                         "message": "Target variable shows strong class imbalance."
                     })
+        if unique_id_cols:
+            warnings.append({
+                "type": "unique_per_row_columns",
+                "columns": unique_id_cols,
+                "message": "Some columns have a unique value per row and likely represent identifiers rather than predictive features."
+            })
 
         return warnings
 
@@ -473,6 +500,7 @@ class EDAAgent:
             "target": target,
             "columns": column_context,
             "data_quality": {
+                "unique_per_row_columns": quality.get("unique_per_row_columns", []),
                 "columns_with_missing": list(
                     quality["missing_values"]["columns_with_missing"].keys()
                 ),
