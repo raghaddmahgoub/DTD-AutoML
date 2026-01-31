@@ -361,26 +361,13 @@ def main():
     
     # Test datasets
     test_datasets = [
+       
         {
-            'path': 'assets/data/Datasets/Classification Datasets/iris.csv',
-            'target': 'target',
-            'name': 'Iris (Classification - Small)'
+            'path': 'assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv',
+            'target': 'sellingprice',
+            'name': 'carprices (Regression)'
         },
-        {
-            'path': 'assets/data/Datasets/Classification Datasets/wine.csv',
-            'target': 'target',
-            'name': 'Wine (Classification - Small)'
-        },
-        {
-            'path': 'assets/data/Datasets/Classification Datasets/breast_cancer.csv',
-            'target': 'target',
-            'name': 'Breast Cancer (Classification - Medium)'
-        },
-        {
-            'path': 'assets/data/Datasets/Regression Datasets/diabetes.csv',
-            'target': 'target',
-            'name': 'Diabetes (Regression)'
-        },
+
     ]
     
     # Run tests
