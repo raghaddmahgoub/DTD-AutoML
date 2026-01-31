@@ -1,270 +1,198 @@
 {
   "meta": {
     "run_type": "raw",
-    "n_rows": 558837,
-    "n_columns": 16,
-    "memory_usage_mb": 371.54,
+    "n_rows": 891,
+    "n_columns": 12,
+    "memory_usage_mb": 0.28,
     "duplicate_rows": 0
   },
   "target": {
-    "dtype": "float64",
-    "missing_count": 12,
-    "missing_ratio": 2.147316659419473e-05,
-    "unique_values": 1887,
-    "task_type": "regression",
-    "mean": 13611.358810003132,
-    "std": 9749.501627824886,
-    "min": 1.0,
-    "max": 230000.0,
-    "median": 12100.0,
-    "skewness": 1.9534443838669924
+    "dtype": "int64",
+    "missing_count": 0,
+    "missing_ratio": 0.0,
+    "unique_values": 2,
+    "task_type": "classification",
+    "is_binary": true,
+    "n_classes": 2,
+    "class_distribution": {
+      "0": 0.6161616161616161,
+      "1": 0.3838383838383838
+    },
+    "majority_class_ratio": 0.6161616161616161,
+    "imbalance_ratio": 1.605263157894737
   },
   "columns": {
-    "year": {
+    "PassengerId": {
       "data_type": "numeric",
       "dtype": "int64",
       "missing_ratio": 0.0,
       "missing_count": 0,
-      "unique_count": 34,
-      "mean": 2010.038927272174,
-      "std": 3.9668636154044545,
-      "min": 1982.0,
-      "max": 2015.0,
-      "skewness": -1.1832258663421038,
+      "unique_count": 891,
+      "mean": 446.0,
+      "std": 257.3538420152301,
+      "min": 1.0,
+      "max": 891.0,
+      "skewness": 0.0,
       "zero_count": 0
     },
-    "make": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.0184,
-      "missing_count": 10301,
-      "unique_count": 96,
-      "top_values": {
-        "Ford": 93554,
-        "Chevrolet": 60197,
-        "Nissan": 53946,
-        "Toyota": 39871,
-        "Dodge": 30710
-      },
-      "is_high_cardinality": false
+    "Survived": {
+      "data_type": "numeric",
+      "dtype": "int64",
+      "missing_ratio": 0.0,
+      "missing_count": 0,
+      "unique_count": 2,
+      "mean": 0.3838383838383838,
+      "std": 0.4865924542648575,
+      "min": 0.0,
+      "max": 1.0,
+      "skewness": 0.4785234382949897,
+      "zero_count": 549
     },
-    "model": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.0186,
-      "missing_count": 10399,
-      "unique_count": 973,
-      "top_values": {
-        "Altima": 19349,
-        "F-150": 14479,
-        "Fusion": 12946,
-        "Camry": 12545,
-        "Escape": 11861
-      },
-      "is_high_cardinality": false
+    "Pclass": {
+      "data_type": "numeric",
+      "dtype": "int64",
+      "missing_ratio": 0.0,
+      "missing_count": 0,
+      "unique_count": 3,
+      "mean": 2.308641975308642,
+      "std": 0.836071240977049,
+      "min": 1.0,
+      "max": 3.0,
+      "skewness": -0.6305479068752845,
+      "zero_count": 0
     },
-    "trim": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.0191,
-      "missing_count": 10651,
-      "unique_count": 1963,
-      "top_values": {
-        "Base": 55817,
-        "SE": 43648,
-        "LX": 20757,
-        "Limited": 18367,
-        "LT": 16915
-      },
-      "is_high_cardinality": false
-    },
-    "body": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.0236,
-      "missing_count": 13195,
-      "unique_count": 87,
-      "top_values": {
-        "Sedan": 199437,
-        "SUV": 119292,
-        "sedan": 41906,
-        "suv": 24552,
-        "Hatchback": 21380
-      },
-      "is_high_cardinality": false
-    },
-    "transmission": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.1169,
-      "missing_count": 65352,
-      "unique_count": 4,
-      "top_values": {
-        "automatic": 475915,
-        "manual": 17544,
-        "sedan": 15,
-        "Sedan": 11
-      },
-      "is_high_cardinality": false
-    },
-    "vin": {
+    "Name": {
       "data_type": "categorical",
       "dtype": "object",
       "missing_ratio": 0.0,
-      "missing_count": 4,
-      "unique_count": 550297,
+      "missing_count": 0,
+      "unique_count": 891,
       "top_values": {
-        "automatic": 22,
-        "wbanv13588cz57827": 5,
-        "trusc28n241022003": 4,
-        "5uxfe43579l274932": 4,
-        "wddgf56x78f009940": 4
+        "Dooley, Mr. Patrick": 1,
+        "Braund, Mr. Owen Harris": 1,
+        "Cumings, Mrs. John Bradley (Florence Briggs Thayer)": 1,
+        "Heikkinen, Miss. Laina": 1,
+        "Futrelle, Mrs. Jacques Heath (Lily May Peel)": 1
       },
       "is_high_cardinality": true
     },
-    "state": {
+    "Sex": {
       "data_type": "categorical",
       "dtype": "object",
       "missing_ratio": 0.0,
       "missing_count": 0,
-      "unique_count": 64,
+      "unique_count": 2,
       "top_values": {
-        "fl": 82945,
-        "ca": 73148,
-        "pa": 53907,
-        "tx": 45913,
-        "ga": 34750
+        "male": 577,
+        "female": 314
       },
       "is_high_cardinality": false
     },
-    "condition": {
+    "Age": {
       "data_type": "numeric",
       "dtype": "float64",
-      "missing_ratio": 0.0212,
-      "missing_count": 11820,
-      "unique_count": 41,
-      "mean": 30.672364844237016,
-      "std": 13.402831728800097,
-      "min": 1.0,
-      "max": 49.0,
-      "skewness": -0.8329561890401652,
+      "missing_ratio": 0.1987,
+      "missing_count": 177,
+      "unique_count": 88,
+      "mean": 29.69911764705882,
+      "std": 14.526497332334042,
+      "min": 0.42,
+      "max": 80.0,
+      "skewness": 0.38910778230082704,
       "zero_count": 0
     },
-    "odometer": {
+    "SibSp": {
       "data_type": "numeric",
-      "dtype": "float64",
-      "missing_ratio": 0.0002,
-      "missing_count": 94,
-      "unique_count": 172278,
-      "mean": 68320.01776666554,
-      "std": 53398.54282054477,
-      "min": 1.0,
-      "max": 999999.0,
-      "skewness": 1.8431997838970884,
-      "zero_count": 0
+      "dtype": "int64",
+      "missing_ratio": 0.0,
+      "missing_count": 0,
+      "unique_count": 7,
+      "mean": 0.5230078563411896,
+      "std": 1.1027434322934317,
+      "min": 0.0,
+      "max": 8.0,
+      "skewness": 3.6953517271630565,
+      "zero_count": 608
     },
-    "color": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.0013,
-      "missing_count": 749,
-      "unique_count": 46,
-      "top_values": {
-        "black": 110970,
-        "white": 106673,
-        "silver": 83389,
-        "gray": 82857,
-        "blue": 51139
-      },
-      "is_high_cardinality": false
+    "Parch": {
+      "data_type": "numeric",
+      "dtype": "int64",
+      "missing_ratio": 0.0,
+      "missing_count": 0,
+      "unique_count": 7,
+      "mean": 0.38159371492704824,
+      "std": 0.8060572211299483,
+      "min": 0.0,
+      "max": 6.0,
+      "skewness": 2.7491170471010933,
+      "zero_count": 678
     },
-    "interior": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.0013,
-      "missing_count": 749,
-      "unique_count": 17,
-      "top_values": {
-        "black": 244329,
-        "gray": 178581,
-        "beige": 59758,
-        "tan": 44093,
-        "\u2014": 17077
-      },
-      "is_high_cardinality": false
-    },
-    "seller": {
+    "Ticket": {
       "data_type": "categorical",
       "dtype": "object",
       "missing_ratio": 0.0,
       "missing_count": 0,
-      "unique_count": 14263,
+      "unique_count": 681,
       "top_values": {
-        "nissan-infiniti lt": 19693,
-        "ford motor credit company llc": 19162,
-        "the hertz corporation": 18299,
-        "santander consumer": 15285,
-        "avis corporation": 12540
+        "347082": 7,
+        "1601": 7,
+        "CA. 2343": 7,
+        "3101295": 6,
+        "CA 2144": 6
+      },
+      "is_high_cardinality": true
+    },
+    "Fare": {
+      "data_type": "numeric",
+      "dtype": "float64",
+      "missing_ratio": 0.0,
+      "missing_count": 0,
+      "unique_count": 248,
+      "mean": 32.204207968574636,
+      "std": 49.6934285971809,
+      "min": 0.0,
+      "max": 512.3292,
+      "skewness": 4.787316519674893,
+      "zero_count": 15
+    },
+    "Cabin": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.771,
+      "missing_count": 687,
+      "unique_count": 147,
+      "top_values": {
+        "G6": 4,
+        "C23 C25 C27": 4,
+        "B96 B98": 4,
+        "F2": 3,
+        "D": 3
       },
       "is_high_cardinality": false
     },
-    "mmr": {
-      "data_type": "numeric",
-      "dtype": "float64",
-      "missing_ratio": 0.0001,
-      "missing_count": 38,
-      "unique_count": 1101,
-      "mean": 13769.377495306899,
-      "std": 9679.967173686497,
-      "min": 25.0,
-      "max": 182000.0,
-      "skewness": 1.9976441301927186,
-      "zero_count": 0
-    },
-    "sellingprice": {
-      "data_type": "numeric",
-      "dtype": "float64",
-      "missing_ratio": 0.0,
-      "missing_count": 12,
-      "unique_count": 1887,
-      "mean": 13611.358810003132,
-      "std": 9749.501627824886,
-      "min": 1.0,
-      "max": 230000.0,
-      "skewness": 1.9534443838669924,
-      "zero_count": 0
-    },
-    "saledate": {
+    "Embarked": {
       "data_type": "categorical",
       "dtype": "object",
-      "missing_ratio": 0.0,
-      "missing_count": 12,
-      "unique_count": 3766,
+      "missing_ratio": 0.0022,
+      "missing_count": 2,
+      "unique_count": 3,
       "top_values": {
-        "Tue Feb 10 2015 01:30:00 GMT-0800 (PST)": 5334,
-        "Tue Feb 17 2015 01:30:00 GMT-0800 (PST)": 5016,
-        "Tue Jan 27 2015 01:30:00 GMT-0800 (PST)": 4902,
-        "Tue Jan 20 2015 01:30:00 GMT-0800 (PST)": 4731,
-        "Tue Mar 03 2015 01:30:00 GMT-0800 (PST)": 4653
+        "S": 644,
+        "C": 168,
+        "Q": 77
       },
       "is_high_cardinality": false
     }
   },
   "data_quality": {
+    "unique_per_row_columns": [
+      "PassengerId",
+      "Name"
+    ],
     "columns_with_missing": [
-      "make",
-      "model",
-      "trim",
-      "body",
-      "transmission",
-      "vin",
-      "condition",
-      "odometer",
-      "color",
-      "interior",
-      "mmr",
-      "sellingprice",
-      "saledate"
+      "Age",
+      "Cabin",
+      "Embarked"
     ],
     "constant_columns": [],
     "near_constant_columns": [],
@@ -275,39 +203,47 @@
       "threshold": 0.5,
       "strong_pairs": [
         {
-          "feature_1": "year",
-          "feature_2": "odometer",
-          "correlation": -0.773
-        },
-        {
-          "feature_1": "year",
-          "feature_2": "mmr",
-          "correlation": 0.597
-        },
-        {
-          "feature_1": "odometer",
-          "feature_2": "mmr",
-          "correlation": -0.588
+          "feature_1": "Pclass",
+          "feature_2": "Fare",
+          "correlation": -0.549
         }
       ]
     },
     "target_relationships": {
       "target_type": "numeric",
       "feature_correlations": {
-        "year": 0.586,
-        "condition": 0.322,
-        "odometer": -0.582,
-        "mmr": 0.984
+        "PassengerId": -0.005,
+        "Pclass": -0.338,
+        "Age": -0.077,
+        "SibSp": -0.035,
+        "Parch": 0.082,
+        "Fare": 0.257
       }
     }
   },
   "eda_warnings": [
     {
+      "type": "high_missingness",
+      "columns": [
+        "Cabin"
+      ],
+      "message": "Some columns have more than 50% missing values."
+    },
+    {
       "type": "high_cardinality_categoricals",
       "columns": [
-        "vin"
+        "Name",
+        "Ticket"
       ],
       "message": "Some categorical columns have very high cardinality, which may affect encoding and memory usage."
+    },
+    {
+      "type": "unique_per_row_columns",
+      "columns": [
+        "PassengerId",
+        "Name"
+      ],
+      "message": "Some columns have a unique value per row and likely represent identifiers rather than predictive features."
     }
   ]
 }
