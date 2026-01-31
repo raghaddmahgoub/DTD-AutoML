@@ -2750,3 +2750,129 @@ This analysis provides a comprehensive overview of the given dataset for a binar
 [2026-01-29 17:17:19] [INFO] [Training Agent] Training complete. Best model: RandomForest, Score: 0.4529
 [2026-01-29 17:17:19] [INFO] [Training Agent] Results interpretation: The best score of 0.4529 suggests **fair to poor** model performance, indicating significant room for improvement, assuming a metric where higher is better (e.g., R-squared, accuracy). GradientBoostin...
 [2026-01-29 17:17:19] [INFO] Workflow completed successfully!
+
+
+=== New Run — 2026-01-31 00:21:56 ===
+
+
+=== New Run — 2026-01-31 00:21:56 ===
+[2026-01-31 00:21:56] [INFO] Starting AutoML agent workflow...
+[2026-01-31 00:21:56] [INFO] Loading data from: assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv
+[2026-01-31 00:21:57] [INFO] Data loaded successfully. Shape: (558837, 16)
+[2026-01-31 00:21:57] [INFO] Identifying target column
+[2026-01-31 00:21:57] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-01-31 00:21:57] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+[2026-01-31 00:22:20] [INFO] [Data Analysis Agent] Analysis complete. Reasoning length: 14420 chars
+[2026-01-31 00:22:20] [INFO] [Data Analysis Agent] Key insights: As a senior data scientist, I've conducted an initial exploratory data analysis based on the provided dataset overview. This analysis focuses on identifying key characteristics, potential issues, and ...
+[2026-01-31 00:22:20] [INFO] [Model Selection Agent] Starting  model selection with LLM planning
+[2026-01-31 00:22:29] [INFO] [Model Selection Agent] Decision: Using AutoGluon with config: {'models': ['GBM', 'XGBoost', 'LightGBM', 'CatBoost'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-01-31 00:22:29] [INFO] [Model Selection Agent] Selected models: ['GBM', 'XGBoost', 'LightGBM', 'CatBoost']
+[2026-01-31 00:22:29] [INFO] [Model Selection Agent] Reasoning preview: ```json
+{
+  "USE_AUTOML": true,
+  "REASONING": "The dataset characteristics strongly align with the strengths of an AutoML framework like AutoGluon for several reasons:\n\n1.  **Dataset Size:** With 558,837 rows, the dataset is large, far exceeding the typical threshold for simple direct training me...
+[2026-01-31 00:22:29] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-01-31 00:22:32] [INFO] [Training Agent] Training insight: Expect a potentially long training time, especially given the dataset size; closely monitor the primary evaluation metric (e.g., ROC AUC, F1) on the v...
+[2026-01-31 00:22:32] [WARNING] AutoGluon not available, falling back to simple training...
+[2026-01-31 00:22:34] [WARNING] XGBoost not available, will use GradientBoosting as alternative
+[2026-01-31 00:22:34] [INFO] Training simple models: ['GBM']
+
+
+=== New Run — 2026-01-31 00:24:22 ===
+
+
+=== New Run — 2026-01-31 00:24:22 ===
+[2026-01-31 00:24:23] [INFO] Starting AutoML agent workflow...
+[2026-01-31 00:24:23] [INFO] Loading data from: assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv
+[2026-01-31 00:24:23] [INFO] Data loaded successfully. Shape: (558837, 16)
+[2026-01-31 00:24:23] [INFO] Identifying target column
+[2026-01-31 00:24:23] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-01-31 00:24:23] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+[2026-01-31 00:24:46] [INFO] [Data Analysis Agent] Analysis complete. Reasoning length: 13748 chars
+[2026-01-31 00:24:46] [INFO] [Data Analysis Agent] Key insights: ## Comprehensive Data Analysis: Selling Price Prediction
+
+This analysis provides a detailed overview of the provided dataset, focusing on aspects critical for developing effective machine learning mod...
+[2026-01-31 00:24:46] [INFO] [Model Selection Agent] Starting  model selection with LLM planning
+[2026-01-31 00:24:56] [INFO] [Model Selection Agent] Decision: Using AutoGluon with config: {'models': ['GBM', 'XGBoost', 'LightGBM', 'CatBoost'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-01-31 00:24:56] [INFO] [Model Selection Agent] Selected models: ['GBM', 'XGBoost', 'LightGBM', 'CatBoost']
+[2026-01-31 00:24:56] [INFO] [Model Selection Agent] Reasoning preview: ```json
+{
+  "USE_AUTOML": true,
+  "REASONING": "The dataset characteristics strongly favor an AutoML approach like AutoGluon for this regression problem. \n\n1.  **Dataset Size:** With 558,837 rows, this is a moderately large dataset. Manually trying multiple models, extensive hyperparameter tuning,...
+[2026-01-31 00:24:56] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-01-31 00:24:59] [INFO] [Training Agent] Training insight: Expected training time will likely be several hours to a day, given the dataset size and AutoGluon's comprehensive model search. Monitor RMSE and MAE ...
+[2026-01-31 00:24:59] [WARNING] AutoGluon not available, falling back to simple training...
+[2026-01-31 00:25:00] [WARNING] XGBoost not available, will use GradientBoosting as alternative
+[2026-01-31 00:25:00] [INFO] Training simple models: ['GBM']
+
+
+=== New Run — 2026-01-31 00:41:57 ===
+
+
+=== New Run — 2026-01-31 00:41:57 ===
+[2026-01-31 00:41:57] [INFO] Starting AutoML agent workflow...
+[2026-01-31 00:41:57] [INFO] Loading data from: assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv
+[2026-01-31 00:41:58] [INFO] Data loaded successfully. Shape: (558837, 16)
+[2026-01-31 00:41:58] [INFO] Identifying target column
+[2026-01-31 00:41:58] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-01-31 00:41:58] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+[2026-01-31 00:42:19] [INFO] [Data Analysis Agent] Analysis complete. Reasoning length: 13207 chars
+[2026-01-31 00:42:19] [INFO] [Data Analysis Agent] Key insights: Here's a comprehensive analysis of your dataset, tailored for machine learning project planning:
+
+---
+
+## Dataset Analysis for Machine Learning Project
+
+**Dataset Overview:**
+*   Shape: 558,837 rows, ...
+[2026-01-31 00:42:19] [INFO] [Model Selection Agent] Starting  model selection with LLM planning
+[2026-01-31 00:42:28] [INFO] [Model Selection Agent] Decision: Using AutoGluon with config: {'models': ['GBM', 'XGBoost', 'LightGBM', 'CatBoost'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-01-31 00:42:28] [INFO] [Model Selection Agent] Selected models: ['GBM', 'XGBoost', 'LightGBM', 'CatBoost']
+[2026-01-31 00:42:28] [INFO] [Model Selection Agent] Reasoning preview: ```json
+{
+  "USE_AUTOML": true,
+  "REASONING": "The dataset is moderately large (558,837 rows) and presents several complexities that make AutoGluon a superior choice over simple direct training. Key factors include:\n1.  **Dataset Size:** Over 500,000 rows is considered a large dataset, benefiting ...
+[2026-01-31 00:42:28] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-01-31 00:42:31] [INFO] [Training Agent] Training insight: Expect significant training time, potentially several hours to days, given the dataset size and AutoGluon's comprehensive model search. Monitor the pr...
+[2026-01-31 00:42:31] [WARNING] AutoGluon not available, falling back to simple training...
+[2026-01-31 00:42:33] [WARNING] XGBoost not available, will use GradientBoosting as alternative
+[2026-01-31 00:42:33] [INFO] Training simple models: ['GBM']
+
+
+=== New Run — 2026-01-31 00:43:55 ===
+
+
+=== New Run — 2026-01-31 00:43:55 ===
+[2026-01-31 00:43:55] [INFO] Starting AutoML agent workflow...
+[2026-01-31 00:43:55] [INFO] Loading data from: assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv
+[2026-01-31 00:43:55] [INFO] Data loaded successfully. Shape: (558837, 16)
+[2026-01-31 00:43:55] [INFO] Identifying target column
+[2026-01-31 00:43:55] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-01-31 00:43:55] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+[2026-01-31 00:44:13] [INFO] [Data Analysis Agent] Analysis complete. Reasoning length: 11926 chars
+[2026-01-31 00:44:13] [INFO] [Data Analysis Agent] Key insights: As a senior data scientist, I've reviewed the provided dataset overview for your regression problem. Here's a detailed analysis focusing on practical insights for machine learning model selection and ...
+[2026-01-31 00:44:13] [INFO] [Model Selection Agent] Starting  model selection with LLM planning
+[2026-01-31 00:44:25] [INFO] [Model Selection Agent] Decision: Using AutoGluon with config: {'models': ['GBM', 'XGBoost', 'LightGBM', 'CatBoost'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-01-31 00:44:25] [INFO] [Model Selection Agent] Selected models: ['GBM', 'XGBoost', 'LightGBM', 'CatBoost']
+[2026-01-31 00:44:25] [INFO] [Model Selection Agent] Reasoning preview: ```json
+{
+  "USE_AUTOML": true,
+  "REASONING": "The problem characteristics strongly favor an AutoML approach, specifically AutoGluon, over simple direct training. \n\n1.  **Dataset Size:** With 558,837 rows, this is a large dataset. AutoGluon is designed to efficiently handle large datasets, wherea...
+[2026-01-31 00:44:25] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-01-31 00:44:27] [INFO] [Training Agent] Training insight: **1. Expected training time:** Given 558k rows, AutoGluon will likely take several hours to potentially days, depending on the `time_limit` set and av...
+[2026-01-31 00:44:48] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGBoost', 'LightGBM', 'CatBoost'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-01-31 00:44:48] [INFO] Training AutoGluon with models: ['GBM', 'XGBoost', 'LightGBM', 'CatBoost'], time_limit: 300s, preset: best_quality...
+[2026-01-31 00:44:48] [WARNING] AutoGluon training failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 306447, falling back to simple training...
+[2026-01-31 00:44:52] [INFO] Training simple models: ['GBM']
+
+
+=== New Run — 2026-01-31 01:09:23 ===
+
+
+=== New Run — 2026-01-31 01:09:23 ===
+[2026-01-31 01:09:23] [INFO] Starting AutoML agent workflow...
+[2026-01-31 01:09:23] [INFO] Loading data from: assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv
+[2026-01-31 01:09:24] [INFO] Data loaded successfully. Shape: (558837, 16)
+[2026-01-31 01:09:24] [INFO] Identifying target column
+[2026-01-31 01:09:24] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-01-31 01:09:24] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning

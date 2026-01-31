@@ -1,2 +1,24 @@
-.env*
+# Virtual Environment
+automl_env_310/
+venv/
+env/
+
+# Environment Variables (SENSITIVE)
 .env
+
+# Python Caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs and Data
+logs/
+assets/logs/
+assets/data/
+
+# Machine Learning Artifacts
+AutogluonModels/
+catboost_info/
+
+# OS Specific
+.DS_Store
