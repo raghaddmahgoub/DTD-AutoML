@@ -2,13 +2,13 @@ import pandas as pd
 from eda_agent import EDAAgent
 import os
 
-filename = "car_prices.csv" 
+filename = "Titanic-Dataset.csv" 
 df_name = os.path.splitext(os.path.basename(filename))[0] 
 df = pd.read_csv(filename)
 
 eda = EDAAgent(
     df=df,
-    target_column="sellingprice",
+    target_column="Survived",
     df_name=df_name
 )
 

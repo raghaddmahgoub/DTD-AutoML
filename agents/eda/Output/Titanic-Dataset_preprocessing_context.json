@@ -1,249 +1,181 @@
-{
-  "meta": {
-    "run_type": "raw",
-    "n_rows": 891,
-    "n_columns": 12,
-    "memory_usage_mb": 0.28,
-    "duplicate_rows": 0
-  },
-  "target": {
+[
+  {
+    "column": "PassengerId",
     "dtype": "int64",
-    "missing_count": 0,
-    "missing_ratio": 0.0,
-    "unique_values": 2,
-    "task_type": "classification",
-    "is_binary": true,
-    "n_classes": 2,
-    "class_distribution": {
-      "0": 0.6161616161616161,
-      "1": 0.3838383838383838
-    },
-    "majority_class_ratio": 0.6161616161616161,
-    "imbalance_ratio": 1.605263157894737
-  },
-  "columns": {
-    "PassengerId": {
-      "data_type": "numeric",
-      "dtype": "int64",
-      "missing_ratio": 0.0,
-      "missing_count": 0,
-      "unique_count": 891,
-      "mean": 446.0,
-      "std": 257.3538420152301,
-      "min": 1.0,
-      "max": 891.0,
-      "skewness": 0.0,
-      "zero_count": 0
-    },
-    "Survived": {
-      "data_type": "numeric",
-      "dtype": "int64",
-      "missing_ratio": 0.0,
-      "missing_count": 0,
-      "unique_count": 2,
-      "mean": 0.3838383838383838,
-      "std": 0.4865924542648575,
-      "min": 0.0,
-      "max": 1.0,
-      "skewness": 0.4785234382949897,
-      "zero_count": 549
-    },
-    "Pclass": {
-      "data_type": "numeric",
-      "dtype": "int64",
-      "missing_ratio": 0.0,
-      "missing_count": 0,
-      "unique_count": 3,
-      "mean": 2.308641975308642,
-      "std": 0.836071240977049,
-      "min": 1.0,
-      "max": 3.0,
-      "skewness": -0.6305479068752845,
-      "zero_count": 0
-    },
-    "Name": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.0,
-      "missing_count": 0,
-      "unique_count": 891,
-      "top_values": {
-        "Dooley, Mr. Patrick": 1,
-        "Braund, Mr. Owen Harris": 1,
-        "Cumings, Mrs. John Bradley (Florence Briggs Thayer)": 1,
-        "Heikkinen, Miss. Laina": 1,
-        "Futrelle, Mrs. Jacques Heath (Lily May Peel)": 1
-      },
-      "is_high_cardinality": true
-    },
-    "Sex": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.0,
-      "missing_count": 0,
-      "unique_count": 2,
-      "top_values": {
-        "male": 577,
-        "female": 314
-      },
-      "is_high_cardinality": false
-    },
-    "Age": {
-      "data_type": "numeric",
-      "dtype": "float64",
-      "missing_ratio": 0.1987,
-      "missing_count": 177,
-      "unique_count": 88,
-      "mean": 29.69911764705882,
-      "std": 14.526497332334042,
-      "min": 0.42,
-      "max": 80.0,
-      "skewness": 0.38910778230082704,
-      "zero_count": 0
-    },
-    "SibSp": {
-      "data_type": "numeric",
-      "dtype": "int64",
-      "missing_ratio": 0.0,
-      "missing_count": 0,
-      "unique_count": 7,
-      "mean": 0.5230078563411896,
-      "std": 1.1027434322934317,
-      "min": 0.0,
-      "max": 8.0,
-      "skewness": 3.6953517271630565,
-      "zero_count": 608
-    },
-    "Parch": {
-      "data_type": "numeric",
-      "dtype": "int64",
-      "missing_ratio": 0.0,
-      "missing_count": 0,
-      "unique_count": 7,
-      "mean": 0.38159371492704824,
-      "std": 0.8060572211299483,
-      "min": 0.0,
-      "max": 6.0,
-      "skewness": 2.7491170471010933,
-      "zero_count": 678
-    },
-    "Ticket": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.0,
-      "missing_count": 0,
-      "unique_count": 681,
-      "top_values": {
-        "347082": 7,
-        "1601": 7,
-        "CA. 2343": 7,
-        "3101295": 6,
-        "CA 2144": 6
-      },
-      "is_high_cardinality": true
-    },
-    "Fare": {
-      "data_type": "numeric",
-      "dtype": "float64",
-      "missing_ratio": 0.0,
-      "missing_count": 0,
-      "unique_count": 248,
-      "mean": 32.204207968574636,
-      "std": 49.6934285971809,
-      "min": 0.0,
-      "max": 512.3292,
-      "skewness": 4.787316519674893,
-      "zero_count": 15
-    },
-    "Cabin": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.771,
-      "missing_count": 687,
-      "unique_count": 147,
-      "top_values": {
-        "G6": 4,
-        "C23 C25 C27": 4,
-        "B96 B98": 4,
-        "F2": 3,
-        "D": 3
-      },
-      "is_high_cardinality": false
-    },
-    "Embarked": {
-      "data_type": "categorical",
-      "dtype": "object",
-      "missing_ratio": 0.0022,
-      "missing_count": 2,
-      "unique_count": 3,
-      "top_values": {
-        "S": 644,
-        "C": 168,
-        "Q": 77
-      },
-      "is_high_cardinality": false
-    }
-  },
-  "data_quality": {
-    "unique_per_row_columns": [
-      "PassengerId",
-      "Name"
+    "missing_pct": 0.0,
+    "n_unique": 891,
+    "sample_values": [
+      1,
+      2,
+      3,
+      4,
+      5
     ],
-    "columns_with_missing": [
-      "Age",
-      "Cabin",
-      "Embarked"
+    "is_target": false,
+    "mean": 446.0,
+    "std": 257.3538,
+    "skew": 0.0
+  },
+  {
+    "column": "Survived",
+    "dtype": "int64",
+    "missing_pct": 0.0,
+    "n_unique": 2,
+    "sample_values": [
+      0,
+      1
     ],
-    "constant_columns": [],
-    "near_constant_columns": [],
-    "mixed_type_columns": []
+    "is_target": true,
+    "mean": 0.3838,
+    "std": 0.4866,
+    "skew": 0.4785
   },
-  "relationship_insights": {
-    "numeric_correlations": {
-      "threshold": 0.5,
-      "strong_pairs": [
-        {
-          "feature_1": "Pclass",
-          "feature_2": "Fare",
-          "correlation": -0.549
-        }
-      ]
-    },
-    "target_relationships": {
-      "target_type": "numeric",
-      "feature_correlations": {
-        "PassengerId": -0.005,
-        "Pclass": -0.338,
-        "Age": -0.077,
-        "SibSp": -0.035,
-        "Parch": 0.082,
-        "Fare": 0.257
-      }
-    }
+  {
+    "column": "Pclass",
+    "dtype": "int64",
+    "missing_pct": 0.0,
+    "n_unique": 3,
+    "sample_values": [
+      3,
+      1,
+      2
+    ],
+    "is_target": false,
+    "mean": 2.3086,
+    "std": 0.8361,
+    "skew": -0.6305
   },
-  "eda_warnings": [
-    {
-      "type": "high_missingness",
-      "columns": [
-        "Cabin"
-      ],
-      "message": "Some columns have more than 50% missing values."
-    },
-    {
-      "type": "high_cardinality_categoricals",
-      "columns": [
-        "Name",
-        "Ticket"
-      ],
-      "message": "Some categorical columns have very high cardinality, which may affect encoding and memory usage."
-    },
-    {
-      "type": "unique_per_row_columns",
-      "columns": [
-        "PassengerId",
-        "Name"
-      ],
-      "message": "Some columns have a unique value per row and likely represent identifiers rather than predictive features."
-    }
-  ]
-}
+  {
+    "column": "Name",
+    "dtype": "object",
+    "missing_pct": 0.0,
+    "n_unique": 891,
+    "sample_values": [
+      "Braund, Mr. Owen Harris",
+      "Cumings, Mrs. John Bradley (Florence Briggs Thayer)",
+      "Heikkinen, Miss. Laina",
+      "Futrelle, Mrs. Jacques Heath (Lily May Peel)",
+      "Allen, Mr. William Henry"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "Sex",
+    "dtype": "object",
+    "missing_pct": 0.0,
+    "n_unique": 2,
+    "sample_values": [
+      "male",
+      "female"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "Age",
+    "dtype": "float64",
+    "missing_pct": 19.87,
+    "n_unique": 88,
+    "sample_values": [
+      22.0,
+      38.0,
+      26.0,
+      35.0,
+      54.0
+    ],
+    "is_target": false,
+    "mean": 29.6991,
+    "std": 14.5265,
+    "skew": 0.3891
+  },
+  {
+    "column": "SibSp",
+    "dtype": "int64",
+    "missing_pct": 0.0,
+    "n_unique": 7,
+    "sample_values": [
+      1,
+      0,
+      3,
+      4,
+      2
+    ],
+    "is_target": false,
+    "mean": 0.523,
+    "std": 1.1027,
+    "skew": 3.6954
+  },
+  {
+    "column": "Parch",
+    "dtype": "int64",
+    "missing_pct": 0.0,
+    "n_unique": 7,
+    "sample_values": [
+      0,
+      1,
+      2,
+      5,
+      3
+    ],
+    "is_target": false,
+    "mean": 0.3816,
+    "std": 0.8061,
+    "skew": 2.7491
+  },
+  {
+    "column": "Ticket",
+    "dtype": "object",
+    "missing_pct": 0.0,
+    "n_unique": 681,
+    "sample_values": [
+      "A/5 21171",
+      "PC 17599",
+      "STON/O2. 3101282",
+      "113803",
+      "373450"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "Fare",
+    "dtype": "float64",
+    "missing_pct": 0.0,
+    "n_unique": 248,
+    "sample_values": [
+      7.25,
+      71.2833,
+      7.925,
+      53.1,
+      8.05
+    ],
+    "is_target": false,
+    "mean": 32.2042,
+    "std": 49.6934,
+    "skew": 4.7873
+  },
+  {
+    "column": "Cabin",
+    "dtype": "object",
+    "missing_pct": 77.1,
+    "n_unique": 147,
+    "sample_values": [
+      "C85",
+      "C123",
+      "E46",
+      "G6",
+      "C103"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "Embarked",
+    "dtype": "object",
+    "missing_pct": 0.22,
+    "n_unique": 3,
+    "sample_values": [
+      "S",
+      "C",
+      "Q"
+    ],
+    "is_target": false
+  }
+]
