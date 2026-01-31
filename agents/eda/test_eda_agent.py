@@ -8,7 +8,7 @@ df = pd.read_csv(filename)
 
 eda = EDAAgent(
     df=df,
-    target_column="Survived",
+    target_column="sellingprice",
     df_name=df_name
 )
 

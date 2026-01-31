@@ -1,463 +1,541 @@
 import json
 import pandas as pd
-from typing import Optional, Dict, Any
+import numpy as np
+from typing import Optional, Dict, Any, List
 from pathlib import Path
-import json
+from scipy import stats as scipy_stats
 
 
 class EDAAgent:
     """
-    Autonomous Data Analysis (EDA) Agent.
-    This agent performs descriptive analysis only and produces
-    a structured EDA report for downstream agents.
+    Autonomous Exploratory Data Analysis (EDA) Agent.
+
+    Performs descriptive analysis only — no transformations or decisions.
+    Produces a structured report consumed by downstream preprocessing agents.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        The raw dataset to analyze.
+    target_column : str, optional
+        Name of the target/label column, if supervised.
+    df_name : str
+        Identifier used when persisting outputs to disk.
+    top_k : int
+        Number of top categorical values to retain in column profiles.
     """
-    def __init__(self, df: pd.DataFrame, target_column: Optional[str] = None, df_name: str = "dataset"):
+
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        target_column: Optional[str] = None,
+        df_name: str = "dataset",
+        top_k: int = 5,
+    ):
         self.df = df
         self.target = target_column
         self.df_name = df_name
+        self.top_k = top_k
         self.report: Dict[str, Any] = {}
+
+    # ------------------------------------------------------------------
+    # Internal helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _infer_column_type(series: pd.Series) -> str:
+        """Map a pandas Series to one of four canonical type labels."""
+        if pd.api.types.is_bool_dtype(series):
+            return "boolean"
+        if pd.api.types.is_numeric_dtype(series):
+            return "numeric"
+        if pd.api.types.is_datetime64_any_dtype(series):
+            return "datetime"
+        return "categorical"
+
+    # ------------------------------------------------------------------
+    # 1. Dataset-level summary
+    # ------------------------------------------------------------------
 
     def _dataset_summary(self) -> Dict[str, Any]:
         """
-        Descriptive only — no decisions or transformations.
-        “The dataset summary provides a global characterization of the dataset, 
-        allowing downstream agents to reason about scale, data types, memory constraints,
-            and target formulation before any transformation is applied.”
+        Global characterization: shape, types, memory, duplicates, target metadata.
+        Purely descriptive — no filtering or transformation.
         """
-        summary = {}
-
-        summary["n_rows"] = int(self.df.shape[0])
-        summary["n_columns"] = int(self.df.shape[1])
-
-        summary["column_types"] = {
-            "numerical": self.df.select_dtypes(include=["number"]).columns.tolist(),
-            "categorical": self.df.select_dtypes(include=["object", "category"]).columns.tolist(),
-            "datetime": self.df.select_dtypes(include=["datetime"]).columns.tolist(),
-            "boolean": self.df.select_dtypes(include=["bool"]).columns.tolist(),
+        summary: Dict[str, Any] = {
+            "n_rows": int(self.df.shape[0]),
+            "n_columns": int(self.df.shape[1]),
+            "column_types": {
+                "numerical": self.df.select_dtypes(include=["number"]).columns.tolist(),
+                "categorical": self.df.select_dtypes(include=["object", "category"]).columns.tolist(),
+                "datetime": self.df.select_dtypes(include=["datetime"]).columns.tolist(),
+                "boolean": self.df.select_dtypes(include=["bool"]).columns.tolist(),
+            },
+            "memory_usage_mb": round(self.df.memory_usage(deep=True).sum() / (1024 ** 2), 2),
+            "duplicate_rows": int(self.df.duplicated().sum()),
+            "target_column": self.target if (self.target and self.target in self.df.columns) else None,
+            "target_dtype": str(self.df[self.target].dtype) if (self.target and self.target in self.df.columns) else None,
         }
-
-        summary["memory_usage_mb"] = round(
-            self.df.memory_usage(deep=True).sum() / (1024 ** 2), 2
-        )
-
-        summary["duplicate_rows"] = int(self.df.duplicated().sum())
-
-        if self.target and self.target in self.df.columns:
-            summary["target_column"] = self.target
-            summary["target_dtype"] = str(self.df[self.target].dtype)
-        else:
-            summary["target_column"] = None
-            summary["target_dtype"] = None
-
         return summary
 
-    def _infer_column_type(self, series: pd.Series) -> str:
-        if pd.api.types.is_bool_dtype(series):
-            return "boolean"
-        elif pd.api.types.is_numeric_dtype(series):
-            return "numeric"
-        elif pd.api.types.is_datetime64_any_dtype(series):
-            return "datetime"
-        else:
-            return "categorical"
+    # ------------------------------------------------------------------
+    # 2. Per-column profiling
+    # ------------------------------------------------------------------
 
-    def column_info(self,k=5) -> dict:
-        profiles = {}
+    def _column_profiles(self) -> Dict[str, Any]:
+        """
+        Per-column descriptive statistics, grouped by inferred type.
+        Numeric columns also include outlier counts and a normality flag.
+        """
+        profiles: Dict[str, Any] = {}
         n_rows = len(self.df)
 
         for col in self.df.columns:
             series = self.df[col]
             data_type = self._infer_column_type(series)
 
-            profile = {
+            profile: Dict[str, Any] = {
                 "data_type": data_type,
                 "dtype": str(series.dtype),
                 "missing_count": int(series.isna().sum()),
-                "missing_ratio": float(series.isna().mean()),
+                "missing_ratio": round(float(series.isna().mean()), 4),
                 "unique_count": int(series.nunique(dropna=True)),
                 "is_unique_per_row": int(series.nunique(dropna=True)) == n_rows,
             }
 
-            # numerical columns
             if data_type == "numeric":
+                clean = series.dropna()
+                q1 = clean.quantile(0.25)
+                q3 = clean.quantile(0.75)
+                iqr = q3 - q1
+                outlier_count = int(((clean < q1 - 1.5 * iqr) | (clean > q3 + 1.5 * iqr)).sum())
+
+                # Shapiro-Wilk on a sample (max 5 000 rows, needs ≥ 3 points)
+                is_normal: Optional[bool] = None
+                if len(clean) >= 3:
+                    sample = clean.sample(min(len(clean), 5000), random_state=42)
+                    _, p_value = scipy_stats.shapiro(sample)
+                    is_normal = bool(p_value > 0.05)
+
                 profile.update({
-                    "mean": float(series.mean()),
-                    "std": float(series.std()),
-                    "min": float(series.min()),
-                    "max": float(series.max()),
-                    "median": float(series.median()),
-                    "skewness": float(series.skew()),
-                    "zero_count": int((series == 0).sum()),
+                    "mean": round(float(clean.mean()), 4),
+                    "std": round(float(clean.std()), 4),
+                    "min": float(clean.min()),
+                    "max": float(clean.max()),
+                    "median": float(clean.median()),
+                    "q1": float(q1),
+                    "q3": float(q3),
+                    "iqr": round(float(iqr), 4),
+                    "skewness": round(float(clean.skew()), 4),
+                    "kurtosis": round(float(clean.kurtosis()), 4),
+                    "zero_count": int((clean == 0).sum()),
+                    "outlier_count_iqr": outlier_count,
+                    "outlier_ratio_iqr": round(outlier_count / max(len(clean), 1), 4),
+                    "is_normal": is_normal,
                 })
 
-            #categorical columns
             elif data_type == "categorical":
                 value_counts = series.value_counts(dropna=True)
-                top_k = value_counts.head(k).to_dict()
-
                 profile.update({
-                    "top_values": top_k,
+                    "top_values": value_counts.head(self.top_k).to_dict(),
                     "is_high_cardinality": profile["unique_count"] > 0.5 * n_rows,
                 })
 
-            # datetime columns
             elif data_type == "datetime":
+                clean = series.dropna()
                 profile.update({
-                    "min_date": str(series.min()),
-                    "max_date": str(series.max()),
+                    "min_date": str(clean.min()),
+                    "max_date": str(clean.max()),
                 })
 
             profiles[col] = profile
 
         return profiles
-        
+
+    # ------------------------------------------------------------------
+    # 3. Target analysis
+    # ------------------------------------------------------------------
+
     def _target_analysis(self) -> Optional[Dict[str, Any]]:
         """
-        Performs descriptive analysis on the target column. It allows downstream agents to infer
-        task type (classification vs regression), class imbalance, and
-        distributional properties.
+        Descriptive breakdown of the target column.
+        Signals task type, class distribution, and imbalance for
+        both binary and multiclass targets.
         """
         if self.target is None or self.target not in self.df.columns:
             return None
 
         series = self.df[self.target]
-        analysis: Dict[str, Any] = {}
-
-        analysis["dtype"] = str(series.dtype)
-        analysis["missing_count"] = int(series.isna().sum())
-        analysis["missing_ratio"] = float(series.isna().mean())
-        analysis["unique_values"] = int(series.nunique(dropna=True))
-
         unique_values = series.dropna().unique()
 
-        # -----------------------
-        # BINARY CLASSIFICATION (numeric but discrete)
-        # -----------------------
-        if (pd.api.types.is_numeric_dtype(series) and len(unique_values) == 2):
-            analysis["task_type"] = "classification"
-            analysis["is_binary"] = True
+        analysis: Dict[str, Any] = {
+            "dtype": str(series.dtype),
+            "missing_count": int(series.isna().sum()),
+            "missing_ratio": round(float(series.isna().mean()), 4),
+            "unique_values": int(series.nunique(dropna=True)),
+        }
 
-            value_counts = series.value_counts(dropna=True)
-            total = value_counts.sum()
+        is_numeric = pd.api.types.is_numeric_dtype(series)
+        is_discrete = is_numeric and len(unique_values) <= 20  # treat low-cardinality numerics as classification
 
-            analysis["n_classes"] = 2
-            analysis["class_distribution"] = {
-                str(k): float(v / total)
-                for k, v in value_counts.items()
-            }
-            analysis["majority_class_ratio"] = float(value_counts.max() / total)
-            analysis["imbalance_ratio"] = float(
-                value_counts.max() / value_counts.min()
-            )
-
-        # -----------------------
-        # REGRESSION
-        # -----------------------
-        elif pd.api.types.is_numeric_dtype(series):
+        if is_numeric and not is_discrete:
+            # --- Regression ---
+            clean = series.dropna()
             analysis["task_type"] = "regression"
             analysis.update({
-                "mean": float(series.mean()),
-                "std": float(series.std()),
-                "min": float(series.min()),
-                "max": float(series.max()),
-                "median": float(series.median()),
-                "skewness": float(series.skew()),
+                "mean": round(float(clean.mean()), 4),
+                "std": round(float(clean.std()), 4),
+                "min": float(clean.min()),
+                "max": float(clean.max()),
+                "median": float(clean.median()),
+                "skewness": round(float(clean.skew()), 4),
             })
-
-        # -----------------------
-        # CATEGORICAL CLASSIFICATION
-        # -----------------------
         else:
-            analysis["task_type"] = "classification"
-
+            # --- Classification (binary or multiclass) ---
             value_counts = series.value_counts(dropna=True)
             total = value_counts.sum()
+            n_classes = len(value_counts)
 
-            analysis["n_classes"] = len(value_counts)
+            analysis["task_type"] = "classification"
+            analysis["is_binary"] = (n_classes == 2)
+            analysis["n_classes"] = n_classes
             analysis["class_distribution"] = {
-                str(k): float(v / total)
-                for k, v in value_counts.items()
+                str(k): round(float(v / total), 4) for k, v in value_counts.items()
             }
-            analysis["majority_class_ratio"] = float(value_counts.max() / total)
-            analysis["is_binary"] = len(value_counts) == 2
+            analysis["majority_class_ratio"] = round(float(value_counts.max() / total), 4)
+
+            # Imbalance ratio is meaningful for any number of classes ≥ 2
+            if value_counts.min() > 0:
+                analysis["imbalance_ratio"] = round(float(value_counts.max() / value_counts.min()), 2)
+            else:
+                analysis["imbalance_ratio"] = None  # guard against zero-count edge case
 
         return analysis
 
+    # ------------------------------------------------------------------
+    # 4. Data quality report
+    # ------------------------------------------------------------------
+
     def _data_quality_report(self) -> Dict[str, Any]:
         """
-    This report highlights potential data quality issues
+        Flags missing values, duplicates, constant/near-constant columns,
+        unique-per-row identifiers, and mixed-type object columns.
         """
-        report: Dict[str, Any] = {}
         n_rows = len(self.df)
-        unique_per_row_columns = []
         na_df = self.df.isna()
         dup_mask = self.df.duplicated()
 
-
-        # Missing Values
+        # --- Missing values ---
         missing_by_column = {
             col: {
                 "missing_count": int(na_df[col].sum()),
-                "missing_ratio": float(na_df[col].mean())
+                "missing_ratio": round(float(na_df[col].mean()), 4),
             }
             for col in self.df.columns
             if na_df[col].any()
         }
 
-        report["missing_values"] = {
-            "total_missing_cells": int(na_df.sum().sum()),
-            "columns_with_missing": missing_by_column,
-            "n_columns_with_missing": len(missing_by_column)
-        }
-
-        # Duplicate Rows
-        report["duplicates"] = {
-            "duplicate_row_count": int(dup_mask.sum()),
-            "duplicate_ratio": float(dup_mask.mean())
-        }
-
-        # Constant / Near-Constant Columns
-        constant_columns = []
-        near_constant_columns = {}
+        # --- Constant / near-constant / unique-per-row ---
+        constant_columns: List[str] = []
+        near_constant_columns: Dict[str, float] = {}
+        unique_per_row_columns: List[str] = []
 
         for col in self.df.columns:
-            series = self.df[col]
-            nunique = series.nunique(dropna=True)
+            nunique = self.df[col].nunique(dropna=True)
 
-            if nunique == 1:
+            if nunique <= 1:
                 constant_columns.append(col)
             elif nunique == n_rows:
                 unique_per_row_columns.append(col)
-            elif nunique > 1:
-                counts = series.value_counts(dropna=True)
-                top_freq = counts.iloc[0] / n_rows
+            else:
+                top_freq = self.df[col].value_counts(dropna=True).iloc[0] / n_rows
                 if top_freq > 0.95:
-                    near_constant_columns[col] = float(top_freq)
+                    near_constant_columns[col] = round(float(top_freq), 4)
 
+        # --- Mixed-type object columns ---
+        mixed_type_columns = [
+            col
+            for col in self.df.select_dtypes(include=["object"]).columns
+            if self.df[col].dropna().map(type).nunique() > 1
+        ]
 
-        report["low_variance_columns"] = {
-            "constant_columns": constant_columns, # Completely useless for ML
-            "near_constant_columns": near_constant_columns
+        return {
+            "missing_values": {
+                "total_missing_cells": int(na_df.sum().sum()),
+                "columns_with_missing": missing_by_column,
+                "n_columns_with_missing": len(missing_by_column),
+            },
+            "duplicates": {
+                "duplicate_row_count": int(dup_mask.sum()),
+                "duplicate_ratio": round(float(dup_mask.mean()), 4),
+            },
+            "low_variance_columns": {
+                "constant_columns": constant_columns,
+                "near_constant_columns": near_constant_columns,
+            },
+            "unique_per_row_columns": unique_per_row_columns,
+            "type_issues": {
+                "mixed_type_columns": mixed_type_columns,
+            },
         }
 
-        # -----------------------
-        # Data Type Inconsistencies
-        # -----------------------
-        mixed_type_columns = []
-
-        for col in self.df.select_dtypes(include=["object"]).columns:
-            inferred_types = self.df[col].dropna().map(type).nunique()
-            if inferred_types > 1:
-                mixed_type_columns.append(col)
-
-        report["type_issues"] = {
-            "mixed_type_columns": mixed_type_columns
-        }
-        report["unique_per_row_columns"] = unique_per_row_columns
-
-        return report
+    # ------------------------------------------------------------------
+    # 5. Relationship insights
+    # ------------------------------------------------------------------
 
     def _relationship_insights(self) -> Dict[str, Any]:
         """
-        Computes descriptive relationships between features and target.
-        NO feature selection, NO decisions, NO transformations.
+        Descriptive pairwise relationships.
+        Covers:
+          - Numeric ↔ Numeric   : Pearson correlation (threshold 0.5)
+          - Numeric  ↔ Target   : correlation (numeric target) or group means (categorical target)
+          - Categorical ↔ Target: Cramér's V (categorical target only)
         """
-        insights = {}
+        insights: Dict[str, Any] = {}
+        CORR_THRESHOLD = 0.5
 
-        # Identify numeric columns    
         numeric_cols = self.df.select_dtypes(include=["number"]).columns.tolist()
-
         if self.target in numeric_cols:
             numeric_cols.remove(self.target)
 
-        # 1. Numeric ↔ Numeric Correlation        
+        # --- Numeric ↔ Numeric correlations ---
         if len(numeric_cols) >= 2:
             corr_matrix = self.df[numeric_cols].corr()
-
-            strong_pairs = []
-            CORR_THRESHOLD = 0.5  # descriptive only
+            strong_pairs: List[Dict[str, Any]] = []
 
             for i in range(len(numeric_cols)):
                 for j in range(i + 1, len(numeric_cols)):
-                    corr_value = corr_matrix.iloc[i, j]
-
-                    if pd.notna(corr_value) and abs(corr_value) >= CORR_THRESHOLD:
+                    val = corr_matrix.iloc[i, j]
+                    if pd.notna(val) and abs(val) >= CORR_THRESHOLD:
                         strong_pairs.append({
                             "feature_1": numeric_cols[i],
                             "feature_2": numeric_cols[j],
-                            "correlation": round(float(corr_value), 3)
+                            "correlation": round(float(val), 3),
                         })
 
             insights["numeric_correlations"] = {
                 "threshold": CORR_THRESHOLD,
-                "strong_pairs": strong_pairs
+                "strong_pairs": strong_pairs,
             }
         else:
             insights["numeric_correlations"] = None
 
-        # 2. Feature ↔ Target Relationship
-        if self.target and self.target in self.df.columns:
-            target_series = self.df[self.target]
+        # --- Feature ↔ Target relationships ---
+        if not (self.target and self.target in self.df.columns):
+            insights["target_relationships"] = None
+            return insights
 
-            # Case 1: Numeric target → correlation
-            if pd.api.types.is_numeric_dtype(target_series):
-                target_corr = (
-                    self.df[numeric_cols]
-                    .corrwith(target_series)
-                    .dropna()
-                    .round(3)
-                    .to_dict()
+        target_series = self.df[self.target]
+
+        if pd.api.types.is_numeric_dtype(target_series):
+            # Numeric target → Pearson correlation with each numeric feature
+            target_corr = (
+                self.df[numeric_cols]
+                .corrwith(target_series)
+                .dropna()
+                .round(3)
+                .to_dict()
+            )
+            insights["target_relationships"] = {
+                "target_type": "numeric",
+                "feature_correlations": target_corr,
+            }
+        else:
+            # Categorical target → group means + Cramér's V for categoricals
+            group_means: Dict[str, Any] = {}
+            for col in numeric_cols:
+                group_means[col] = (
+                    self.df.groupby(self.target)[col].mean().round(3).to_dict()
                 )
 
-                insights["target_relationships"] = {
-                    "target_type": "numeric",
-                    "feature_correlations": target_corr
-                }
+            categorical_cols = [
+                col for col in self.df.select_dtypes(include=["object", "category"]).columns
+                if col != self.target
+            ]
+            cramers_v: Dict[str, float] = {}
+            for col in categorical_cols:
+                cramers_v[col] = round(self._cramers_v(self.df[col], target_series), 3)
 
-            # Case 2: Categorical target → group statistics
-            else:
-                group_stats = {}
-
-                for col in numeric_cols:
-                    group_stats[col] = (
-                        self.df.groupby(self.target)[col]
-                        .mean()
-                        .round(3)
-                        .to_dict()
-                    )
-
-                insights["target_relationships"] = {
-                    "target_type": "categorical",
-                    "group_means": group_stats
-                }
-        else:
-            insights["target_relationships"] = None
+            insights["target_relationships"] = {
+                "target_type": "categorical",
+                "group_means": group_means,
+                "cramers_v": cramers_v,
+            }
 
         return insights
 
+    @staticmethod
+    def _cramers_v(x: pd.Series, y: pd.Series) -> float:
+        """
+        Compute Cramér's V between two categorical Series.
+        Measures association strength in [0, 1] regardless of class count.
+        """
+        contingency = pd.crosstab(x, y)
+        chi2, _, _, _ = scipy_stats.chi2_contingency(contingency, correction=False)
+        n = contingency.sum().sum()
+        min_dim = min(contingency.shape[0], contingency.shape[1]) - 1
+        if min_dim == 0 or n == 0:
+            return 0.0
+        return float(np.sqrt(chi2 / (n * min_dim)))
+
+    # ------------------------------------------------------------------
+    # 6. EDA warnings
+    # ------------------------------------------------------------------
+
     def _generate_eda_warnings(
         self,
-        dataset_summary: dict,
-        column_profiles: dict,
-        unique_id_cols = None,
-        target_analysis: Optional[dict] = None) -> list:
-        
-        if unique_id_cols is None:
-            unique_id_cols = [
-                col for col, stats in column_profiles.items()
-                if stats.get("is_unique_per_row", False)
-            ]
+        dataset_summary: Dict[str, Any],
+        column_profiles: Dict[str, Any],
+        target_analysis: Optional[Dict[str, Any]] = None,
+    ) -> List[Dict[str, Any]]:
         """
-        Generates high-level EDA warnings.
-        Warnings are descriptive signals for downstream agents — not actions.
+        Emit descriptive signals for downstream agents.
+        Warnings are never acted on here — they inform the preprocessing plan.
         """
-        warnings = []
-
+        warnings: List[Dict[str, Any]] = []
         n_rows = dataset_summary["n_rows"]
         n_cols = dataset_summary["n_columns"]
 
-        # Dataset size warnings
+        # --- Dataset scale ---
         if n_rows < 100:
             warnings.append({
                 "type": "small_dataset",
-                "message": "Dataset contains fewer than 100 rows; model generalization may be limited."
+                "message": "Dataset contains fewer than 100 rows; model generalization may be limited.",
             })
-
         if n_rows < n_cols:
             warnings.append({
                 "type": "wide_dataset",
-                "message": "Number of features exceeds number of rows, increasing overfitting risk."
+                "message": "Number of features exceeds number of rows, increasing overfitting risk.",
             })
 
-        # Missing data warnings
-        high_missing_cols = [
-            col for col, stats in column_profiles.items()
-            if stats["missing_ratio"] > 0.5
+        # --- Missing data ---
+        high_missing = [
+            col for col, s in column_profiles.items() if s["missing_ratio"] > 0.5
         ]
-
-        if high_missing_cols:
+        if high_missing:
             warnings.append({
                 "type": "high_missingness",
-                "columns": high_missing_cols,
-                "message": "Some columns have more than 50% missing values."
+                "columns": high_missing,
+                "message": "Some columns have more than 50% missing values.",
             })
 
-        # Constant / near-constant columns
-        constant_cols = [
-            col for col, stats in column_profiles.items()
-            if stats["unique_count"] <= 1
+        # --- Constant columns ---
+        constant = [
+            col for col, s in column_profiles.items() if s["unique_count"] <= 1
         ]
-
-        if constant_cols:
+        if constant:
             warnings.append({
                 "type": "constant_columns",
-                "columns": constant_cols,
-                "message": "Some columns contain a single unique value and carry no information."
+                "columns": constant,
+                "message": "Some columns contain a single unique value and carry no information.",
             })
 
-        # High-cardinality categoricals
-        high_cardinality_cols = [
-            col for col, stats in column_profiles.items()
-            if stats["data_type"] == "categorical" and stats.get("is_high_cardinality", False)
+        # --- High-cardinality categoricals ---
+        high_card = [
+            col for col, s in column_profiles.items()
+            if s["data_type"] == "categorical" and s.get("is_high_cardinality", False)
         ]
-
-        if high_cardinality_cols:
+        if high_card:
             warnings.append({
                 "type": "high_cardinality_categoricals",
-                "columns": high_cardinality_cols,
-                "message": "Some categorical columns have very high cardinality, which may affect encoding and memory usage."
+                "columns": high_card,
+                "message": "Some categorical columns have very high cardinality.",
             })
 
-        # Target-related warnings
-        if target_analysis:
-            if target_analysis.get("task_type") == "classification":
-                imbalance_ratio = target_analysis.get("imbalance_ratio")
-
-                if imbalance_ratio and imbalance_ratio >= 3:
-                    warnings.append({
-                        "type": "class_imbalance",
-                        "message": "Target variable shows strong class imbalance."
-                    })
-        if unique_id_cols:
+        # --- Unique-per-row identifiers ---
+        id_cols = [
+            col for col, s in column_profiles.items() if s.get("is_unique_per_row", False)
+        ]
+        if id_cols:
             warnings.append({
                 "type": "unique_per_row_columns",
-                "columns": unique_id_cols,
-                "message": "Some columns have a unique value per row and likely represent identifiers rather than predictive features."
+                "columns": id_cols,
+                "message": "Some columns have a unique value per row and likely represent identifiers.",
             })
+
+        # --- Outlier-heavy numeric columns ---
+        outlier_heavy = [
+            col for col, s in column_profiles.items()
+            if s["data_type"] == "numeric" and s.get("outlier_ratio_iqr", 0) > 0.05
+        ]
+        if outlier_heavy:
+            warnings.append({
+                "type": "high_outlier_ratio",
+                "columns": outlier_heavy,
+                "message": "Some numeric columns have more than 5% outliers (IQR method).",
+            })
+
+        # --- Non-normal numeric columns ---
+        non_normal = [
+            col for col, s in column_profiles.items()
+            if s["data_type"] == "numeric" and s.get("is_normal") is False
+        ]
+        if non_normal:
+            warnings.append({
+                "type": "non_normal_columns",
+                "columns": non_normal,
+                "message": "Some numeric columns are not normally distributed (Shapiro-Wilk).",
+            })
+
+        # --- Class imbalance (binary AND multiclass) ---
+        if target_analysis and target_analysis.get("task_type") == "classification":
+            imbalance_ratio = target_analysis.get("imbalance_ratio")
+            if imbalance_ratio is not None and imbalance_ratio >= 3:
+                warnings.append({
+                    "type": "class_imbalance",
+                    "imbalance_ratio": imbalance_ratio,
+                    "message": "Target variable shows class imbalance (majority/minority ≥ 3).",
+                })
 
         return warnings
 
+    # ------------------------------------------------------------------
+    # 7. Run pipeline
+    # ------------------------------------------------------------------
+
     def run(self, run_type: str = "raw") -> Dict[str, Any]:
         """
-        Executes the EDA process.
-        Parameters:
-        - run_type: "raw" or "clean" to indicate pipeline stage
-        Returns:
-        - Structured EDA report (dict)
-        """
-        self.report["run_type"] = run_type
-        self.report["dataset_summary"] = self._dataset_summary()
-        self.report["column_profiles"] = self.column_info()
-        self.report["target_analysis"] = self._target_analysis()
-        self.report["data_quality_report"] = self._data_quality_report()
-        self.report["relationship_insights"] = self._relationship_insights()
-        self.report["eda_warnings"] = self._generate_eda_warnings(
-        dataset_summary=self.report["dataset_summary"],
-        column_profiles=self.report["column_profiles"],
-        target_analysis=self.report["target_analysis"] )
+        Execute the full EDA pipeline.
 
+        Parameters
+        ----------
+        run_type : {"raw", "clean"}
+            Pipeline stage indicator persisted in the report.
+
+        Returns
+        -------
+        dict
+            Complete structured EDA report.
+        """
+        self.report = {
+            "run_type": run_type,
+            "dataset_summary": self._dataset_summary(),
+            "column_profiles": self._column_profiles(),
+            "target_analysis": self._target_analysis(),
+            "data_quality_report": self._data_quality_report(),
+            "relationship_insights": self._relationship_insights(),
+        }
+        # Warnings depend on earlier sections, so computed last
+        self.report["eda_warnings"] = self._generate_eda_warnings(
+            dataset_summary=self.report["dataset_summary"],
+            column_profiles=self.report["column_profiles"],
+            target_analysis=self.report["target_analysis"],
+        )
         return self.report
+
+    # ------------------------------------------------------------------
+    # 8. Preprocessing context export
+    # ------------------------------------------------------------------
 
     def generate_preprocessing_context(
         self,
         plan_dir: str = "Plan",
-        output_dir: str = "Output"
-    ) -> dict:
+        output_dir: str = "Output",
+    ) -> Dict[str, Any]:
         """
-        Generates and persists a structured preprocessing context.
-        This context is a READ-ONLY contract for the preprocessing agent.
+        Produce and persist a read-only contract for the preprocessing agent.
+        Raises ValueError if `run()` has not been called first.
         """
-
         if not self.report:
             raise ValueError("EDA must be run before generating preprocessing context.")
 
@@ -467,44 +545,44 @@ class EDAAgent:
         target = self.report.get("target_analysis")
         relationships = self.report.get("relationship_insights")
 
-        # Column-level signals
-        column_context = {}
-
+        # --- Per-column context (flattened for the preprocessing agent) ---
+        column_context: Dict[str, Any] = {}
         for col, stats in columns.items():
-            col_entry = {
+            entry: Dict[str, Any] = {
                 "data_type": stats["data_type"],
                 "dtype": stats["dtype"],
-                "missing_ratio": round(stats["missing_ratio"], 4),
+                "missing_ratio": stats["missing_ratio"],
                 "missing_count": stats["missing_count"],
                 "unique_count": stats["unique_count"],
             }
 
             if stats["data_type"] == "numeric":
-                col_entry.update({
+                entry.update({
                     "mean": stats.get("mean"),
                     "std": stats.get("std"),
                     "min": stats.get("min"),
                     "max": stats.get("max"),
                     "skewness": stats.get("skewness"),
                     "zero_count": stats.get("zero_count"),
+                    "outlier_count_iqr": stats.get("outlier_count_iqr"),
+                    "outlier_ratio_iqr": stats.get("outlier_ratio_iqr"),
+                    "is_normal": stats.get("is_normal"),
                 })
-
             elif stats["data_type"] == "categorical":
-                col_entry.update({
+                entry.update({
                     "top_values": stats.get("top_values"),
                     "is_high_cardinality": stats.get("is_high_cardinality", False),
                 })
-
             elif stats["data_type"] == "datetime":
-                col_entry.update({
+                entry.update({
                     "min_date": stats.get("min_date"),
                     "max_date": stats.get("max_date"),
                 })
 
-            column_context[col] = col_entry
+            column_context[col] = entry
 
-        # Final preprocessing context
-        preprocessing_context = {
+        # --- Assembled context ---
+        preprocessing_context: Dict[str, Any] = {
             "meta": {
                 "run_type": self.report.get("run_type"),
                 "n_rows": summary["n_rows"],
@@ -516,45 +594,21 @@ class EDAAgent:
             "columns": column_context,
             "data_quality": {
                 "unique_per_row_columns": quality.get("unique_per_row_columns", []),
-                "columns_with_missing": list(
-                    quality["missing_values"]["columns_with_missing"].keys()
-                ),
+                "columns_with_missing": list(quality["missing_values"]["columns_with_missing"].keys()),
                 "constant_columns": quality["low_variance_columns"]["constant_columns"],
-                "near_constant_columns": list(
-                    quality["low_variance_columns"]["near_constant_columns"].keys()
-                ),
+                "near_constant_columns": list(quality["low_variance_columns"]["near_constant_columns"].keys()),
                 "mixed_type_columns": quality["type_issues"]["mixed_type_columns"],
             },
             "relationship_insights": relationships,
             "eda_warnings": self.report.get("eda_warnings", []),
         }
 
-        # to disk (Plan + Output)
-        plan_path = Path(plan_dir)
-        output_path = Path(output_dir)
-
-        plan_path.mkdir(parents=True, exist_ok=True)
-        output_path.mkdir(parents=True, exist_ok=True)
-
-        plan_file = plan_path / f"{self.df_name}_preprocessing_context.json"
-        output_file = output_path / f"{self.df_name}_preprocessing_context.json"
-
-        plan_file.write_text(
-            json.dumps(preprocessing_context, indent=2),
-            encoding="utf-8"
-        )
-        output_file.write_text(
-            json.dumps(preprocessing_context, indent=2),
-            encoding="utf-8"
-        )
+        # --- Persist to disk ---
+        for dir_path in (plan_dir, output_dir):
+            path = Path(dir_path)
+            path.mkdir(parents=True, exist_ok=True)
+            (path / f"{self.df_name}_preprocessing_context.json").write_text(
+                json.dumps(preprocessing_context, indent=2), encoding="utf-8"
+            )
 
         return preprocessing_context
-
-# with open("Plan/preprocessing_context.json") as f:
-#     context = json.load(f)
-
-# prep = PreprocessingAgent(context)
-# plan = prep.build_plan()
-
-
-

@@ -6,7 +6,19 @@
     "memory_usage_mb": 371.54,
     "duplicate_rows": 0
   },
-  "target": null,
+  "target": {
+    "dtype": "float64",
+    "missing_count": 12,
+    "missing_ratio": 0.0,
+    "unique_values": 1887,
+    "task_type": "regression",
+    "mean": 13611.3588,
+    "std": 9749.5016,
+    "min": 1.0,
+    "max": 230000.0,
+    "median": 12100.0,
+    "skewness": 1.9534
+  },
   "columns": {
     "year": {
       "data_type": "numeric",
@@ -14,12 +26,15 @@
       "missing_ratio": 0.0,
       "missing_count": 0,
       "unique_count": 34,
-      "mean": 2010.038927272174,
-      "std": 3.9668636154044545,
+      "mean": 2010.0389,
+      "std": 3.9669,
       "min": 1982.0,
       "max": 2015.0,
-      "skewness": -1.1832258663421038,
-      "zero_count": 0
+      "skewness": -1.1832,
+      "zero_count": 0,
+      "outlier_count_iqr": 4021,
+      "outlier_ratio_iqr": 0.0072,
+      "is_normal": false
     },
     "make": {
       "data_type": "categorical",
@@ -131,12 +146,15 @@
       "missing_ratio": 0.0212,
       "missing_count": 11820,
       "unique_count": 41,
-      "mean": 30.672364844237016,
-      "std": 13.402831728800097,
+      "mean": 30.6724,
+      "std": 13.4028,
       "min": 1.0,
       "max": 49.0,
-      "skewness": -0.8329561890401652,
-      "zero_count": 0
+      "skewness": -0.833,
+      "zero_count": 0,
+      "outlier_count_iqr": 0,
+      "outlier_ratio_iqr": 0.0,
+      "is_normal": false
     },
     "odometer": {
       "data_type": "numeric",
@@ -144,12 +162,15 @@
       "missing_ratio": 0.0002,
       "missing_count": 94,
       "unique_count": 172278,
-      "mean": 68320.01776666554,
-      "std": 53398.54282054477,
+      "mean": 68320.0178,
+      "std": 53398.5428,
       "min": 1.0,
       "max": 999999.0,
-      "skewness": 1.8431997838970884,
-      "zero_count": 0
+      "skewness": 1.8432,
+      "zero_count": 0,
+      "outlier_count_iqr": 10375,
+      "outlier_ratio_iqr": 0.0186,
+      "is_normal": false
     },
     "color": {
       "data_type": "categorical",
@@ -202,12 +223,15 @@
       "missing_ratio": 0.0001,
       "missing_count": 38,
       "unique_count": 1101,
-      "mean": 13769.377495306899,
-      "std": 9679.967173686497,
+      "mean": 13769.3775,
+      "std": 9679.9672,
       "min": 25.0,
       "max": 182000.0,
-      "skewness": 1.9976441301927186,
-      "zero_count": 0
+      "skewness": 1.9976,
+      "zero_count": 0,
+      "outlier_count_iqr": 16315,
+      "outlier_ratio_iqr": 0.0292,
+      "is_normal": false
     },
     "sellingprice": {
       "data_type": "numeric",
@@ -215,12 +239,15 @@
       "missing_ratio": 0.0,
       "missing_count": 12,
       "unique_count": 1887,
-      "mean": 13611.358810003132,
-      "std": 9749.501627824886,
+      "mean": 13611.3588,
+      "std": 9749.5016,
       "min": 1.0,
       "max": 230000.0,
-      "skewness": 1.9534443838669924,
-      "zero_count": 0
+      "skewness": 1.9534,
+      "zero_count": 0,
+      "outlier_count_iqr": 16354,
+      "outlier_ratio_iqr": 0.0293,
+      "is_normal": false
     },
     "saledate": {
       "data_type": "categorical",
@@ -274,28 +301,21 @@
           "correlation": 0.597
         },
         {
-          "feature_1": "year",
-          "feature_2": "sellingprice",
-          "correlation": 0.586
-        },
-        {
           "feature_1": "odometer",
           "feature_2": "mmr",
           "correlation": -0.588
-        },
-        {
-          "feature_1": "odometer",
-          "feature_2": "sellingprice",
-          "correlation": -0.582
-        },
-        {
-          "feature_1": "mmr",
-          "feature_2": "sellingprice",
-          "correlation": 0.984
         }
       ]
     },
-    "target_relationships": null
+    "target_relationships": {
+      "target_type": "numeric",
+      "feature_correlations": {
+        "year": 0.586,
+        "condition": 0.322,
+        "odometer": -0.582,
+        "mmr": 0.984
+      }
+    }
   },
   "eda_warnings": [
     {
@@ -303,7 +323,18 @@
       "columns": [
         "vin"
       ],
-      "message": "Some categorical columns have very high cardinality, which may affect encoding and memory usage."
+      "message": "Some categorical columns have very high cardinality."
+    },
+    {
+      "type": "non_normal_columns",
+      "columns": [
+        "year",
+        "condition",
+        "odometer",
+        "mmr",
+        "sellingprice"
+      ],
+      "message": "Some numeric columns are not normally distributed (Shapiro-Wilk)."
     }
   ]
 }
