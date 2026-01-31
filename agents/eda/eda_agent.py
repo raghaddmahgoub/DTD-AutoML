@@ -15,13 +15,13 @@ class EDAAgent:
         self.df = df
         self.target = target_column
         self.report: Dict[str, Any] = {}
-    
+
     def _dataset_summary(self) -> Dict[str, Any]:
         """
         Descriptive only — no decisions or transformations.
         “The dataset summary provides a global characterization of the dataset, 
         allowing downstream agents to reason about scale, data types, memory constraints,
-          and target formulation before any transformation is applied.”
+            and target formulation before any transformation is applied.”
         """
         summary = {}
 
@@ -49,7 +49,7 @@ class EDAAgent:
             summary["target_dtype"] = None
 
         return summary
-    
+
     def _infer_column_type(self, series: pd.Series) -> str:
         if pd.api.types.is_bool_dtype(series):
             return "boolean"
@@ -111,136 +111,150 @@ class EDAAgent:
         return profiles
         
     def _target_analysis(self) -> Optional[Dict[str, Any]]:
-      """
-      Performs descriptive analysis on the target column. It allows downstream agents to infer
-      task type (classification vs regression), class imbalance, and
-      distributional properties.
-      """
-      if self.target is None or self.target not in self.df.columns:
-          return None
+        """
+        Performs descriptive analysis on the target column. It allows downstream agents to infer
+        task type (classification vs regression), class imbalance, and
+        distributional properties.
+        """
+        if self.target is None or self.target not in self.df.columns:
+            return None
 
-      series = self.df[self.target]
-      analysis: Dict[str, Any] = {}
+        series = self.df[self.target]
+        analysis: Dict[str, Any] = {}
 
-      analysis["dtype"] = str(series.dtype)
-      analysis["missing_count"] = int(series.isna().sum())
-      analysis["missing_ratio"] = float(series.isna().mean())
-      analysis["unique_values"] = int(series.nunique(dropna=True))
+        analysis["dtype"] = str(series.dtype)
+        analysis["missing_count"] = int(series.isna().sum())
+        analysis["missing_ratio"] = float(series.isna().mean())
+        analysis["unique_values"] = int(series.nunique(dropna=True))
 
-      # NUMERIC TARGET (Regression)
-      if pd.api.types.is_numeric_dtype(series):
-          analysis["task_type"] = "regression"
-          analysis.update({
-              "mean": float(series.mean()),
-              "std": float(series.std()),
-              "min": float(series.min()),
-              "max": float(series.max()),
-              "median": float(series.median()),
-              "skewness": float(series.skew()),
-          })
+        unique_values = series.dropna().unique()
 
-      # CATEGORICAL / BOOLEAN TARGET (Classification)
-      else:
-          analysis["task_type"] = "classification"
+        # -----------------------
+        # BINARY CLASSIFICATION (numeric but discrete)
+        # -----------------------
+        if (pd.api.types.is_numeric_dtype(series) and len(unique_values) == 2):
+            analysis["task_type"] = "classification"
+            analysis["is_binary"] = True
 
-          value_counts = series.value_counts(dropna=True)
-          total = value_counts.sum()
+            value_counts = series.value_counts(dropna=True)
+            total = value_counts.sum()
 
-        # k = the class label (the value itself)
-        # v = count of that class
-        
-          class_distribution = {
-              str(k): float(v / total)
-              for k, v in value_counts.items()
-          }
+            analysis["n_classes"] = 2
+            analysis["class_distribution"] = {
+                str(k): float(v / total)
+                for k, v in value_counts.items()
+            }
+            analysis["majority_class_ratio"] = float(value_counts.max() / total)
+            analysis["imbalance_ratio"] = float(
+                value_counts.max() / value_counts.min()
+            )
 
-          analysis["n_classes"] = len(value_counts)
-          analysis["class_distribution"] = class_distribution
-          analysis["majority_class_ratio"] = float(value_counts.max() / total)
+        # -----------------------
+        # REGRESSION
+        # -----------------------
+        elif pd.api.types.is_numeric_dtype(series):
+            analysis["task_type"] = "regression"
+            analysis.update({
+                "mean": float(series.mean()),
+                "std": float(series.std()),
+                "min": float(series.min()),
+                "max": float(series.max()),
+                "median": float(series.median()),
+                "skewness": float(series.skew()),
+            })
 
-          if len(value_counts) == 2:
-              analysis["is_binary"] = True
-              analysis["imbalance_ratio"] = float(
-                  value_counts.max() / value_counts.min()
-              )
-          else:
-              analysis["is_binary"] = False
+        # -----------------------
+        # CATEGORICAL CLASSIFICATION
+        # -----------------------
+        else:
+            analysis["task_type"] = "classification"
 
-      return analysis
-    
+            value_counts = series.value_counts(dropna=True)
+            total = value_counts.sum()
+
+            analysis["n_classes"] = len(value_counts)
+            analysis["class_distribution"] = {
+                str(k): float(v / total)
+                for k, v in value_counts.items()
+            }
+            analysis["majority_class_ratio"] = float(value_counts.max() / total)
+            analysis["is_binary"] = len(value_counts) == 2
+
+        return analysis
+
     def _data_quality_report(self) -> Dict[str, Any]:
-     """
+        """
     This report highlights potential data quality issues
-     """
-     report: Dict[str, Any] = {}
-     n_rows = len(self.df)
-     unique_per_row_columns = []
-     na_df = self.df.isna()
-     dup_mask = self.df.duplicated()
+        """
+        report: Dict[str, Any] = {}
+        n_rows = len(self.df)
+        unique_per_row_columns = []
+        na_df = self.df.isna()
+        dup_mask = self.df.duplicated()
 
 
-     # Missing Values
-     missing_by_column = {
-         col: {
-             "missing_count": int(na_df[col].sum()),
-             "missing_ratio": float(na_df[col].mean())
-         }
-         for col in self.df.columns
-         if na_df[col].any()
-     }
+        # Missing Values
+        missing_by_column = {
+            col: {
+                "missing_count": int(na_df[col].sum()),
+                "missing_ratio": float(na_df[col].mean())
+            }
+            for col in self.df.columns
+            if na_df[col].any()
+        }
 
-     report["missing_values"] = {
-         "total_missing_cells": int(na_df.sum().sum()),
-         "columns_with_missing": missing_by_column,
-         "n_columns_with_missing": len(missing_by_column)
-     }
+        report["missing_values"] = {
+            "total_missing_cells": int(na_df.sum().sum()),
+            "columns_with_missing": missing_by_column,
+            "n_columns_with_missing": len(missing_by_column)
+        }
 
-     # Duplicate Rows
-     report["duplicates"] = {
-         "duplicate_row_count": int(dup_mask.sum()),
-         "duplicate_ratio": float(dup_mask.mean())
-     }
+        # Duplicate Rows
+        report["duplicates"] = {
+            "duplicate_row_count": int(dup_mask.sum()),
+            "duplicate_ratio": float(dup_mask.mean())
+        }
 
-     # Constant / Near-Constant Columns
-     constant_columns = []
-     near_constant_columns = {}
+        # Constant / Near-Constant Columns
+        constant_columns = []
+        near_constant_columns = {}
 
-     for col in self.df.columns:
-         series = self.df[col]
-         nunique = series.nunique(dropna=True)
+        for col in self.df.columns:
+            series = self.df[col]
+            nunique = series.nunique(dropna=True)
 
-         if nunique == 1:
-             constant_columns.append(col)
-         elif nunique == n_rows:
-            unique_per_row_columns.append(col)
-         elif nunique > 1:
-             counts = series.value_counts(dropna=True)
-             top_freq = counts.iloc[0] / n_rows
-             if top_freq > 0.95:
-                 near_constant_columns[col] = float(top_freq)
+            if nunique == 1:
+                constant_columns.append(col)
+            elif nunique == n_rows:
+                unique_per_row_columns.append(col)
+            elif nunique > 1:
+                counts = series.value_counts(dropna=True)
+                top_freq = counts.iloc[0] / n_rows
+                if top_freq > 0.95:
+                    near_constant_columns[col] = float(top_freq)
 
 
-     report["low_variance_columns"] = {
-         "constant_columns": constant_columns, # Completely useless for ML
-         "near_constant_columns": near_constant_columns
-     }
+        report["low_variance_columns"] = {
+            "constant_columns": constant_columns, # Completely useless for ML
+            "near_constant_columns": near_constant_columns
+        }
 
-     # -----------------------
-     # Data Type Inconsistencies
-     # -----------------------
-     mixed_type_columns = []
+        # -----------------------
+        # Data Type Inconsistencies
+        # -----------------------
+        mixed_type_columns = []
 
-     for col in self.df.select_dtypes(include=["object"]).columns:
-         inferred_types = self.df[col].dropna().map(type).nunique()
-         if inferred_types > 1:
-             mixed_type_columns.append(col)
+        for col in self.df.select_dtypes(include=["object"]).columns:
+            inferred_types = self.df[col].dropna().map(type).nunique()
+            if inferred_types > 1:
+                mixed_type_columns.append(col)
 
-     report["type_issues"] = {
-         "mixed_type_columns": mixed_type_columns
-     }
-     report["unique_per_row_columns"] = unique_per_row_columns
+        report["type_issues"] = {
+            "mixed_type_columns": mixed_type_columns
+        }
+        report["unique_per_row_columns"] = unique_per_row_columns
 
-     return report
+        return report
 
     def _relationship_insights(self) -> Dict[str, Any]:
         """
@@ -432,7 +446,7 @@ class EDAAgent:
         target_analysis=self.report["target_analysis"] )
 
         return self.report
-    
+
     def generate_preprocessing_context(
         self,
         plan_dir: str = "Plan",
@@ -534,7 +548,7 @@ class EDAAgent:
         )
 
         return preprocessing_context
-    
+
 # with open("Plan/preprocessing_context.json") as f:
 #     context = json.load(f)
 
