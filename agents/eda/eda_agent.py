@@ -526,89 +526,189 @@ class EDAAgent:
     # ------------------------------------------------------------------
     # 8. Preprocessing context export
     # ------------------------------------------------------------------
+    def _collect_sample_values(self, col: str, n: int = 5) -> List[Any]:
+        """
+        Return up to *n* representative non-null values from the column,
+        preserving original insertion order (i.e. the first *n* distinct
+        values that appear in the DataFrame).
 
+        Native numpy/pandas scalar types are cast to plain Python so the
+        list is always JSON-serialisable.
+        """
+        seen: List[Any] = []
+        for val in self.df[col]:
+            if pd.isna(val):
+                continue
+            # cast numpy scalars → Python natives
+            native = val.item() if hasattr(val, "item") else val
+            if native not in seen:
+                seen.append(native)
+                if len(seen) == n:
+                    break
+        return seen
     def generate_preprocessing_context(
-        self,
-        plan_dir: str = "Plan",
-        output_dir: str = "Output",
-    ) -> Dict[str, Any]:
-        """
-        Produce and persist a read-only contract for the preprocessing agent.
-        Raises ValueError if `run()` has not been called first.
-        """
-        if not self.report:
-            raise ValueError("EDA must be run before generating preprocessing context.")
+            self,
+            plan_dir: str = "Plan",
+            output_dir: str = "Output",
+            sample_size: int = 5,
+        ) -> List[Dict[str, Any]]:
+            """
+            Produce and persist a flat, per-column preprocessing context.
 
-        summary = self.report["dataset_summary"]
-        quality = self.report["data_quality_report"]
-        columns = self.report["column_profiles"]
-        target = self.report.get("target_analysis")
-        relationships = self.report.get("relationship_insights")
+            Output is a JSON array where every element describes exactly one
+            column:
 
-        # --- Per-column context (flattened for the preprocessing agent) ---
-        column_context: Dict[str, Any] = {}
-        for col, stats in columns.items():
-            entry: Dict[str, Any] = {
-                "data_type": stats["data_type"],
-                "dtype": stats["dtype"],
-                "missing_ratio": stats["missing_ratio"],
-                "missing_count": stats["missing_count"],
-                "unique_count": stats["unique_count"],
-            }
+                [
+                    {
+                        "column":        <str>   – column name,
+                        "dtype":         <str>   – pandas dtype string,
+                        "missing_pct":   <float> – percentage of missing values (0-100),
+                        "n_unique":      <int>   – number of distinct non-null values,
+                        "sample_values": <list>  – first *sample_size* distinct values,
+                        "is_target":     <bool>  – whether this is the target column,
 
-            if stats["data_type"] == "numeric":
-                entry.update({
-                    "mean": stats.get("mean"),
-                    "std": stats.get("std"),
-                    "min": stats.get("min"),
-                    "max": stats.get("max"),
-                    "skewness": stats.get("skewness"),
-                    "zero_count": stats.get("zero_count"),
-                    "outlier_count_iqr": stats.get("outlier_count_iqr"),
-                    "outlier_ratio_iqr": stats.get("outlier_ratio_iqr"),
-                    "is_normal": stats.get("is_normal"),
-                })
-            elif stats["data_type"] == "categorical":
-                entry.update({
-                    "top_values": stats.get("top_values"),
-                    "is_high_cardinality": stats.get("is_high_cardinality", False),
-                })
-            elif stats["data_type"] == "datetime":
-                entry.update({
-                    "min_date": stats.get("min_date"),
-                    "max_date": stats.get("max_date"),
-                })
+                        // numeric columns only:
+                        "mean":          <float>,
+                        "std":           <float>,
+                        "skew":          <float>
+                    },
+                    ...
+                ]
 
-            column_context[col] = entry
+            Parameters
+            ----------
+            plan_dir : str
+                Directory for the plan-stage copy of the JSON.
+            output_dir : str
+                Directory for the output-stage copy of the JSON.
+            sample_size : int
+                How many distinct sample values to include per column.
 
-        # --- Assembled context ---
-        preprocessing_context: Dict[str, Any] = {
-            "meta": {
-                "run_type": self.report.get("run_type"),
-                "n_rows": summary["n_rows"],
-                "n_columns": summary["n_columns"],
-                "memory_usage_mb": summary["memory_usage_mb"],
-                "duplicate_rows": summary["duplicate_rows"],
-            },
-            "target": target,
-            "columns": column_context,
-            "data_quality": {
-                "unique_per_row_columns": quality.get("unique_per_row_columns", []),
-                "columns_with_missing": list(quality["missing_values"]["columns_with_missing"].keys()),
-                "constant_columns": quality["low_variance_columns"]["constant_columns"],
-                "near_constant_columns": list(quality["low_variance_columns"]["near_constant_columns"].keys()),
-                "mixed_type_columns": quality["type_issues"]["mixed_type_columns"],
-            },
-            "relationship_insights": relationships,
-            "eda_warnings": self.report.get("eda_warnings", []),
-        }
+            Returns
+            -------
+            list[dict]
+                The assembled context (also written to disk).
 
-        # --- Persist to disk ---
-        for dir_path in (plan_dir, output_dir):
-            path = Path(dir_path)
-            path.mkdir(parents=True, exist_ok=True)
-            (path / f"{self.df_name}_preprocessing_context.json").write_text(
-                json.dumps(preprocessing_context, indent=2), encoding="utf-8"
-            )
+            Raises
+            ------
+            ValueError
+                If `run()` has not been called first.
+            """
+            if not self.report:
+                raise ValueError("EDA must be run before generating preprocessing context.")
 
-        return preprocessing_context
+            columns = self.report["column_profiles"]
+            preprocessing_context: List[Dict[str, Any]] = []
+
+            for col, stats in columns.items():
+                entry: Dict[str, Any] = {
+                    "column": col,
+                    "dtype": stats["dtype"],
+                    "missing_pct": round(stats["missing_ratio"] * 100, 2),
+                    "n_unique": stats["unique_count"],
+                    "sample_values": self._collect_sample_values(col, sample_size),
+                    "is_target": (col == self.target),
+                }
+
+                # Append numeric stats only for numeric columns
+                if stats["data_type"] == "numeric":
+                    entry["mean"] = stats.get("mean")
+                    entry["std"] = stats.get("std")
+                    entry["skew"] = stats.get("skewness")
+
+                preprocessing_context.append(entry)
+
+            # --- Persist to disk ---
+            for dir_path in (plan_dir, output_dir):
+                path = Path(dir_path)
+                path.mkdir(parents=True, exist_ok=True)
+                (path / f"{self.df_name}_preprocessing_context.json").write_text(
+                    json.dumps(preprocessing_context, indent=2), encoding="utf-8"
+                )
+
+            return preprocessing_context
+    # def generate_preprocessing_context(
+    #     self,
+    #     plan_dir: str = "Plan",
+    #     output_dir: str = "Output",
+    # ) -> Dict[str, Any]:
+    #     """
+    #     Produce and persist a read-only contract for the preprocessing agent.
+    #     Raises ValueError if `run()` has not been called first.
+    #     """
+    #     if not self.report:
+    #         raise ValueError("EDA must be run before generating preprocessing context.")
+
+    #     summary = self.report["dataset_summary"]
+    #     quality = self.report["data_quality_report"]
+    #     columns = self.report["column_profiles"]
+    #     target = self.report.get("target_analysis")
+    #     relationships = self.report.get("relationship_insights")
+
+    #     # --- Per-column context (flattened for the preprocessing agent) ---
+    #     column_context: Dict[str, Any] = {}
+    #     for col, stats in columns.items():
+    #         entry: Dict[str, Any] = {
+    #             "data_type": stats["data_type"],
+    #             "dtype": stats["dtype"],
+    #             "missing_ratio": stats["missing_ratio"],
+    #             "missing_count": stats["missing_count"],
+    #             "unique_count": stats["unique_count"],
+    #         }
+
+    #         if stats["data_type"] == "numeric":
+    #             entry.update({
+    #                 "mean": stats.get("mean"),
+    #                 "std": stats.get("std"),
+    #                 "min": stats.get("min"),
+    #                 "max": stats.get("max"),
+    #                 "skewness": stats.get("skewness"),
+    #                 "zero_count": stats.get("zero_count"),
+    #                 "outlier_count_iqr": stats.get("outlier_count_iqr"),
+    #                 "outlier_ratio_iqr": stats.get("outlier_ratio_iqr"),
+    #                 "is_normal": stats.get("is_normal"),
+    #             })
+    #         elif stats["data_type"] == "categorical":
+    #             entry.update({
+    #                 "top_values": stats.get("top_values"),
+    #                 "is_high_cardinality": stats.get("is_high_cardinality", False),
+    #             })
+    #         elif stats["data_type"] == "datetime":
+    #             entry.update({
+    #                 "min_date": stats.get("min_date"),
+    #                 "max_date": stats.get("max_date"),
+    #             })
+
+    #         column_context[col] = entry
+
+    #     # --- Assembled context ---
+    #     preprocessing_context: Dict[str, Any] = {
+    #         "meta": {
+    #             "run_type": self.report.get("run_type"),
+    #             "n_rows": summary["n_rows"],
+    #             "n_columns": summary["n_columns"],
+    #             "memory_usage_mb": summary["memory_usage_mb"],
+    #             "duplicate_rows": summary["duplicate_rows"],
+    #         },
+    #         "target": target,
+    #         "columns": column_context,
+    #         "data_quality": {
+    #             "unique_per_row_columns": quality.get("unique_per_row_columns", []),
+    #             "columns_with_missing": list(quality["missing_values"]["columns_with_missing"].keys()),
+    #             "constant_columns": quality["low_variance_columns"]["constant_columns"],
+    #             "near_constant_columns": list(quality["low_variance_columns"]["near_constant_columns"].keys()),
+    #             "mixed_type_columns": quality["type_issues"]["mixed_type_columns"],
+    #         },
+    #         "relationship_insights": relationships,
+    #         "eda_warnings": self.report.get("eda_warnings", []),
+    #     }
+
+    #     # --- Persist to disk ---
+    #     for dir_path in (plan_dir, output_dir):
+    #         path = Path(dir_path)
+    #         path.mkdir(parents=True, exist_ok=True)
+    #         (path / f"{self.df_name}_preprocessing_context.json").write_text(
+    #             json.dumps(preprocessing_context, indent=2), encoding="utf-8"
+    #         )
+
+    #     return preprocessing_context
