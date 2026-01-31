@@ -1,0 +1,297 @@
+{
+  "meta": {
+    "run_type": "raw",
+    "n_rows": 558837,
+    "n_columns": 16,
+    "memory_usage_mb": 371.54,
+    "duplicate_rows": 0
+  },
+  "target": {
+    "dtype": "float64",
+    "missing_count": 12,
+    "missing_ratio": 2.147316659419473e-05,
+    "unique_values": 1887,
+    "task_type": "regression",
+    "mean": 13611.358810003132,
+    "std": 9749.501627824886,
+    "min": 1.0,
+    "max": 230000.0,
+    "median": 12100.0,
+    "skewness": 1.9534443838669926
+  },
+  "columns": {
+    "year": {
+      "data_type": "numeric",
+      "dtype": "int64",
+      "missing_ratio": 0.0,
+      "missing_count": 0,
+      "unique_count": 34,
+      "mean": 2010.038927272174,
+      "std": 3.966863615404454,
+      "min": 1982.0,
+      "max": 2015.0,
+      "skewness": -1.183225866342104,
+      "zero_count": 0
+    },
+    "make": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.0184,
+      "missing_count": 10301,
+      "unique_count": 96,
+      "top_values": {
+        "Ford": 93554,
+        "Chevrolet": 60197,
+        "Nissan": 53946,
+        "Toyota": 39871,
+        "Dodge": 30710
+      },
+      "is_high_cardinality": false
+    },
+    "model": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.0186,
+      "missing_count": 10399,
+      "unique_count": 973,
+      "top_values": {
+        "Altima": 19349,
+        "F-150": 14479,
+        "Fusion": 12946,
+        "Camry": 12545,
+        "Escape": 11861
+      },
+      "is_high_cardinality": false
+    },
+    "trim": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.0191,
+      "missing_count": 10651,
+      "unique_count": 1963,
+      "top_values": {
+        "Base": 55817,
+        "SE": 43648,
+        "LX": 20757,
+        "Limited": 18367,
+        "LT": 16915
+      },
+      "is_high_cardinality": false
+    },
+    "body": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.0236,
+      "missing_count": 13195,
+      "unique_count": 87,
+      "top_values": {
+        "Sedan": 199437,
+        "SUV": 119292,
+        "sedan": 41906,
+        "suv": 24552,
+        "Hatchback": 21380
+      },
+      "is_high_cardinality": false
+    },
+    "transmission": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.1169,
+      "missing_count": 65352,
+      "unique_count": 4,
+      "top_values": {
+        "automatic": 475915,
+        "manual": 17544,
+        "sedan": 15,
+        "Sedan": 11
+      },
+      "is_high_cardinality": false
+    },
+    "vin": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.0,
+      "missing_count": 4,
+      "unique_count": 550297,
+      "top_values": {
+        "automatic": 22,
+        "wbanv13588cz57827": 5,
+        "trusc28n241022003": 4,
+        "5uxfe43579l274932": 4,
+        "wddgf56x78f009940": 4
+      },
+      "is_high_cardinality": true
+    },
+    "state": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.0,
+      "missing_count": 0,
+      "unique_count": 64,
+      "top_values": {
+        "fl": 82945,
+        "ca": 73148,
+        "pa": 53907,
+        "tx": 45913,
+        "ga": 34750
+      },
+      "is_high_cardinality": false
+    },
+    "condition": {
+      "data_type": "numeric",
+      "dtype": "float64",
+      "missing_ratio": 0.0212,
+      "missing_count": 11820,
+      "unique_count": 41,
+      "mean": 30.672364844237016,
+      "std": 13.402831728800097,
+      "min": 1.0,
+      "max": 49.0,
+      "skewness": -0.8329561890401649,
+      "zero_count": 0
+    },
+    "odometer": {
+      "data_type": "numeric",
+      "dtype": "float64",
+      "missing_ratio": 0.0002,
+      "missing_count": 94,
+      "unique_count": 172278,
+      "mean": 68320.01776666554,
+      "std": 53398.542820544775,
+      "min": 1.0,
+      "max": 999999.0,
+      "skewness": 1.8431997838970886,
+      "zero_count": 0
+    },
+    "color": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.0013,
+      "missing_count": 749,
+      "unique_count": 46,
+      "top_values": {
+        "black": 110970,
+        "white": 106673,
+        "silver": 83389,
+        "gray": 82857,
+        "blue": 51139
+      },
+      "is_high_cardinality": false
+    },
+    "interior": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.0013,
+      "missing_count": 749,
+      "unique_count": 17,
+      "top_values": {
+        "black": 244329,
+        "gray": 178581,
+        "beige": 59758,
+        "tan": 44093,
+        "\u2014": 17077
+      },
+      "is_high_cardinality": false
+    },
+    "seller": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.0,
+      "missing_count": 0,
+      "unique_count": 14263,
+      "top_values": {
+        "nissan-infiniti lt": 19693,
+        "ford motor credit company llc": 19162,
+        "the hertz corporation": 18299,
+        "santander consumer": 15285,
+        "avis corporation": 12540
+      },
+      "is_high_cardinality": false
+    },
+    "mmr": {
+      "data_type": "numeric",
+      "dtype": "float64",
+      "missing_ratio": 0.0001,
+      "missing_count": 38,
+      "unique_count": 1101,
+      "mean": 13769.377495306899,
+      "std": 9679.967173686498,
+      "min": 25.0,
+      "max": 182000.0,
+      "skewness": 1.997644130192718,
+      "zero_count": 0
+    },
+    "sellingprice": {
+      "data_type": "numeric",
+      "dtype": "float64",
+      "missing_ratio": 0.0,
+      "missing_count": 12,
+      "unique_count": 1887,
+      "mean": 13611.358810003132,
+      "std": 9749.501627824886,
+      "min": 1.0,
+      "max": 230000.0,
+      "skewness": 1.9534443838669926,
+      "zero_count": 0
+    },
+    "saledate": {
+      "data_type": "categorical",
+      "dtype": "object",
+      "missing_ratio": 0.0,
+      "missing_count": 12,
+      "unique_count": 3766,
+      "top_values": {
+        "Tue Feb 10 2015 01:30:00 GMT-0800 (PST)": 5334,
+        "Tue Feb 17 2015 01:30:00 GMT-0800 (PST)": 5016,
+        "Tue Jan 27 2015 01:30:00 GMT-0800 (PST)": 4902,
+        "Tue Jan 20 2015 01:30:00 GMT-0800 (PST)": 4731,
+        "Tue Mar 03 2015 01:30:00 GMT-0800 (PST)": 4653
+      },
+      "is_high_cardinality": false
+    }
+  },
+  "data_quality": {
+    "columns_with_missing": [
+      "make",
+      "model",
+      "trim",
+      "body",
+      "transmission",
+      "vin",
+      "condition",
+      "odometer",
+      "color",
+      "interior",
+      "mmr",
+      "sellingprice",
+      "saledate"
+    ],
+    "constant_columns": [],
+    "near_constant_columns": [],
+    "mixed_type_columns": []
+  },
+  "relationship_insights": {
+    "numeric_correlations": {
+      "threshold": 0.8,
+      "strong_pairs": []
+    },
+    "target_relationships": {
+      "target_type": "numeric",
+      "feature_correlations": {
+        "year": 0.586,
+        "condition": 0.322,
+        "odometer": -0.582,
+        "mmr": 0.984
+      }
+    }
+  },
+  "eda_warnings": [
+    {
+      "type": "high_cardinality_categoricals",
+      "columns": [
+        "vin"
+      ],
+      "message": "Some categorical columns have very high cardinality, which may affect encoding and memory usage."
+    }
+  ]
+}
