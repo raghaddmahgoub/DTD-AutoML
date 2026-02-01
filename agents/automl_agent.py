@@ -322,9 +322,7 @@ Provide your analysis in a clear, structured format:
 
     def training_agent(self, state: AgentState) -> AgentState:
         """
-        Deep Agent: Training Subagent
-        Executes model training based on strategy selected by model selection agent.
-        Uses LLM for reasoning about training progress and results interpretation.
+        Deep Agent: Training Subagent with Confusion Matrix Support.
         """
         try:
             use_automl = state.get('use_automl', False)
@@ -335,58 +333,50 @@ Provide your analysis in a clear, structured format:
             else:
                 logger.info("[Training Agent] Executing simple training strategy")
             
-            # Get LLM insight on training strategy before execution
-            training_strategy_prompt = f"""
-You are executing the training phase based on the model selection strategy.
-
-**Selected Strategy:**
-{'AutoGluon AutoML' if use_automl else 'Simple Direct Training'}
-
-**Model Selection Reasoning:**
-{model_selection_reasoning[:500] if model_selection_reasoning else 'N/A'}
-
-**Your Task:**
-Provide a brief assessment of the training approach:
-1. Expected training time
-2. Key success metrics to monitor
-3. Potential issues to watch for
-
-Keep it concise (2-3 sentences).
-"""
-            
+            # --- LLM strategy assessment block (kept your style) ---
             try:
+                training_strategy_prompt = f"Assess this strategy: {'AutoGluon' if use_automl else 'Simple'}. Reasoning: {model_selection_reasoning[:500]}"
                 strategy_messages = [
-                    SystemMessage(content="You are an ML engineer executing model training. Provide brief, actionable insights."),
+                    SystemMessage(content="You are an ML engineer. Provide brief insights."),
                     HumanMessage(content=training_strategy_prompt)
                 ]
                 strategy_response = self.llm.invoke(strategy_messages)
                 training_insight = strategy_response.content
-                logger.info(f"[Training Agent] Training insight: {training_insight[:150]}...")
             except Exception as e:
-                logger.warn(f"[Training Agent] Could not get LLM training insight: {str(e)}")
                 training_insight = "Executing training strategy..."
             
             # Execute training
             data = state['data']
             target_column = state['target_column']
             problem_type = state['problem_type']
-            
-            # Prepare data for training
             X = data.drop(columns=[target_column])
             y = data[target_column]
             
+            # Split data here to ensure we have test labels for the confusion matrix
+            from sklearn.model_selection import train_test_split
+            from sklearn.metrics import confusion_matrix
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
             if use_automl:
-                # Use AutoGluon with LLM-recommended configuration
                 automl_config = state.get('automl_config', {})
-                trained_model, metrics = self._train_with_autogluon(X, y, problem_type, automl_config)
+                trained_model, metrics = self._train_with_autogluon(X_train, y_train, problem_type, automl_config)
+                # AutoGluon needs its own internal test data format
+                y_pred = trained_model.predict(X_test)
             else:
-                # Use simple approach with LLM-selected models
-                selected_models = state.get('selected_models', [])
-                # Fallback to default models if none selected
-                if not selected_models:
-                    selected_models = ['RandomForest']
+                selected_models = state.get('selected_models', []) or ['RandomForest']
                 trained_model, metrics = self._train_simple_models(X, y, problem_type, selected_models)
+                # Simple models use scikit-learn predict
+                X_test_simple = pd.get_dummies(X_test, drop_first=True)
+                # Re-align columns in case dummies changed
+                X_test_simple = X_test_simple.reindex(columns=pd.get_dummies(X_train, drop_first=True).columns, fill_value=0)
+                y_pred = trained_model.predict(X_test_simple)
             
+            # --- FIX: ADD CONFUSION MATRIX ---
+            if problem_type == 'classification':
+                cm = confusion_matrix(y_test, y_pred)
+                metrics['confusion_matrix'] = cm.tolist() # Save as list for JSON/Markdown compatibility
+                logger.info(f"[Training Agent] Confusion Matrix generated: {metrics['confusion_matrix']}")
+
             # Get LLM interpretation of results
             results_interpretation = self._interpret_training_results(metrics, use_automl)
             
@@ -395,7 +385,6 @@ Keep it concise (2-3 sentences).
             state['model_metrics'] = metrics
             state['step'] = 'model_trained'
             
-            # Update agent messages
             if 'agent_messages' not in state:
                 state['agent_messages'] = []
             state['agent_messages'].append({
@@ -403,8 +392,7 @@ Keep it concise (2-3 sentences).
                 'message': f"Training complete. {results_interpretation}"
             })
             
-            logger.info(f"[Training Agent] Training complete. Best model: {metrics.get('best_model', 'N/A')}, Score: {metrics.get('best_score', 0):.4f}")
-            logger.info(f"[Training Agent] Results interpretation: {results_interpretation[:200]}...")
+            logger.info(f"[Training Agent] Training complete. Score: {metrics.get('best_score', 0):.4f}")
             
         except Exception as e:
             logger.error(f"[Training Agent] Error: {str(e)}", e)
@@ -412,10 +400,16 @@ Keep it concise (2-3 sentences).
             state['step'] = 'error'
         
         return state
-    
+
     def _interpret_training_results(self, metrics: dict, use_automl: bool) -> str:
-        """Use LLM to interpret training results and provide insights."""
+        """Use LLM to interpret training results including Confusion Matrix."""
         try:
+            # Prepare Confusion Matrix text if it exists
+            cm_text = ""
+            if 'confusion_matrix' in metrics:
+                cm = metrics['confusion_matrix']
+                cm_text = f"\n**Confusion Matrix:**\nPredicted 0: [{cm[0][0]}, {cm[0][1]}]\nPredicted 1: [{cm[1][0]}, {cm[1][1]}]"
+
             interpretation_prompt = f"""
 Analyze the following model training results:
 
@@ -424,11 +418,11 @@ Analyze the following model training results:
 **Best Score:** {metrics.get('best_score', 0):.4f}
 **Models Trained:** {metrics.get('models_trained', 0)}
 **All Models:** {metrics.get('all_models', [])}
-**All Scores:** {metrics.get('all_scores', [])}
+{cm_text}
 
 Provide a brief interpretation:
 1. Performance assessment (excellent/good/fair/poor)
-2. Notable observations about model performance
+2. Based on the Confusion Matrix, are there more False Positives or False Negatives?
 3. Any recommendations for improvement
 
 Keep it concise (3-4 sentences).
@@ -883,7 +877,7 @@ Provide your analysis and decision:
             'agent_messages': []
         }
         
-        logger.info("Starting AutoML agent workflow...")
+        logger.info("Starting AutoML agent workflow")
         final_state = self.graph.invoke(initial_state)
         
         if final_state.get('error'):

@@ -46,6 +46,20 @@ class TeeOutput:
         for f in self.files:
             f.flush()
 
+# New helper function for matrix formatting
+def format_confusion_matrix_markdown(cm):
+    """Helper to format a 2x2 confusion matrix into a Markdown table."""
+    if not cm or not isinstance(cm, list) or len(cm) < 2:
+        return ""
+    
+    table = [
+        "| | Predicted: 0 | Predicted: 1 |",
+        "|---|---|---|",
+        f"| **Actual: 0** | {cm[0][0]} | {cm[0][1]} |",
+        f"| **Actual: 1** | {cm[1][0]} | {cm[1][1]} |"
+    ]
+    return "\n".join(table)
+
 def test_dataset(data_path, target_column, dataset_name):
     """Test a single dataset and collect all information."""
     print("\n" + "="*80)
@@ -267,6 +281,13 @@ def generate_report():
                     report_content.append(f"- **All Models:** {', '.join(map(str, metrics.get('all_models', [])))}")
                 if metrics.get('all_scores'):
                     report_content.append(f"- **All Scores:** {[f'{s:.4f}' for s in metrics.get('all_scores', [])]}")
+                
+                # ADDING CONFUSION MATRIX HERE
+                if results.get('problem_type') == 'classification' and metrics.get('confusion_matrix'):
+                    report_content.append("")
+                    report_content.append("**Confusion Matrix:**")
+                    report_content.append("")
+                    report_content.append(format_confusion_matrix_markdown(metrics['confusion_matrix']))
                 report_content.append("")
             
             # Reasoning
@@ -391,6 +412,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
