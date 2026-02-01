@@ -3008,3 +3008,34 @@ The dataset, while small in terms of rows (891) and initial features (11), prese
 [2026-02-01 02:00:19] [INFO] [Training Agent] Results interpretation: 1.  **Performance assessment:** Good. A score of 0.8474 indicates strong predictive performance.
 2.  **Notable observations:** The top two models, `LightGBM_BAG_L2` and `WeightedEnsemble_L3`, achieved...
 [2026-02-01 02:00:19] [INFO] Workflow completed successfully!
+
+
+=== New Run — 2026-02-01 13:19:12 ===
+
+
+=== New Run — 2026-02-01 13:19:12 ===
+[2026-02-01 13:19:12] [INFO] Starting AutoML agent workflow
+[2026-02-01 13:19:12] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-01 13:19:12] [INFO] Data loaded successfully. Shape: (891, 12)
+[2026-02-01 13:19:12] [INFO] Identifying target column
+[2026-02-01 13:19:12] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-01 13:19:12] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+[2026-02-01 13:19:28] [INFO] [Data Analysis Agent] Analysis complete. Reasoning length: 10468 chars
+[2026-02-01 13:19:28] [INFO] [Data Analysis Agent] Key insights: As a senior data scientist, my analysis of this dataset focuses on extracting practical insights to guide the machine learning project. The goal is to identify data characteristics, potential challeng...
+[2026-02-01 13:19:28] [INFO] [Model Selection Agent] Starting  model selection with LLM planning
+[2026-02-01 13:19:38] [INFO] [Model Selection Agent] Decision: Using AutoGluon with config: {'models': ['GBM', 'XGB', 'RF'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-01 13:19:38] [INFO] [Model Selection Agent] Selected models: ['GBM', 'XGB', 'RF']
+[2026-02-01 13:19:38] [INFO] [Model Selection Agent] Reasoning preview: ```json
+{
+  "approach": "AutoGluon",
+  "reasoning": "The problem is a binary classification task on a relatively small dataset (891 rows), but it's assessed as 'moderately complex' due to several factors: significant missing values (8.1% overall, likely higher in key columns like Age and Cabin), the...
+[2026-02-01 13:19:38] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-01 13:19:46] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB', 'RF'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-01 13:19:46] [INFO] Mapped 'classification' to 'binary' (2 classes)
+[2026-02-01 13:19:46] [INFO] Training AutoGluon with models: ['GBM', 'XGB', 'RF'], time_limit: 300s, preset: best_quality...
+[2026-02-01 13:19:46] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-01 13:19:56] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L2 (score: 0.8525)
+[2026-02-01 13:19:56] [INFO] Total models trained: 6
+[2026-02-01 13:19:56] [INFO] [Training Agent] Confusion Matrix generated: [[94, 11], [20, 54]]
+[2026-02-01 13:19:59] [INFO] [Training Agent] Training complete. Score: 0.8525
+[2026-02-01 13:19:59] [INFO] Workflow completed successfully!
