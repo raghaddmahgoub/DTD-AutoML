@@ -2876,3 +2876,135 @@ This analysis provides a detailed overview of the provided dataset, focusing on 
 [2026-01-31 01:09:24] [INFO] Identifying target column
 [2026-01-31 01:09:24] [INFO] Target column identified: sellingprice, Problem type: regression
 [2026-01-31 01:09:24] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+
+
+=== New Run — 2026-01-31 17:59:14 ===
+
+
+=== New Run — 2026-01-31 17:59:14 ===
+[2026-01-31 17:59:14] [INFO] Loading data from: assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv
+[2026-01-31 17:59:15] [INFO] Data loaded successfully. Shape: (558837, 16)
+[2026-01-31 17:59:15] [INFO] Identifying target column
+[2026-01-31 17:59:15] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-01-31 17:59:15] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+[2026-01-31 17:59:31] [INFO] [Data Analysis Agent] Analysis complete. Reasoning length: 11255 chars
+[2026-01-31 17:59:31] [INFO] [Data Analysis Agent] Key insights: As a senior data scientist, I've reviewed the provided dataset overview for your regression problem. Here's a detailed analysis and actionable recommendations to guide your machine learning project.
+
+...
+[2026-01-31 17:59:31] [INFO] [Model Selection Agent] Starting  model selection with LLM planning
+[2026-01-31 17:59:42] [INFO] [Model Selection Agent] Decision: Using simple approach with models: []
+[2026-01-31 17:59:42] [INFO] [Model Selection Agent] Reasoning preview: ```json
+{
+  "decision": "Use AutoGluon (AutoML Framework)",
+  "reasoning": "Based on the dataset characteristics and the detailed analysis provided by the Data Analysis Agent, AutoGluon is the optimal choice for this machine learning problem. Here's a breakdown of the reasoning:\n\n1.  **Dataset Siz...
+[2026-01-31 17:59:42] [INFO] [Training Agent] Executing simple training strategy
+[2026-01-31 17:59:45] [INFO] [Training Agent] Training insight: 1.  **Expected training time:** Training time can be significant (hours to potentially days) depending on the `time_limit` and `presets` used by AutoG...
+[2026-01-31 17:59:46] [INFO] Training simple models: ['RandomForest']
+
+
+=== New Run — 2026-01-31 18:05:43 ===
+
+
+=== New Run — 2026-01-31 18:05:43 ===
+[2026-01-31 18:05:43] [INFO] Loading data from: assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv
+[2026-01-31 18:05:44] [INFO] Data loaded successfully. Shape: (558837, 16)
+[2026-01-31 18:05:44] [INFO] Identifying target column
+[2026-01-31 18:05:44] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-01-31 18:05:44] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+[2026-01-31 18:06:03] [INFO] [Data Analysis Agent] Analysis complete. Reasoning length: 13305 chars
+[2026-01-31 18:06:03] [INFO] [Data Analysis Agent] Key insights: Okay, let's dive into the analysis of this dataset for your regression problem.
+
+---
+
+### Dataset Analysis: Selling Price Prediction
+
+**Problem Type:** Regression (predicting `sellingprice`)
+**Dataset...
+[2026-01-31 18:06:03] [INFO] [Model Selection Agent] Starting  model selection with LLM planning
+[2026-01-31 18:06:14] [INFO] [Model Selection Agent] Decision: Using AutoGluon with config: {'models': ['GBM', 'XGBoost', 'LightGBM', 'CatBoost'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-01-31 18:06:14] [INFO] [Model Selection Agent] Selected models: ['GBM', 'XGBoost', 'LightGBM', 'CatBoost']
+[2026-01-31 18:06:14] [INFO] [Model Selection Agent] Reasoning preview: ```json
+{
+  "decision": "Use AutoGluon (AutoML Framework)",
+  "reasoning": "Based on the comprehensive analysis provided by the Data Analysis Agent, the problem exhibits characteristics that strongly favor an AutoML approach, specifically AutoGluon, despite the relatively low number of features (15)...
+[2026-01-31 18:06:14] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-01-31 18:06:17] [INFO] [Training Agent] Training insight: **Training Assessment (AutoGluon AutoML):**
+
+1.  **Expected Training Time:** Expect training to take several hours to potentially a day or more given ...
+[2026-01-31 18:06:17] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGBoost', 'LightGBM', 'CatBoost'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-01-31 18:06:18] [WARNING] AutoGluon training failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 306447, falling back to simple training...
+[2026-01-31 18:06:18] [INFO] Training simple models: ['RandomForest']
+
+
+=== New Run — 2026-01-31 18:11:15 ===
+
+
+=== New Run — 2026-01-31 18:11:15 ===
+[2026-01-31 18:11:15] [INFO] Loading data from: assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv
+[2026-01-31 18:11:16] [INFO] Data loaded successfully. Shape: (558837, 16)
+[2026-01-31 18:11:16] [INFO] Identifying target column
+[2026-01-31 18:11:16] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-01-31 18:11:16] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+
+
+=== New Run — 2026-01-31 18:11:38 ===
+
+
+=== New Run — 2026-01-31 18:11:38 ===
+[2026-01-31 18:11:38] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-01-31 18:11:38] [INFO] Data loaded successfully. Shape: (891, 12)
+[2026-01-31 18:11:38] [INFO] Identifying target column
+[2026-01-31 18:11:38] [INFO] Target column identified: Survived, Problem type: classification
+[2026-01-31 18:11:38] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+[2026-01-31 18:11:54] [INFO] [Data Analysis Agent] Analysis complete. Reasoning length: 11110 chars
+[2026-01-31 18:11:54] [INFO] [Data Analysis Agent] Key insights: As a senior data scientist, my goal is to provide a comprehensive analysis of this dataset to inform our machine learning strategy. The dataset, likely the Titanic survival dataset given its character...
+[2026-01-31 18:11:54] [INFO] [Model Selection Agent] Starting  model selection with LLM planning
+[2026-01-31 18:12:08] [INFO] [Model Selection Agent] Decision: Using simple approach with models: []
+[2026-01-31 18:12:08] [INFO] [Model Selection Agent] Reasoning preview: Based on the comprehensive analysis provided by the Data Analysis Agent, here's my decision as the Model Selection Agent:
+
+**Analysis and Decision:**
+
+The dataset, while small in terms of rows (891) and initial features (11), presents a "moderately complex classification problem" due to several fact...
+[2026-01-31 18:12:08] [INFO] [Training Agent] Executing simple training strategy
+[2026-01-31 18:12:10] [INFO] [Training Agent] Training insight: **Assessment of Training Approach:**
+
+1.  **Expected Training Time:** Training should be very fast, likely seconds to minutes, given the small dataset...
+[2026-01-31 18:12:10] [INFO] Training simple models: ['RandomForest']
+[2026-01-31 18:12:13] [INFO] [Training Agent] Training complete. Best model: RandomForest, Score: 0.8156
+[2026-01-31 18:12:13] [INFO] [Training Agent] Results interpretation: This output indicates a critical issue: **no models were actually trained** ("Models Trained: 0", "All Models: []"). The reported "Best Model: RandomForest" and "Best Score: 0.8156" are therefore inva...
+
+
+=== New Run — 2026-02-01 01:59:24 ===
+
+
+=== New Run — 2026-02-01 01:59:24 ===
+[2026-02-01 01:59:24] [INFO] Starting AutoML agent workflow...
+[2026-02-01 01:59:24] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-01 01:59:24] [INFO] Data loaded successfully. Shape: (891, 12)
+[2026-02-01 01:59:24] [INFO] Identifying target column
+[2026-02-01 01:59:24] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-01 01:59:24] [INFO] [Data Analysis Agent] Starting deep data analysis with LLM reasoning
+[2026-02-01 01:59:46] [INFO] [Data Analysis Agent] Analysis complete. Reasoning length: 12950 chars
+[2026-02-01 01:59:46] [INFO] [Data Analysis Agent] Key insights: This dataset presents a classic classification problem, likely resembling the well-known Titanic survival prediction task given its common characteristics. My analysis will focus on extracting actiona...
+[2026-02-01 01:59:46] [INFO] [Model Selection Agent] Starting  model selection with LLM planning
+[2026-02-01 01:59:56] [INFO] [Model Selection Agent] Decision: Using AutoGluon with config: {'models': ['GBM', 'CAT', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-01 01:59:56] [INFO] [Model Selection Agent] Selected models: ['GBM', 'CAT', 'XGB']
+[2026-02-01 01:59:56] [INFO] [Model Selection Agent] Reasoning preview: ```json
+{
+  "approach": "AutoGluon",
+  "reasoning": "The dataset, while relatively small (891 rows), is characterized as a 'moderately complex classification problem' with an expectation of 'non-linear relationships and interactions.' The Data Analysis Agent's insights highlight significant opportun...
+[2026-02-01 01:59:56] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-01 01:59:58] [INFO] [Training Agent] Training insight: **Assessment of AutoGluon Training:**
+
+1.  **Expected Training Time:** For 891 rows, AutoGluon should complete training relatively quickly, likely wit...
+[2026-02-01 01:59:59] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'CAT', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-01 01:59:59] [INFO] Mapped 'classification' to 'binary' (2 classes)
+[2026-02-01 01:59:59] [INFO] Training AutoGluon with models: ['GBM', 'CAT', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-01 01:59:59] [WARNING] Unknown model 'CAT' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-01 01:59:59] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-01 02:00:15] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L2 (score: 0.8474)
+[2026-02-01 02:00:15] [INFO] Total models trained: 4
+[2026-02-01 02:00:19] [INFO] [Training Agent] Training complete. Best model: LightGBM_BAG_L2, Score: 0.8474
+[2026-02-01 02:00:19] [INFO] [Training Agent] Results interpretation: 1.  **Performance assessment:** Good. A score of 0.8474 indicates strong predictive performance.
+2.  **Notable observations:** The top two models, `LightGBM_BAG_L2` and `WeightedEnsemble_L3`, achieved...
+[2026-02-01 02:00:19] [INFO] Workflow completed successfully!
