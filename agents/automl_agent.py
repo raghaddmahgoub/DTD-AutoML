@@ -483,43 +483,26 @@ Analyze the following tabular dataset characteristics and decide the best approa
 
 As the Model Selection Agent, you need to plan and decide between two approaches:
 
-1. **Use AutoGluon (AutoML Framework)**: Best for complex problems with:
-   - Large datasets (>10,000 rows)
-   - Many features (>20 features)
-   - Complex feature interactions
-   - Need for hyperparameter tuning
-   - Multiple model types to compare
-   - Missing data handling requirements
+1. **AutoGluon (AutoML Framework)**: Best for complex problems, large datasets, or when high performance is critical.
+   - If you choose this, you MUST specify the models to prioritize, a time limit, and a preset.
+   - Valid Models: ['GBM', 'CAT', 'XGB', 'RF', 'XT', 'KNN', 'LR', 'NN_TORCH', 'FASTAI']
 
-2. **Use Simple Direct Training**: Best for simpler problems with:
-   - Small to medium datasets (<10,000 rows)
-   - Few features (<20 features)
-   - Straightforward relationships
-   - Quick results needed
-   - Interpretable models preferred
+2. **Simple Direct Training**: Best for small datasets or when simple, interpretable models are preferred.
+   - If you choose this, you MUST suggest exactly 3 specific models to train for comparison.
+   - Valid Models: ['RandomForest', 'XGBoost', 'GradientBoosting', 'LogisticRegression', 'LinearRegression']
 
-**If using AutoGluon**, specify:
-- Which models/algorithms to prioritize (e.g., ['GBM', 'XGBoost', 'LightGBM', 'CatBoost', 'NeuralNet', 'FastAI'])
-- Time limit for training (in seconds, default 300)
-- Preset mode ('best_quality', 'high_quality', 'good_quality_faster_inference', 'optimize_for_deployment')
-
-**If using Simple Approach**, specify:
-- 1-3 specific models to train (e.g., ['RandomForest', 'XGBoost'])
-
-**Your Response Format (JSON-like structure):**
-```
-USE_AUTOML: true/false
-REASONING: [Your reasoning for the decision]
-
-If USE_AUTOML is true:
-AUTOGLUON_CONFIG:
-  models: [list of model names]
-  time_limit: [seconds]
-  preset: [preset name]
-
-If USE_AUTOML is false:
-SIMPLE_MODELS: [list of 1-3 model names]
-```
+**Response Format (STRICT JSON):**
+Your response must be a single JSON object with these EXACT keys:
+{
+  "approach": "AutoGluon" or "Simple",
+  "reasoning": "Detailed explanation of your choice",
+  "autogluon_settings": {
+    "models_to_prioritize": ["GBM", "XGB", "CAT"],
+    "time_limit_seconds": 300,
+    "preset_mode": "best_quality"
+  },
+  "simple_models": ["Model1", "Model2", "Model3"]
+}
 
 Provide your analysis and decision:
 """
@@ -533,70 +516,96 @@ Provide your analysis and decision:
             tuple: (use_automl: bool, automl_config: dict, selected_models: list)
         """
         import re
+        import json
         
         reasoning_lower = reasoning.lower()
         use_automl = None
-        if re.search(r'use_automl\s*[:=]\s*(false|0|no)', reasoning_lower):
-            use_automl = False
-        elif re.search(r'use_automl\s*[:=]\s*(true|1|yes)', reasoning_lower):
-            use_automl = True
+        automl_config = {}
+        selected_models = []
+
+        # PRIORITY 1: Try to parse structured JSON from the reasoning
+        try:
+            json_match = re.search(r'\{.*\}', reasoning, re.DOTALL)
+            if json_match:
+                data = json.loads(json_match.group(0))
+                
+                # Check approach key (matches the new prompt)
+                approach = str(data.get("approach") or "").lower()
+                if "autogluon" in approach:
+                    use_automl = True
+                elif "simple" in approach:
+                    use_automl = False
+                
+                # If JSON explicitly decided, extract the rest
+                if use_automl is not None:
+                    if use_automl:
+                        settings = data.get("autogluon_settings", {})
+                        automl_config = {
+                            'models': settings.get("models_to_prioritize", ['GBM', 'XGB', 'CAT']),
+                            'time_limit': settings.get("time_limit_seconds", 300),
+                            'preset': settings.get("preset_mode", 'best_quality')
+                        }
+                    else:
+                        selected_models = data.get("simple_models", [])
+        except Exception as e:
+            logger.warn(f"JSON parsing failed, falling back to regex: {e}")
+
+        # PRIORITY 2: Regex Fallback (Your original style)
+        if use_automl is None:
+            if re.search(r'use_automl\s*[:=]\s*(false|0|no)', reasoning_lower):
+                use_automl = False
+            elif re.search(r'use_automl\s*[:=]\s*(true|1|yes)', reasoning_lower):
+                use_automl = True
         
-        # If not explicit, use heuristics
+        # PRIORITY 3: Heuristics (Your original style)
         if use_automl is None:
             rows = data_summary['data_info']['rows']
             features = data_summary['feature_info']['total_features']
             use_automl = rows > 10000 or features > 20
-        
-        automl_config = {}
-        selected_models = []
-        
+
+        # Final Config Assembly
         if use_automl:
-            automl_config = {
-                'models': ['GBM', 'XGBoost', 'LightGBM', 'CatBoost'],
-                'time_limit': 300,
-                'preset': 'best_quality'
-            }
-            
-            # Extract models from reasoning if specified
-            models_match = re.search(r'models\s*[:=]\s*\[([^\]]+)\]', reasoning, re.IGNORECASE)
-            if models_match:
-                models_str = models_match.group(1)
-                models = [m.strip().strip("'\"") for m in models_str.split(',')]
-                valid_models = ['GBM', 'XGBoost', 'LightGBM', 'CatBoost', 'NeuralNet', 
-                              'FastAI', 'RF', 'XT', 'KNN', 'LR']
-                automl_config['models'] = [m for m in models if m in valid_models][:8]
-                if not automl_config['models']:
-                    automl_config['models'] = ['GBM', 'XGBoost', 'LightGBM', 'CatBoost']
-            
-            # Extract time limit
-            time_match = re.search(r'time_limit\s*[:=]\s*(\d+)', reasoning, re.IGNORECASE)
-            if time_match:
-                automl_config['time_limit'] = int(time_match.group(1))
-            
-            # Extract preset
-            preset_match = re.search(r'preset\s*[:=]\s*([^\s,\]]+)', reasoning, re.IGNORECASE)
-            if preset_match:
-                preset = preset_match.group(1).strip("'\"")
-                valid_presets = ['best_quality', 'high_quality', 'good_quality_faster_inference', 
-                               'optimize_for_deployment', 'optimize_for_size']
-                if preset in valid_presets:
-                    automl_config['preset'] = preset
-        else:
-            # Extract simple models
-            models_match = re.search(r'simple_models\s*[:=]\s*\[([^\]]+)\]', reasoning, re.IGNORECASE)
-            if models_match:
-                models_str = models_match.group(1)
-                selected_models = [m.strip().strip("'\"") for m in models_str.split(',')]
-            
-            if not selected_models:
-                default_models = {
-                    'classification': ['RandomForest', 'GradientBoosting'],
-                    'regression': ['RandomForest', 'GradientBoosting']
+            # If JSON didn't provide config, use your defaults + regex extraction
+            if not automl_config:
+                automl_config = {
+                    'models': ['GBM', 'XGBoost', 'LightGBM', 'CatBoost'],
+                    'time_limit': 300,
+                    'preset': 'best_quality'
                 }
-                selected_models = default_models.get(problem_type, ['RandomForest'])
+                
+                models_match = re.search(r'models\s*[:=]\s*\[([^\]]+)\]', reasoning, re.IGNORECASE)
+                if models_match:
+                    models_str = models_match.group(1)
+                    models = [m.strip().strip("'\"") for m in models_str.split(',')]
+                    valid_models = ['GBM', 'XGBoost', 'LightGBM', 'CatBoost', 'NeuralNet', 'FastAI', 'RF', 'XT', 'KNN', 'LR']
+                    automl_config['models'] = [m for m in models if m in valid_models][:8]
+
+                time_match = re.search(r'time_limit\s*[:=]\s*(\d+)', reasoning, re.IGNORECASE)
+                if time_match:
+                    automl_config['time_limit'] = int(time_match.group(1))
+
+                preset_match = re.search(r'preset\s*[:=]\s*([^\s,\]]+)', reasoning, re.IGNORECASE)
+                if preset_match:
+                    preset = preset_match.group(1).strip("'\"")
+                    valid_presets = ['best_quality', 'high_quality', 'good_quality_faster_inference', 'optimize_for_deployment']
+                    if preset in valid_presets:
+                        automl_config['preset'] = preset
+        else:
+            # If JSON didn't provide models, use your regex extraction + defaults
+            if not selected_models:
+                models_match = re.search(r'simple_models\s*[:=]\s*\[([^\]]+)\]', reasoning, re.IGNORECASE)
+                if models_match:
+                    models_str = models_match.group(1)
+                    selected_models = [m.strip().strip("'\"") for m in models_str.split(',')]
+                
+                if not selected_models:
+                    default_models = {
+                        'classification': ['RandomForest', 'GradientBoosting'],
+                        'regression': ['RandomForest', 'GradientBoosting']
+                    }
+                    selected_models = default_models.get(problem_type, ['RandomForest'])
         
         return use_automl, automl_config, selected_models[:3]
-    
     def _train_with_autogluon(self, X: pd.DataFrame, y: pd.Series, problem_type: str, config: dict) -> tuple:
         """
         Train model using AutoGluon AutoML framework with LLM-recommended configuration.
@@ -743,22 +752,12 @@ Provide your analysis and decision:
     def _train_simple_models(self, X: pd.DataFrame, y: pd.Series, problem_type: str, model_names: list[str]) -> tuple:
         """
         Train models using simple scikit-learn approach with LLM-selected models.
-        
-        Args:
-            X: Feature DataFrame
-            y: Target Series
-            problem_type: 'classification' or 'regression'
-            model_names: List of model names to train
-        
-        Returns:
-            tuple: (best_trained_model, metrics_dict)
         """
         from sklearn.model_selection import train_test_split
         from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingClassifier, GradientBoostingRegressor
         from sklearn.linear_model import LogisticRegression, LinearRegression
         from sklearn.metrics import accuracy_score, r2_score, f1_score, mean_squared_error
         
-        # Try to import xgboost, fallback to GradientBoosting if not available
         try:
             import xgboost as xgb
             xgb_available = True
@@ -766,24 +765,23 @@ Provide your analysis and decision:
             xgb_available = False
             logger.warn("XGBoost not available, will use GradientBoosting as alternative")
         
+        # Ensure we have a valid list to iterate over
+        if not model_names or not isinstance(model_names, list):
+            model_names = ['RandomForest', 'GradientBoosting'] if problem_type == 'classification' else ['RandomForest']
+            
         logger.info(f"Training simple models: {model_names}")
         
-        # Handle categorical columns
         X_processed = pd.get_dummies(X, drop_first=True)
-        
-        # Split data
         X_train, X_test, y_train, y_test = train_test_split(
             X_processed, y, test_size=0.2, random_state=42
         )
         
-        # Model mapping
-        models_to_train = {}
         best_model = None
         best_score = -float('inf')
-        best_metric_name = None
+        best_model_name = None
+        best_metric_name = 'accuracy' if problem_type == 'classification' else 'r2_score'
         all_results = []
         
-        # Train each model and compare
         for model_name in model_names:
             try:
                 if problem_type == 'classification':
@@ -793,21 +791,13 @@ Provide your analysis and decision:
                         model = xgb.XGBClassifier(n_estimators=100, random_state=42, eval_metric='logloss')
                     elif 'GradientBoosting' in model_name or 'gradient' in model_name.lower():
                         model = GradientBoostingClassifier(n_estimators=100, random_state=42)
-                    elif ('XGBoost' in model_name or 'xgboost' in model_name.lower() or 'xgb' in model_name.lower()) and not xgb_available:
-                        # Fallback to GradientBoosting if XGBoost requested but not available
-                        logger.warn(f"XGBoost not available, using GradientBoosting instead of {model_name}")
-                        model = GradientBoostingClassifier(n_estimators=100, random_state=42)
                     elif 'LogisticRegression' in model_name or 'logistic' in model_name.lower():
                         model = LogisticRegression(max_iter=1000, random_state=42)
                     else:
-                        # Default to RandomForest
                         model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
                     
                     model.fit(X_train, y_train)
-                    y_pred = model.predict(X_test)
-                    score = accuracy_score(y_test, y_pred)
-                    f1 = f1_score(y_test, y_pred, average='weighted')
-                    metric_name = 'accuracy'
+                    score = accuracy_score(y_test, model.predict(X_test))
                     
                 else:  # regression
                     if 'RandomForest' in model_name or 'randomforest' in model_name.lower():
@@ -816,56 +806,41 @@ Provide your analysis and decision:
                         model = xgb.XGBRegressor(n_estimators=100, random_state=42)
                     elif 'GradientBoosting' in model_name or 'gradient' in model_name.lower():
                         model = GradientBoostingRegressor(n_estimators=100, random_state=42)
-                    elif ('XGBoost' in model_name or 'xgboost' in model_name.lower() or 'xgb' in model_name.lower()) and not xgb_available:
-                        # Fallback to GradientBoosting if XGBoost requested but not available
-                        logger.warn(f"XGBoost not available, using GradientBoosting instead of {model_name}")
-                        model = GradientBoostingRegressor(n_estimators=100, random_state=42)
                     elif 'LinearRegression' in model_name or 'linear' in model_name.lower():
                         model = LinearRegression()
                     else:
-                        # Default to RandomForest
                         model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
                     
                     model.fit(X_train, y_train)
-                    y_pred = model.predict(X_test)
-                    score = r2_score(y_test, y_pred)
-                    mse = mean_squared_error(y_test, y_pred)
-                    metric_name = 'r2_score'
+                    score = r2_score(y_test, model.predict(X_test))
                 
                 all_results.append({
                     'model_name': model_name,
-                    'model': model,
-                    'score': score,
-                    'metric': metric_name
+                    'score': float(score)
                 })
                 
-                # Track best model
                 if score > best_score:
                     best_score = score
                     best_model = model
-                    best_metric_name = metric_name
+                    best_model_name = model_name
                 
-                logger.info(f"{model_name} - {metric_name}: {score:.4f}")
+                logger.info(f"{model_name} - {best_metric_name}: {score:.4f}")
                 
             except Exception as e:
                 logger.warn(f"Failed to train {model_name}: {str(e)}")
                 continue
         
-        # If no models trained successfully, use default
+        # Fallback if the loop didn't produce a model
         if best_model is None:
-            logger.warn("All models failed, using default RandomForest...")
-            if problem_type == 'classification':
-                best_model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-            else:
-                best_model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+            logger.warn("All selected models failed, using default RandomForest...")
+            best_model_name = 'RandomForest'
+            best_model = RandomForestClassifier() if problem_type == 'classification' else RandomForestRegressor()
             best_model.fit(X_train, y_train)
-            y_pred = best_model.predict(X_test)
-            best_score = accuracy_score(y_test, y_pred) if problem_type == 'classification' else r2_score(y_test, y_pred)
-            best_metric_name = 'accuracy' if problem_type == 'classification' else 'r2_score'
-            all_results = [{'model_name': 'RandomForest', 'score': best_score}]
-        
+            best_score = best_model.score(X_test, y_test)
+            all_results = [{'model_name': 'RandomForest', 'score': float(best_score)}]
+
         metrics = {
-            'best_model': all_results[0]['model_name'] if all_results else 'RandomForest',
+            'best_model': best_model_name,
             'best_score': float(best_score),
             'metric_name': best_metric_name,
             'models_trained': len(all_results),

@@ -350,7 +350,7 @@ def save_report():
     with open(report_file, 'w', encoding='utf-8') as f:
         f.write(report_content)
     
-    print(f"\n📄 Report saved to: {report_file}")
+    print(f"\nReport saved to: {report_file}")
     return report_file
 
 def main():
@@ -362,12 +362,17 @@ def main():
     # Test datasets
     test_datasets = [
        
-        {
-            'path': 'assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv',
-            'target': 'sellingprice',
-            'name': 'carprices (Regression)'
-        },
-
+        # {
+        #     'path': 'assets/data/Datasets/Regression Datasets/Concrete Compressive Strength/car_prices.csv',
+        #     'target': 'sellingprice',
+        #     'name': 'carprices (Regression)'
+            
+        # },
+        {'path':'assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv',
+            'target':'Survived',
+            'name':'Titanic (Classification)'
+         
+         },
     ]
     
     # Run tests
