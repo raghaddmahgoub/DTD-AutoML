@@ -1,0 +1,102 @@
+{
+  "task_type": "classification",
+  "target": {
+    "column": "Species",
+    "dtype": "object",
+    "n_classes": 3,
+    "is_binary": false,
+    "class_distribution": {
+      "Iris-setosa": 0.3333,
+      "Iris-versicolor": 0.3333,
+      "Iris-virginica": 0.3333
+    },
+    "imbalance_ratio": 1.0,
+    "majority_class_ratio": 0.3333
+  },
+  "features": {
+    "numeric": [
+      "Id",
+      "SepalLengthCm",
+      "SepalWidthCm",
+      "PetalLengthCm",
+      "PetalWidthCm"
+    ],
+    "categorical": [],
+    "total_feature_count": 5
+  },
+  "dataset_shape": {
+    "n_rows": 150,
+    "n_columns": 6
+  },
+  "multicollinearity": {
+    "threshold": 0.7,
+    "pairs": [
+      {
+        "feature_1": "Id",
+        "feature_2": "SepalLengthCm",
+        "correlation": 0.717
+      },
+      {
+        "feature_1": "Id",
+        "feature_2": "PetalLengthCm",
+        "correlation": 0.883
+      },
+      {
+        "feature_1": "Id",
+        "feature_2": "PetalWidthCm",
+        "correlation": 0.9
+      },
+      {
+        "feature_1": "SepalLengthCm",
+        "feature_2": "PetalLengthCm",
+        "correlation": 0.872
+      },
+      {
+        "feature_1": "SepalLengthCm",
+        "feature_2": "PetalWidthCm",
+        "correlation": 0.818
+      },
+      {
+        "feature_1": "PetalLengthCm",
+        "feature_2": "PetalWidthCm",
+        "correlation": 0.963
+      }
+    ]
+  },
+  "encoding_hints": {
+    "Species": {
+      "strategy": "one_hot",
+      "reason": "3 categories \u2014 safe for one-hot."
+    }
+  },
+  "recommended_metrics": [
+    "accuracy",
+    "f1_weighted",
+    "roc_auc",
+    "cohen_kappa"
+  ],
+  "recommended_models": [
+    "GradientBoostingClassifier",
+    "RandomForestClassifier",
+    "LogisticRegression"
+  ],
+  "eda_warnings": [
+    {
+      "type": "unique_per_row_columns",
+      "columns": [
+        "Id"
+      ],
+      "message": "Likely identifier columns (unique per row)."
+    },
+    {
+      "type": "non_normal_columns",
+      "columns": [
+        "Id",
+        "SepalLengthCm",
+        "PetalLengthCm",
+        "PetalWidthCm"
+      ],
+      "message": "Non-normal numeric columns (Shapiro-Wilk)."
+    }
+  ]
+}
