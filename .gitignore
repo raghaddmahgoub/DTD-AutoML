@@ -14,7 +14,7 @@ __pycache__/
 # Logs and Data
 logs/
 assets/logs/
-assets/data/
+# assets/data/
 
 # Machine Learning Artifacts
 AutogluonModels/
