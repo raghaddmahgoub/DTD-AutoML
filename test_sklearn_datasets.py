@@ -12,7 +12,7 @@ import traceback
 PROJECT_ROOT = Path(__file__).parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from agents.automl_agent import AutoMLAgent, AgentState
+from agents.automl_agent.automl_agent import AutoMLAgent, AgentState
 from src.utils.logger import Logger
 
 logger = Logger()
