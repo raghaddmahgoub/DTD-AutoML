@@ -1,0 +1,367 @@
+[
+  {
+    "column": "Country",
+    "dtype": "object",
+    "missing_pct": 0.0,
+    "n_unique": 193,
+    "sample_values": [
+      "Afghanistan",
+      "Albania",
+      "Algeria",
+      "Angola",
+      "Antigua and Barbuda"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "Year",
+    "dtype": "int64",
+    "missing_pct": 0.0,
+    "n_unique": 16,
+    "sample_values": [
+      2015,
+      2014,
+      2013,
+      2012,
+      2011
+    ],
+    "is_target": false,
+    "mean": 2007.5187,
+    "std": 4.6138,
+    "skew": -0.0064
+  },
+  {
+    "column": "Status",
+    "dtype": "object",
+    "missing_pct": 0.0,
+    "n_unique": 2,
+    "sample_values": [
+      "Developing",
+      "Developed"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "Life expectancy ",
+    "dtype": "float64",
+    "missing_pct": 0.34,
+    "n_unique": 362,
+    "sample_values": [
+      65.0,
+      59.9,
+      59.5,
+      59.2,
+      58.8
+    ],
+    "is_target": false,
+    "mean": 69.2249,
+    "std": 9.5239,
+    "skew": -0.6386
+  },
+  {
+    "column": "Adult Mortality",
+    "dtype": "float64",
+    "missing_pct": 0.34,
+    "n_unique": 425,
+    "sample_values": [
+      263.0,
+      271.0,
+      268.0,
+      272.0,
+      275.0
+    ],
+    "is_target": false,
+    "mean": 164.7964,
+    "std": 124.2921,
+    "skew": 1.1744
+  },
+  {
+    "column": "infant deaths",
+    "dtype": "int64",
+    "missing_pct": 0.0,
+    "n_unique": 209,
+    "sample_values": [
+      62,
+      64,
+      66,
+      69,
+      71
+    ],
+    "is_target": false,
+    "mean": 30.3039,
+    "std": 117.9265,
+    "skew": 9.787
+  },
+  {
+    "column": "Alcohol",
+    "dtype": "float64",
+    "missing_pct": 6.6,
+    "n_unique": 1076,
+    "sample_values": [
+      0.01,
+      0.03,
+      0.02,
+      4.6,
+      4.51
+    ],
+    "is_target": false,
+    "mean": 4.6029,
+    "std": 4.0524,
+    "skew": 0.5896
+  },
+  {
+    "column": "percentage expenditure",
+    "dtype": "float64",
+    "missing_pct": 0.0,
+    "n_unique": 2328,
+    "sample_values": [
+      71.27962362,
+      73.52358168,
+      73.21924272,
+      78.1842153,
+      7.097108703
+    ],
+    "is_target": false,
+    "mean": 738.2513,
+    "std": 1987.9149,
+    "skew": 4.6521
+  },
+  {
+    "column": "Hepatitis B",
+    "dtype": "float64",
+    "missing_pct": 18.82,
+    "n_unique": 87,
+    "sample_values": [
+      65.0,
+      62.0,
+      64.0,
+      67.0,
+      68.0
+    ],
+    "is_target": false,
+    "mean": 80.9405,
+    "std": 25.07,
+    "skew": -1.9308
+  },
+  {
+    "column": "Measles ",
+    "dtype": "int64",
+    "missing_pct": 0.0,
+    "n_unique": 958,
+    "sample_values": [
+      1154,
+      492,
+      430,
+      2787,
+      3013
+    ],
+    "is_target": false,
+    "mean": 2419.5922,
+    "std": 11467.2725,
+    "skew": 9.4413
+  },
+  {
+    "column": " BMI ",
+    "dtype": "float64",
+    "missing_pct": 1.16,
+    "n_unique": 608,
+    "sample_values": [
+      19.1,
+      18.6,
+      18.1,
+      17.6,
+      17.2
+    ],
+    "is_target": false,
+    "mean": 38.3212,
+    "std": 20.044,
+    "skew": -0.2193
+  },
+  {
+    "column": "under-five deaths ",
+    "dtype": "int64",
+    "missing_pct": 0.0,
+    "n_unique": 252,
+    "sample_values": [
+      83,
+      86,
+      89,
+      93,
+      97
+    ],
+    "is_target": false,
+    "mean": 42.0357,
+    "std": 160.4455,
+    "skew": 9.4951
+  },
+  {
+    "column": "Polio",
+    "dtype": "float64",
+    "missing_pct": 0.65,
+    "n_unique": 73,
+    "sample_values": [
+      6.0,
+      58.0,
+      62.0,
+      67.0,
+      68.0
+    ],
+    "is_target": false,
+    "mean": 82.5502,
+    "std": 23.428,
+    "skew": -2.0981
+  },
+  {
+    "column": "Total expenditure",
+    "dtype": "float64",
+    "missing_pct": 7.69,
+    "n_unique": 818,
+    "sample_values": [
+      8.16,
+      8.18,
+      8.13,
+      8.52,
+      7.87
+    ],
+    "is_target": false,
+    "mean": 5.9382,
+    "std": 2.4983,
+    "skew": 0.6187
+  },
+  {
+    "column": "Diphtheria ",
+    "dtype": "float64",
+    "missing_pct": 0.65,
+    "n_unique": 81,
+    "sample_values": [
+      65.0,
+      62.0,
+      64.0,
+      67.0,
+      68.0
+    ],
+    "is_target": false,
+    "mean": 82.3241,
+    "std": 23.7169,
+    "skew": -2.0728
+  },
+  {
+    "column": " HIV/AIDS",
+    "dtype": "float64",
+    "missing_pct": 0.0,
+    "n_unique": 200,
+    "sample_values": [
+      0.1,
+      1.9,
+      2.0,
+      2.3,
+      2.6
+    ],
+    "is_target": false,
+    "mean": 1.7421,
+    "std": 5.0778,
+    "skew": 5.3961
+  },
+  {
+    "column": "GDP",
+    "dtype": "float64",
+    "missing_pct": 15.25,
+    "n_unique": 2490,
+    "sample_values": [
+      584.25921,
+      612.696514,
+      631.744976,
+      669.959,
+      63.537231
+    ],
+    "is_target": false,
+    "mean": 7483.1585,
+    "std": 14270.1693,
+    "skew": 3.2067
+  },
+  {
+    "column": "Population",
+    "dtype": "float64",
+    "missing_pct": 22.19,
+    "n_unique": 2278,
+    "sample_values": [
+      33736494.0,
+      327582.0,
+      31731688.0,
+      3696958.0,
+      2978599.0
+    ],
+    "is_target": false,
+    "mean": 12753375.1201,
+    "std": 61012096.5084,
+    "skew": 15.9162
+  },
+  {
+    "column": " thinness  1-19 years",
+    "dtype": "float64",
+    "missing_pct": 1.16,
+    "n_unique": 200,
+    "sample_values": [
+      17.2,
+      17.5,
+      17.7,
+      17.9,
+      18.2
+    ],
+    "is_target": false,
+    "mean": 4.8397,
+    "std": 4.4202,
+    "skew": 1.7115
+  },
+  {
+    "column": " thinness 5-9 years",
+    "dtype": "float64",
+    "missing_pct": 1.16,
+    "n_unique": 207,
+    "sample_values": [
+      17.3,
+      17.5,
+      17.7,
+      18.0,
+      18.2
+    ],
+    "is_target": false,
+    "mean": 4.8703,
+    "std": 4.5089,
+    "skew": 1.7774
+  },
+  {
+    "column": "Income composition of resources",
+    "dtype": "float64",
+    "missing_pct": 5.68,
+    "n_unique": 625,
+    "sample_values": [
+      0.479,
+      0.476,
+      0.47,
+      0.463,
+      0.454
+    ],
+    "is_target": false,
+    "mean": 0.6276,
+    "std": 0.2109,
+    "skew": -1.1438
+  },
+  {
+    "column": "Schooling",
+    "dtype": "float64",
+    "missing_pct": 5.55,
+    "n_unique": 173,
+    "sample_values": [
+      10.1,
+      10.0,
+      9.9,
+      9.8,
+      9.5
+    ],
+    "is_target": false,
+    "mean": 11.9928,
+    "std": 3.3589,
+    "skew": -0.6024
+  }
+]
