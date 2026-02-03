@@ -10,6 +10,8 @@ from typing import Optional, Dict, Any, List
 from pathlib import Path
 from scipy import stats as scipy_stats
 import gc
+from sklearn.feature_selection import f_classif
+import numpy as np
 
 matplotlib.use("Agg")  # no display; we render to bytes
 
@@ -108,6 +110,22 @@ class EDAAgent:
             "target_dtype": str(self.df[self.target].dtype) if (self.target and self.target in self.df.columns) else None,
         }
         return summary
+    
+    def _feature_scale_analysis(self) -> Dict[str, Any]:
+        numeric = self.df.select_dtypes(include=["number"]).drop(columns=[self.target])
+        stds = numeric.std()
+
+        return {
+            "wide_scale_features": stds[stds > stds.median() * 10].index.tolist(),
+            "heavy_tailed_features": [
+                col for col in numeric.columns
+                if abs(numeric[col].kurtosis()) > 3
+            ],
+            "approximately_standard_scale_features": [
+                col for col in numeric.columns
+                if 0.5 < numeric[col].std() < 5
+            ]
+        }
 
     # ------------------------------------------------------------------
     # 2. Per-column profiling
@@ -188,47 +206,83 @@ class EDAAgent:
         if self.target is None or self.target not in self.df.columns:
             return None
 
-        series = self.df[self.target]
-        unique_values = series.dropna().unique()
+        series = self.df[self.target].dropna()
+        dtype = str(series.dtype)
 
         analysis: Dict[str, Any] = {
-            "dtype": str(series.dtype),
-            "missing_count": int(series.isna().sum()),
-            "missing_ratio": round(float(series.isna().mean()), 4),
-            "unique_values": int(series.nunique(dropna=True)),
+            "column": self.target,
+            "dtype": dtype,
         }
 
         is_numeric = pd.api.types.is_numeric_dtype(series)
-        is_discrete = is_numeric and len(unique_values) <= 20
+        unique_values = series.unique()
 
-        if is_numeric and not is_discrete:
-            clean = series.dropna()
-            analysis["task_type"] = "regression"
+        # ─────────────────────────────────────────────
+        # REGRESSION TARGET
+        # ─────────────────────────────────────────────
+        if is_numeric and len(unique_values) > 20:
+            q1 = series.quantile(0.25)
+            q3 = series.quantile(0.75)
+            iqr = q3 - q1
+            outliers = ((series < q1 - 1.5 * iqr) | (series > q3 + 1.5 * iqr))
+
+            skew = float(series.skew())
+            kurt = float(series.kurtosis())
+
             analysis.update({
-                "mean": round(float(clean.mean()), 4),
-                "std": round(float(clean.std()), 4),
-                "min": float(clean.min()),
-                "max": float(clean.max()),
-                "median": float(clean.median()),
-                "skewness": round(float(clean.skew()), 4),
+                "task_type": "regression",
+                "mean": round(float(series.mean()), 4),
+                "std": round(float(series.std()), 4),
+                "variance": round(float(series.var()), 4),
+                "min": float(series.min()),
+                "max": float(series.max()),
+                "range": round(float(series.max() - series.min()), 4),
+                "skewness": round(skew, 4),
+                "skew_severity": (
+                    "low" if abs(skew) < 0.5 else
+                    "moderate" if abs(skew) < 1 else
+                    "high"
+                ),
+                "kurtosis": round(kurt, 4),
+                "outlier_ratio_iqr": round(float(outliers.mean()), 4),
+                "heavy_tailed": bool(kurt > 3),
+                "low_variance_target": bool(series.var() < 1e-3),
             })
-        else:
-            value_counts = series.value_counts(dropna=True)
-            total = value_counts.sum()
-            n_classes = len(value_counts)
 
-            analysis["task_type"] = "classification"
-            analysis["is_binary"] = (n_classes == 2)
-            analysis["n_classes"] = n_classes
-            analysis["class_distribution"] = {
-                str(k): round(float(v / total), 4) for k, v in value_counts.items()
-            }
-            analysis["majority_class_ratio"] = round(float(value_counts.max() / total), 4)
+            return analysis
 
-            if value_counts.min() > 0:
-                analysis["imbalance_ratio"] = round(float(value_counts.max() / value_counts.min()), 2)
-            else:
-                analysis["imbalance_ratio"] = None
+        # ─────────────────────────────────────────────
+        # CLASSIFICATION TARGET
+        # ─────────────────────────────────────────────
+        value_counts = series.value_counts()
+        total = value_counts.sum()
+        probs = value_counts / total
+
+        entropy = -np.sum(probs * np.log2(probs))
+
+        imbalance_ratio = (
+            round(float(value_counts.max() / value_counts.min()), 2)
+            if value_counts.min() > 0 else None
+        )
+
+        analysis.update({
+            "task_type": "classification",
+            "n_classes": len(value_counts),
+            "is_binary": len(value_counts) == 2,
+            "class_distribution": probs.round(4).to_dict(),
+            "minority_class_ratio": round(float(probs.min()), 4),
+            "majority_class_ratio": round(float(probs.max()), 4),
+            "imbalance_ratio": imbalance_ratio,
+            "imbalance_severity": (
+                "none" if imbalance_ratio is None or imbalance_ratio < 2 else
+                "moderate" if imbalance_ratio < 5 else
+                "severe"
+            ),
+            "target_entropy": round(float(entropy), 4),
+            "min_samples_per_class": int(value_counts.min()),
+            "requires_stratification": True,
+            "rare_class_risk": bool(probs.min() < 0.05),
+        })
 
         return analysis
 
@@ -531,13 +585,24 @@ class EDAAgent:
         """
         if not self.report:
             raise ValueError("Run EDA before generating context.")
-
+        
         target_analysis = self.report.get("target_analysis") or {}
         column_profiles = self.report["column_profiles"]
         relationships = self.report.get("relationship_insights", {})
-        summary = self.report["dataset_summary"]
 
         task_type = target_analysis.get("task_type", "unknown")
+
+        signal_analysis = {}
+
+        if task_type == "classification":
+            signal_analysis = {
+                "classification_feature_analysis": self._classification_signal_analysis()
+            }
+
+        elif task_type == "regression":
+            signal_analysis = {
+                "regression_feature_analysis": self._regression_signal_analysis()
+            }
 
         # ── feature lists (exclude target) ──────────────────────────
         numeric_features: List[str] = []
@@ -560,41 +625,19 @@ class EDAAgent:
                 if abs(p["correlation"]) >= 0.7
             ]
 
-        # ── recommended metrics ─────────────────────────────────────
-        recommended_metrics = self._recommend_metrics(target_analysis)
-
-        # ── recommended models ──────────────────────────────────────
-        recommended_models = self._recommend_models(target_analysis, summary)
 
         # ── assemble ────────────────────────────────────────────────
         automl_context: Dict[str, Any] = {
             "task_type": task_type,
-            "target": {
-                "column": self.target,
-                "dtype": target_analysis.get("dtype"),
-                "n_classes": target_analysis.get("n_classes"),
-                "is_binary": target_analysis.get("is_binary"),
-                "class_distribution": target_analysis.get("class_distribution"),
-                "imbalance_ratio": target_analysis.get("imbalance_ratio"),
-                "majority_class_ratio": target_analysis.get("majority_class_ratio"),
-            },
-            "features": {
-                "numeric": numeric_features,
-                "categorical": categorical_features,
-                "total_feature_count": len(numeric_features) + len(categorical_features),
-            },
-            "dataset_shape": {
-                "n_rows": summary["n_rows"],
-                "n_columns": summary["n_columns"],
-            },
+            "report": self.report,
+            "total_feature_count": len(numeric_features) + len(categorical_features),
             "multicollinearity": {
                 "threshold": 0.7,
                 "pairs": multicollinear_pairs,
             },
+            "feature_scale_analysis": self._feature_scale_analysis(),
             "encoding_hints": self._encoding_hints(column_profiles),
-            "recommended_metrics": recommended_metrics,
-            "recommended_models": recommended_models,
-            "eda_warnings": self.report.get("eda_warnings", []),
+            "signal_analysis": signal_analysis,
         }
 
         self._persist_json(automl_context, f"{self.df_name}_automl_context.json", plan_dir, output_dir)
@@ -602,38 +645,50 @@ class EDAAgent:
 
     # ── AutoML helpers ────────────────────────────────────────────────
 
-    @staticmethod
-    def _recommend_metrics(target_analysis: Dict[str, Any]) -> List[str]:
-        task = target_analysis.get("task_type", "unknown")
-        if task == "classification":
-            imbalance = target_analysis.get("imbalance_ratio") or 1.0
-            if imbalance >= 3:
-                return ["f1_weighted", "roc_auc", "precision_recall_auc", "cohen_kappa"]
-            return ["accuracy", "f1_weighted", "roc_auc", "cohen_kappa"]
-        if task == "regression":
-            return ["r2", "neg_mean_squared_error", "neg_mean_absolute_error", "neg_root_mean_squared_error"]
-        return []
+    def _classification_signal_analysis(self) -> Dict[str, Any]:
+        if self.target is None:
+            return {}
 
-    @staticmethod
-    def _recommend_models(target_analysis: Dict[str, Any], summary: Dict[str, Any]) -> List[str]:
-        task = target_analysis.get("task_type", "unknown")
-        n_rows = summary.get("n_rows", 0)
+        df = self.df
+        y = df[self.target]
 
-        if task == "classification":
-            models = ["GradientBoostingClassifier", "RandomForestClassifier", "LogisticRegression"]
-            if n_rows > 5000:
-                models.append("XGBoostClassifier")
-            if target_analysis.get("imbalance_ratio") and target_analysis["imbalance_ratio"] >= 3:
-                models.append("SMOTETomek")  # signal to the agent to consider resampling
-            return models
+        numeric_features = df.select_dtypes(include=["number"]).columns
+        numeric_features = [c for c in numeric_features if c != self.target]
 
-        if task == "regression":
-            models = ["GradientBoostingRegressor", "RandomForestRegressor", "Ridge"]
-            if n_rows > 5000:
-                models.append("XGBoostRegressor")
-            return models
+        f_scores = {}
 
-        return []
+        for feature in numeric_features:
+            valid = df[[feature, self.target]].dropna()
+
+            # Skip weak samples
+            if valid.shape[0] < 50:
+                continue
+
+            X_feat = valid[[feature]].values
+            y_valid = valid[self.target].values
+
+            try:
+                score, _ = f_classif(X_feat, y_valid)
+                f_scores[feature] = round(float(score[0]), 4)
+            except Exception:
+                continue
+
+        return {
+            "univariate_class_signal": f_scores
+        }
+
+    def _regression_signal_analysis(self) -> Dict[str, Any]:
+        numeric_cols = self.df.select_dtypes(include=["number"]).columns
+        numeric_cols = [c for c in numeric_cols if c != self.target]
+
+        target = self.df[self.target]
+
+        pearson = self.df[numeric_cols].corrwith(target).dropna()
+
+        return {
+            "linear_signal_strength": pearson.abs().round(3).to_dict(),
+            "non_linear_candidates": pearson[pearson.abs() < 0.3].index.tolist()
+        }
 
     @staticmethod
     def _encoding_hints(column_profiles: Dict[str, Any]) -> Dict[str, Any]:
@@ -891,11 +946,11 @@ class EDAAgent:
     <tbody>{table_rows}</tbody>
   </table>
 </div>"""
+    
     def _get_sample(self, series, limit=10000):
         if len(series) > limit:
             return series.sample(limit, random_state=42)
         return series
-
 
     def _section_numeric_distributions(self) -> str:
         profiles = self.report["column_profiles"]

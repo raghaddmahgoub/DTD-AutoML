@@ -27,13 +27,16 @@ from eda_agent2 import EDAAgent  # local import — same directory
 # ===========================================================================
 # TARGET_COLUMN = "Species"
 TARGET_COLUMN = "Survived"
+# TARGET_COLUMN = "Life expectancy "
 PLAN_DIR      = "Plan"
 OUTPUT_DIR    = "Output"
 
 RAW_CSV   = '../../assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
-CLEAN_CSV = '../../assets/data/Datasets/Classification Datasets/Iris.csv'
-df_name = os.path.splitext(os.path.basename(RAW_CSV))[0] 
-# df_name = os.path.splitext(os.path.basename(CLEAN_CSV))[0] 
+# CLEAN_CSV = '../../assets/data/Datasets/Classification Datasets/Iris.csv'
+CLEAN_CSV   = '../../assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
+# CLEAN_CSV = '../../assets/data/Datasets/Regression Datasets/Life Expectancy Data.csv'
+# df_name = os.path.splitext(os.path.basename(RAW_CSV))[0] 
+df_name = os.path.splitext(os.path.basename(CLEAN_CSV))[0] 
 
 
 # ===========================================================================
@@ -108,8 +111,8 @@ import sys
 
 def main():
     # Usage: python test.py raw OR python test.py clean
-    mode = "raw"
-    # mode = "clean"
+    # mode = "raw"
+    mode = "clean"
 
     if mode == "raw":
         print("🚀 [STAGE 1] Running RAW Data Analysis...")
