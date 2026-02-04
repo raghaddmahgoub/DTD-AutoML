@@ -12,9 +12,11 @@ from scipy import stats as scipy_stats
 import gc
 from sklearn.feature_selection import f_classif
 import numpy as np
+from src.utils.logger import Logger
 
 matplotlib.use("Agg")  # no display; we render to bytes
 
+logger = Logger()
 # ---------------------------------------------------------------------------
 # Colour / style constants
 # ---------------------------------------------------------------------------
@@ -506,6 +508,8 @@ class EDAAgent:
             "raw"   → after initial ingestion, before preprocessing.
             "clean" → after preprocessing, before model training.
         """
+        logger.info(f"[EDA Agent] Starting {run_type.upper()} data analysis...")
+
         self.report = {
             "run_type": run_type,
             "dataset_summary": self._dataset_summary(),
@@ -519,6 +523,8 @@ class EDAAgent:
             column_profiles=self.report["column_profiles"],
             target_analysis=self.report["target_analysis"],
         )
+        logger.info(f"[EDA Agent] {run_type.upper()} analysis complete. "
+                    f"Found {len(self.report['eda_warnings'])} warnings.")
         return self.report
 
     # ==================================================================
@@ -586,10 +592,13 @@ class EDAAgent:
         Called automatically when run_type == "clean".
 
         Contains everything the AutoML agent needs to pick models,
-        metrics, and encoding strategies without re-analysing the data.
+        metrics
         """
         if not self.report:
+            logger.error("[EDA Agent] Attempted to generate AutoML context before running analysis.")
             raise ValueError("Run EDA before generating context.")
+
+        logger.info("[EDA Agent] Generating Meaningful JSON directives for AutoML Agent...")
         
         target_analysis = self.report.get("target_analysis") or {}
         column_profiles = self.report["column_profiles"]
@@ -646,6 +655,7 @@ class EDAAgent:
         }
 
         self._persist_json(automl_context, f"{self.df_name}_automl_context.json", plan_dir, output_dir)
+        logger.info(f"[EDA Agent] AutoML context saved to {output_dir}.")
         return automl_context
 
     # ── AutoML helpers ────────────────────────────────────────────────
@@ -1218,10 +1228,12 @@ class EDAAgent:
         Returns a dict with keys pointing to every generated artefact.
         """
         if not self.report:
+            logger.error("[EDA Agent] Export failed: No report data found.")
             raise ValueError("Call run() first.")
 
         result: Dict[str, Any] = {}
         run_type = self.report["run_type"]
+        logger.info(f"[EDA Agent] Exporting artifacts for {run_type} stage...")
 
         if run_type == "raw":
             result["preprocessing_context"] = self.generate_preprocessing_context(plan_dir, output_dir)
@@ -1231,6 +1243,7 @@ class EDAAgent:
             raise ValueError(f"Unknown run_type '{run_type}'. Use 'raw' or 'clean'.")
 
         result["report_path"] = self.generate_report(output_dir)
+        logger.info(f"[EDA Agent] HTML Report generated at: {result['report_path']}")
         return result
 
     # ==================================================================
