@@ -5,7 +5,7 @@ from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv
 
 # Import modular agents from your folders
-from agents.eda_agent.eda_agent2 import EDAAgent
+from agents.eda_agent.eda_agent import EDAAgent
 # from agents.preprocessing_agent.preprocessor import PreprocessingAgent
 from agents.automl_agent.automl_agent import AutoMLAgent
 
