@@ -112,7 +112,12 @@ class EDAAgent:
         return summary
     
     def _feature_scale_analysis(self) -> Dict[str, Any]:
-        numeric = self.df.select_dtypes(include=["number"]).drop(columns=[self.target])
+
+        numeric = self.df.select_dtypes(include=["number"])
+    
+        if self.target in numeric.columns:
+            numeric = numeric.drop(columns=[self.target])
+
         stds = numeric.std()
 
         return {
@@ -636,7 +641,7 @@ class EDAAgent:
                 "pairs": multicollinear_pairs,
             },
             "feature_scale_analysis": self._feature_scale_analysis(),
-            "encoding_hints": self._encoding_hints(column_profiles),
+            # "encoding_hints": self._encoding_hints(column_profiles),
             "signal_analysis": signal_analysis,
         }
 
@@ -690,25 +695,25 @@ class EDAAgent:
             "non_linear_candidates": pearson[pearson.abs() < 0.3].index.tolist()
         }
 
-    @staticmethod
-    def _encoding_hints(column_profiles: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Per-column encoding suggestions for the AutoML agent.
-        """
-        hints: Dict[str, Any] = {}
-        for col, stats in column_profiles.items():
-            if stats["data_type"] != "categorical":
-                continue
+    # @staticmethod
+    # def _encoding_hints(column_profiles: Dict[str, Any]) -> Dict[str, Any]:
+    #     """
+    #     Per-column encoding suggestions for the AutoML agent.
+    #     """
+    #     hints: Dict[str, Any] = {}
+    #     for col, stats in column_profiles.items():
+    #         if stats["data_type"] != "categorical":
+    #             continue
 
-            n_unique = stats["unique_count"]
-            if n_unique == 2:
-                hints[col] = {"strategy": "binary", "reason": "Only 2 unique values."}
-            elif n_unique <= 15:
-                hints[col] = {"strategy": "one_hot", "reason": f"{n_unique} categories — safe for one-hot."}
-            else:
-                hints[col] = {"strategy": "target_encoding", "reason": f"High cardinality ({n_unique}) — use target encoding to avoid dimensionality blow-up."}
+    #         n_unique = stats["unique_count"]
+    #         if n_unique == 2:
+    #             hints[col] = {"strategy": "binary", "reason": "Only 2 unique values."}
+    #         elif n_unique <= 15:
+    #             hints[col] = {"strategy": "one_hot", "reason": f"{n_unique} categories — safe for one-hot."}
+    #         else:
+    #             hints[col] = {"strategy": "target_encoding", "reason": f"High cardinality ({n_unique}) — use target encoding to avoid dimensionality blow-up."}
 
-        return hints
+    #     return hints
 
     # ==================================================================
     # OUTPUT C — User-facing HTML report  (always generated on export)

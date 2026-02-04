@@ -1,4 +1,5 @@
 
+import json
 from typing import TypedDict, Annotated, Literal, Any, Optional
 from langgraph.graph import StateGraph, END
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -29,7 +30,8 @@ class AgentState(TypedDict):
     automl_config: Optional[dict]  # Configuration for AutoGluon (models, hyperparameters, etc.)
     selected_models: Optional[list[str]]  # Models for simple approach
     reasoning: Optional[str]  # LLM reasoning from subagents
-    data_analysis_reasoning: Optional[str]  # Reasoning from data analysis subagent, hagat about l data
+    # data_analysis_reasoning: Optional[str]  # Reasoning from data analysis subagent, hagat about l data
+    automl_directives: Optional[dict]  # =====> Add this to receive external analysis
     model_selection_reasoning: Optional[str]  # Reasoning from model selection subagent, why the agent chose this model
     trained_model: Optional[Any]
     model_metrics: Optional[dict]
@@ -67,15 +69,16 @@ class AutoMLAgent:
         workflow.add_node("identify_target", self.identify_target_node)
 
         # Specialized subagents
-        workflow.add_node("data_analysis_agent", self.data_analysis_agent)
+        # workflow.add_node("data_analysis_agent", self.data_analysis_agent)
         workflow.add_node("model_selection_agent", self.model_selection_agent)
         workflow.add_node("training_agent", self.training_agent)
 
         # Define the flow
         workflow.set_entry_point("load_data")#start by loading data, defines the init state
         workflow.add_edge("load_data", "identify_target")#then identify the target column
-        workflow.add_edge("identify_target", "data_analysis_agent")#then analyze the data
-        workflow.add_edge("data_analysis_agent", "model_selection_agent")#then select the models
+        # workflow.add_edge("identify_target", "data_analysis_agent")#then analyze the data
+        # workflow.add_edge("data_analysis_agent", "model_selection_agent")#then select the models
+        workflow.add_edge("identify_target", "model_selection_agent")#then select the models
         workflow.add_edge("model_selection_agent", "training_agent")#then train the models
 
         return workflow.compile()
@@ -222,103 +225,177 @@ Provide your analysis in a clear, structured format:
         
         return state
     
+    # def model_selection_agent(self, state: AgentState) -> AgentState:
+    #     """
+    #     Deep Agent: Model Selection Subagent
+    #     Uses LLM planning and reasoning to decide on AutoML vs simple training and select models.
+    #     """
+    #     try:
+    #         logger.info("[Model Selection Agent] Starting  model selection with LLM planning")
+            
+    #         data_summary = state['data_summary']
+    #         problem_type = state['problem_type']
+    #         data_analysis_reasoning = state.get('data_analysis_reasoning', '')
+    #         # Create enhanced prompt with data analysis context
+    #         prompt = self._create_automl_decision_prompt(data_summary, problem_type, data_analysis_reasoning)
+            
+    #         # Get LLM reasoning with planning
+    #         messages = [
+    #             SystemMessage(content="You are a senior ML architect specializing in automated ML and model selection. You plan the best strategy considering complexity, resources, and performance requirements. Think step-by-step and provide detailed reasoning."),
+    #             HumanMessage(content=prompt)
+    #         ]
+            
+    #         # Include previous agent context if available
+    #         if data_analysis_reasoning:
+    #             messages.insert(1, AIMessage(content=f"Data Analysis Agent's findings:\n{data_analysis_reasoning}"))
+            
+    #         try:
+    #             response = self.llm.invoke(messages)
+    #             reasoning = response.content
+                
+    #             # Update agent messages
+    #             if 'agent_messages' not in state:
+    #                 state['agent_messages'] = []
+    #             state['agent_messages'].append({
+    #                 'agent': 'model_selection',
+    #                 'message': reasoning
+    #             })
+                
+    #             # Parse LLM decision
+    #             use_automl, automl_config, selected_models = self._parse_automl_decision(
+    #                 reasoning, data_summary, problem_type
+    #             )
+                
+    #             state['model_selection_reasoning'] = reasoning
+    #             state['reasoning'] = reasoning
+    #             state['use_automl'] = use_automl
+    #             state['automl_config'] = automl_config
+    #             state['selected_models'] = selected_models
+    #             state['step'] = 'models_selected'
+                
+    #             if use_automl:
+    #                 logger.info(f"[Model Selection Agent] Decision: Using AutoGluon with config: {automl_config}")
+    #                 logger.info(f"[Model Selection Agent] Selected models: {automl_config.get('models', [])}")
+    #             else:
+    #                 logger.info(f"[Model Selection Agent] Decision: Using simple approach with models: {selected_models}")
+    #             logger.info(f"[Model Selection Agent] Reasoning preview: {reasoning[:300]}...")
+                
+    #         except Exception as e:
+    #             logger.warn(f"[Model Selection Agent] LLM call failed: {str(e)}, using heuristic-based fallback...")
+    #             # Fallback: Use heuristics to decide
+    #             rows = data_summary.get('data_info', {}).get('rows', 0)
+    #             features = data_summary.get('feature_info', {}).get('total_features', 0)
+    #             has_missing = data_summary.get('data_quality', {}).get('has_missing', False)
+                
+    #             # Heuristic decision
+    #             use_automl = rows > 10000 or features > 20 or has_missing
+                
+    #             if use_automl:
+    #                 automl_config = {
+    #                     'models': ['GBM', 'XGBoost', 'LightGBM'],
+    #                     'time_limit': 300,
+    #                     'preset': 'best_quality'
+    #                 }
+    #                 selected_models = []
+    #             else:
+    #                 automl_config = {}
+    #                 default_models = {
+    #                     'classification': ['RandomForest', 'GradientBoosting'],
+    #                     'regression': ['RandomForest', 'GradientBoosting']
+    #                 }
+    #                 selected_models = default_models.get(problem_type, ['RandomForest'])
+                
+    #             state['model_selection_reasoning'] = f"LLM unavailable, using heuristic: dataset has {rows} rows, {features} features. Decision: {'AutoGluon' if use_automl else 'Simple training'}"
+    #             state['reasoning'] = state['model_selection_reasoning']
+    #             state['use_automl'] = use_automl
+    #             state['automl_config'] = automl_config
+    #             state['selected_models'] = selected_models
+    #             state['step'] = 'models_selected'
+                
+    #             logger.info(f"[Model Selection Agent] Fallback decision: Using {'AutoGluon' if use_automl else 'Simple'} approach with models: {selected_models}")
+        
+    #     except Exception as e:
+    #         logger.error(f"[Model Selection Agent] Error: {str(e)}", e)
+    #         state['error'] = f"Failed in model selection: {str(e)}"
+    #         state['step'] = 'error'
+        
+    #     return state
+    
     def model_selection_agent(self, state: AgentState) -> AgentState:
         """
-        Deep Agent: Model Selection Subagent
-        Uses LLM planning and reasoning to decide on AutoML vs simple training and select models.
+        Model Selection Subagent that depends on external Analysis Agent directives.
         """
         try:
-            logger.info("[Model Selection Agent] Starting  model selection with LLM planning")
+            logger.info("[Model Selection Agent] Starting selection using external directives")
             
-            data_summary = state['data_summary']
-            problem_type = state['problem_type']
-            data_analysis_reasoning = state.get('data_analysis_reasoning', '')
+            # 1. Retrieve the directives from the shared state
+            directives = state.get('automl_directives', {})
+            task_type = state.get('problem_type') or directives.get('task_type')
             
-            # Create enhanced prompt with data analysis context
-            prompt = self._create_automl_decision_prompt(data_summary, problem_type, data_analysis_reasoning)
+            # 2. Extract key signals for the LLM prompt
+            # We access the report structure generated by eda_agent2.py
+            report = directives.get('report', {})
+            target_info = report.get('target_analysis', {})
+            encoding_hints = directives.get('encoding_hints', {})
+            multicollinearity = directives.get('multicollinearity', {})
+            signal_analysis = directives.get('signal_analysis', {})
+
+            # 3. Construct a directive-aware prompt
+            prompt = f"""
+            Analyze these pre-calculated dataset characteristics to select the best ML strategy.
             
-            # Get LLM reasoning with planning
+            **Target Information:**
+            - Task Type: {task_type}
+            - Target Column: {target_info.get('column')}
+            - Skew Severity: {target_info.get('skew_severity', 'N/A')}
+            
+            **Feature Engineering Directives:**
+            - Recommended Encodings: {json.dumps(encoding_hints)}
+            - Multicollinearity Risk: {json.dumps(multicollinearity.get('pairs', []))}
+            
+            **Signal Analysis:**
+            - Feature Strengths: {json.dumps(signal_analysis)}
+            
+            **Decision Task:**
+            Plan and decide between:
+            1. AutoGluon: For high complexity or non-linear signals.
+            2. Simple Training: For linear signals or smaller datasets.
+            
+            Response Format (STRICT JSON):
+            {{
+            "approach": "AutoGluon" or "Simple",
+            "reasoning": "Explain why based on the signals above",
+            "autogluon_settings": {{ "models_to_prioritize": ["GBM", "XGB"], "time_limit_seconds": 300, "preset_mode": "best_quality" }},
+            "simple_models": ["RandomForest", "XGBoost", "LogisticRegression"]
+            }}
+            """
+
+            # 4. Invoke LLM with directives
             messages = [
-                SystemMessage(content="You are a senior ML architect specializing in automated ML and model selection. You plan the best strategy considering complexity, resources, and performance requirements. Think step-by-step and provide detailed reasoning."),
+                SystemMessage(content="You are a senior ML architect. Use the provided data analysis to choose a model."),
                 HumanMessage(content=prompt)
             ]
             
-            # Include previous agent context if available
-            if data_analysis_reasoning:
-                messages.insert(1, AIMessage(content=f"Data Analysis Agent's findings:\n{data_analysis_reasoning}"))
+            response = self.llm.invoke(messages)
+            reasoning = response.content
             
-            try:
-                response = self.llm.invoke(messages)
-                reasoning = response.content
-                
-                # Update agent messages
-                if 'agent_messages' not in state:
-                    state['agent_messages'] = []
-                state['agent_messages'].append({
-                    'agent': 'model_selection',
-                    'message': reasoning
-                })
-                
-                # Parse LLM decision
-                use_automl, automl_config, selected_models = self._parse_automl_decision(
-                    reasoning, data_summary, problem_type
-                )
-                
-                state['model_selection_reasoning'] = reasoning
-                state['reasoning'] = reasoning
-                state['use_automl'] = use_automl
-                state['automl_config'] = automl_config
-                state['selected_models'] = selected_models
-                state['step'] = 'models_selected'
-                
-                if use_automl:
-                    logger.info(f"[Model Selection Agent] Decision: Using AutoGluon with config: {automl_config}")
-                    logger.info(f"[Model Selection Agent] Selected models: {automl_config.get('models', [])}")
-                else:
-                    logger.info(f"[Model Selection Agent] Decision: Using simple approach with models: {selected_models}")
-                logger.info(f"[Model Selection Agent] Reasoning preview: {reasoning[:300]}...")
-                
-            except Exception as e:
-                logger.warn(f"[Model Selection Agent] LLM call failed: {str(e)}, using heuristic-based fallback...")
-                # Fallback: Use heuristics to decide
-                rows = data_summary.get('data_info', {}).get('rows', 0)
-                features = data_summary.get('feature_info', {}).get('total_features', 0)
-                has_missing = data_summary.get('data_quality', {}).get('has_missing', False)
-                
-                # Heuristic decision
-                use_automl = rows > 10000 or features > 20 or has_missing
-                
-                if use_automl:
-                    automl_config = {
-                        'models': ['GBM', 'XGBoost', 'LightGBM'],
-                        'time_limit': 300,
-                        'preset': 'best_quality'
-                    }
-                    selected_models = []
-                else:
-                    automl_config = {}
-                    default_models = {
-                        'classification': ['RandomForest', 'GradientBoosting'],
-                        'regression': ['RandomForest', 'GradientBoosting']
-                    }
-                    selected_models = default_models.get(problem_type, ['RandomForest'])
-                
-                state['model_selection_reasoning'] = f"LLM unavailable, using heuristic: dataset has {rows} rows, {features} features. Decision: {'AutoGluon' if use_automl else 'Simple training'}"
-                state['reasoning'] = state['model_selection_reasoning']
-                state['use_automl'] = use_automl
-                state['automl_config'] = automl_config
-                state['selected_models'] = selected_models
-                state['step'] = 'models_selected'
-                
-                logger.info(f"[Model Selection Agent] Fallback decision: Using {'AutoGluon' if use_automl else 'Simple'} approach with models: {selected_models}")
-        
+            # 5. Parse and update state
+            use_automl, automl_config, selected_models = self._parse_automl_decision(
+                reasoning, state.get('data_summary', {}), task_type
+            )
+            
+            state['model_selection_reasoning'] = reasoning
+            state['use_automl'] = use_automl
+            state['automl_config'] = automl_config
+            state['selected_models'] = selected_models
+            state['step'] = 'models_selected'
+            
+            return state
+
         except Exception as e:
-            logger.error(f"[Model Selection Agent] Error: {str(e)}", e)
+            logger.error(f"[Model Selection Agent] Error: {str(e)}")
             state['error'] = f"Failed in model selection: {str(e)}"
-            state['step'] = 'error'
-        
-        return state
-   
+            return state
 
     def training_agent(self, state: AgentState) -> AgentState:
         """
@@ -350,12 +427,13 @@ Provide your analysis in a clear, structured format:
             target_column = state['target_column']
             problem_type = state['problem_type']
             X = data.drop(columns=[target_column])
+            X_encoded = pd.get_dummies(X, drop_first=True)
             y = data[target_column]
-            
+
             # Split data here to ensure we have test labels for the confusion matrix
             from sklearn.model_selection import train_test_split
             from sklearn.metrics import confusion_matrix
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+            X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2, random_state=42)
 
             if use_automl:
                 automl_config = state.get('automl_config', {})
@@ -364,12 +442,14 @@ Provide your analysis in a clear, structured format:
                 y_pred = trained_model.predict(X_test)
             else:
                 selected_models = state.get('selected_models', []) or ['RandomForest']
-                trained_model, metrics = self._train_simple_models(X, y, problem_type, selected_models)
+                # trained_model, metrics = self._train_simple_models(X, y, problem_type, selected_models)
+                trained_model, metrics = self._train_simple_models(X_train, y_train, state['problem_type'], selected_models)
                 # Simple models use scikit-learn predict
-                X_test_simple = pd.get_dummies(X_test, drop_first=True)
-                # Re-align columns in case dummies changed
-                X_test_simple = X_test_simple.reindex(columns=pd.get_dummies(X_train, drop_first=True).columns, fill_value=0)
-                y_pred = trained_model.predict(X_test_simple)
+                # X_test_simple = pd.get_dummies(X_test, drop_first=True)
+                # # Re-align columns in case dummies changed
+                # X_test_simple = X_test_simple.reindex(columns=pd.get_dummies(X_train, drop_first=True).columns, fill_value=0)
+                # y_pred = trained_model.predict(X_test_simple)
+                y_pred = trained_model.predict(X_test)
             
             # --- FIX: ADD CONFUSION MATRIX ---
             if problem_type == 'classification':
@@ -697,7 +777,21 @@ Provide your analysis and decision:
             # Note: AutoGluon will automatically select the best model after training all specified models
             fit_kwargs = {
                 'time_limit': time_limit,
-                'presets': preset
+                'presets': preset,
+                # FORCE SEQUENTIAL FOLD FITTING: This is the most important change for 2GB RAM
+                'ag_args_ensemble': {
+                    'fold_fitting_strategy': 'sequential',
+                    'use_ray': False
+                },
+                # DISABLE DYNAMIC STACKING: Prevents the sub-fits that trigger Ray
+                'dynamic_stacking': False,
+                # REDUCE MODEL COMPLEXITY: Limit to lighter models if needed
+                'hyperparameters': {
+                    'GBM': {},  # LightGBM is generally memory efficient
+                    'XGB': {},
+                },
+                # SAVE MEMORY: Delete intermediate data after fit
+                'save_space': True
             }
             
             if hyperparameters:
