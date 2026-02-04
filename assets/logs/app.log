@@ -3039,3 +3039,263 @@ The dataset, while small in terms of rows (891) and initial features (11), prese
 [2026-02-01 13:19:56] [INFO] [Training Agent] Confusion Matrix generated: [[94, 11], [20, 54]]
 [2026-02-01 13:19:59] [INFO] [Training Agent] Training complete. Score: 0.8525
 [2026-02-01 13:19:59] [INFO] Workflow completed successfully!
+
+
+=== New Run — 2026-02-04 15:34:44 ===
+
+
+=== New Run — 2026-02-04 15:40:17 ===
+
+
+=== New Run — 2026-02-04 15:41:41 ===
+
+
+=== New Run — 2026-02-04 15:42:37 ===
+
+
+=== New Run — 2026-02-04 15:43:21 ===
+
+
+=== New Run — 2026-02-04 15:43:51 ===
+
+
+=== New Run — 2026-02-04 15:44:45 ===
+
+
+=== New Run — 2026-02-04 15:50:03 ===
+
+
+=== New Run — 2026-02-04 15:51:47 ===
+
+
+=== New Run — 2026-02-04 15:58:47 ===
+
+
+=== New Run — 2026-02-04 16:00:05 ===
+
+
+=== New Run — 2026-02-04 16:11:34 ===
+
+
+=== New Run — 2026-02-04 16:12:20 ===
+
+
+=== New Run — 2026-02-04 16:15:01 ===
+
+
+=== New Run — 2026-02-04 16:23:49 ===
+
+
+=== New Run — 2026-02-04 16:25:50 ===
+
+
+=== New Run — 2026-02-04 16:29:37 ===
+
+
+=== New Run — 2026-02-04 16:30:17 ===
+[2026-02-04 16:30:23] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Iris.csv
+[2026-02-04 16:30:23] [INFO] Data loaded successfully. Shape: (150, 6)
+[2026-02-04 16:30:23] [INFO] Identifying target column
+[2026-02-04 16:30:23] [INFO] Target column identified: Species, Problem type: classification
+[2026-02-04 16:30:23] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-04 16:30:23] [ERROR] [Model Selection Agent] Error: name 'json' is not defined
+[2026-02-04 16:30:23] [INFO] [Training Agent] Executing simple training strategy
+[2026-02-04 16:30:32] [WARNING] XGBoost not available, will use GradientBoosting as alternative
+[2026-02-04 16:30:32] [INFO] Training simple models: ['RandomForest']
+[2026-02-04 16:30:32] [INFO] RandomForest - accuracy: 1.0000
+[2026-02-04 16:30:32] [INFO] Best model: RandomForest with accuracy: 1.0000
+[2026-02-04 16:30:32] [INFO] [Training Agent] Confusion Matrix generated: [[10, 0, 0], [0, 9, 0], [0, 0, 11]]
+[2026-02-04 16:30:36] [INFO] [Training Agent] Training complete. Score: 1.0000
+
+
+=== New Run — 2026-02-04 16:32:15 ===
+[2026-02-04 16:32:22] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-04 16:32:22] [INFO] Data loaded successfully. Shape: (1783, 12)
+[2026-02-04 16:32:22] [INFO] Identifying target column
+[2026-02-04 16:32:22] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-04 16:32:22] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-04 16:32:22] [ERROR] [Model Selection Agent] Error: name 'json' is not defined
+[2026-02-04 16:32:22] [INFO] [Training Agent] Executing simple training strategy
+[2026-02-04 16:32:30] [WARNING] XGBoost not available, will use GradientBoosting as alternative
+[2026-02-04 16:32:30] [INFO] Training simple models: ['RandomForest']
+[2026-02-04 16:32:31] [INFO] RandomForest - accuracy: 0.9720
+[2026-02-04 16:32:31] [INFO] Best model: RandomForest with accuracy: 0.9720
+[2026-02-04 16:32:31] [ERROR] [Training Agent] Error: The feature names should match those that were passed during fit.
+Feature names seen at fit time, yet now missing:
+- Age_0.92
+- Cabin_A24
+- Cabin_C106
+- Cabin_C148
+- Cabin_C86
+- ...
+
+Traceback (most recent call last):
+  File "D:\Codes\GP code\agents\automl_agent\automl_agent.py", line 448, in training_agent
+    y_pred = trained_model.predict(X_test_simple)
+  File "D:\Codes\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 903, in predict
+    proba = self.predict_proba(X)
+  File "D:\Codes\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 945, in predict_proba
+    X = self._validate_X_predict(X)
+  File "D:\Codes\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 637, in _validate_X_predict
+    X = validate_data(
+  File "D:\Codes\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 2929, in validate_data
+    _check_feature_names(_estimator, X, reset=reset)
+  File "D:\Codes\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 2787, in _check_feature_names
+    raise ValueError(message)
+ValueError: The feature names should match those that were passed during fit.
+Feature names seen at fit time, yet now missing:
+- Age_0.92
+- Cabin_A24
+- Cabin_C106
+- Cabin_C148
+- Cabin_C86
+- ...
+
+
+
+
+=== New Run — 2026-02-04 16:34:28 ===
+[2026-02-04 16:34:34] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-04 16:34:34] [INFO] Data loaded successfully. Shape: (1783, 12)
+[2026-02-04 16:34:34] [INFO] Identifying target column
+[2026-02-04 16:34:34] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-04 16:34:34] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-04 16:34:40] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-04 16:34:46] [WARNING] AutoGluon not available, falling back to simple training...
+[2026-02-04 16:34:46] [WARNING] XGBoost not available, will use GradientBoosting as alternative
+[2026-02-04 16:34:46] [INFO] Training simple models: ['GBM']
+[2026-02-04 16:34:47] [INFO] GBM - accuracy: 0.9510
+[2026-02-04 16:34:47] [INFO] Best model: GBM with accuracy: 0.9510
+[2026-02-04 16:34:47] [ERROR] [Training Agent] Error: The feature names should match those that were passed during fit.
+Feature names unseen at fit time:
+- Age
+- Cabin
+- Embarked
+- Fare
+- Name
+- ...
+Feature names seen at fit time, yet now missing:
+- Age_0.67
+- Age_0.75
+- Age_0.83
+- Age_1
+- Age_10
+- ...
+
+Traceback (most recent call last):
+  File "D:\Codes\GP code\agents\automl_agent\automl_agent.py", line 441, in training_agent
+    y_pred = trained_model.predict(X_test)
+  File "D:\Codes\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 903, in predict
+    proba = self.predict_proba(X)
+  File "D:\Codes\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 945, in predict_proba
+    X = self._validate_X_predict(X)
+  File "D:\Codes\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 637, in _validate_X_predict
+    X = validate_data(
+  File "D:\Codes\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 2929, in validate_data
+    _check_feature_names(_estimator, X, reset=reset)
+  File "D:\Codes\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 2787, in _check_feature_names
+    raise ValueError(message)
+ValueError: The feature names should match those that were passed during fit.
+Feature names unseen at fit time:
+- Age
+- Cabin
+- Embarked
+- Fare
+- Name
+- ...
+Feature names seen at fit time, yet now missing:
+- Age_0.67
+- Age_0.75
+- Age_0.83
+- Age_1
+- Age_10
+- ...
+
+
+
+
+=== New Run — 2026-02-04 16:43:24 ===
+[2026-02-04 16:43:27] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-04 16:43:27] [INFO] Data loaded successfully. Shape: (1783, 12)
+[2026-02-04 16:43:27] [INFO] Identifying target column
+[2026-02-04 16:43:27] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-04 16:43:27] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-04 16:43:34] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-04 16:43:40] [WARNING] AutoGluon not available, falling back to simple training...
+[2026-02-04 16:43:40] [WARNING] XGBoost not available, will use GradientBoosting as alternative
+[2026-02-04 16:43:40] [INFO] Training simple models: ['GBM']
+[2026-02-04 16:43:41] [INFO] GBM - accuracy: 0.9510
+[2026-02-04 16:43:41] [INFO] Best model: GBM with accuracy: 0.9510
+[2026-02-04 16:43:41] [INFO] [Training Agent] Confusion Matrix generated: [[219, 6], [10, 122]]
+[2026-02-04 16:43:44] [INFO] [Training Agent] Training complete. Score: 0.9510
+
+
+=== New Run — 2026-02-04 17:06:18 ===
+[2026-02-04 17:06:23] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-04 17:06:23] [INFO] Data loaded successfully. Shape: (1783, 12)
+[2026-02-04 17:06:23] [INFO] Identifying target column
+[2026-02-04 17:06:23] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-04 17:06:23] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-04 17:06:29] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-04 17:06:38] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-04 17:06:38] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-04 17:06:38] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-04 17:06:38] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+
+
+=== New Run — 2026-02-04 17:09:44 ===
+[2026-02-04 17:09:48] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-04 17:09:48] [INFO] Data loaded successfully. Shape: (1783, 12)
+[2026-02-04 17:09:48] [INFO] Identifying target column
+[2026-02-04 17:09:48] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-04 17:09:48] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-04 17:09:53] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-04 17:10:00] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-04 17:10:00] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-04 17:10:00] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-04 17:10:00] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+
+
+=== New Run — 2026-02-04 17:17:32 ===
+[2026-02-04 17:17:37] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-04 17:17:37] [INFO] Data loaded successfully. Shape: (1783, 12)
+[2026-02-04 17:17:37] [INFO] Identifying target column
+[2026-02-04 17:17:37] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-04 17:17:37] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-04 17:17:44] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-04 17:17:52] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-04 17:17:52] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-04 17:17:52] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-04 17:17:52] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+
+
+=== New Run — 2026-02-04 17:19:29 ===
+[2026-02-04 17:19:34] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-04 17:19:34] [INFO] Data loaded successfully. Shape: (1783, 12)
+[2026-02-04 17:19:34] [INFO] Identifying target column
+[2026-02-04 17:19:34] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-04 17:19:34] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-04 17:19:40] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-04 17:19:43] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-04 17:19:43] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-04 17:19:43] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-04 17:19:43] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+
+
+=== New Run — 2026-02-04 17:22:34 ===
+[2026-02-04 17:22:38] [INFO] Loading data from: assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv
+[2026-02-04 17:22:38] [INFO] Data loaded successfully. Shape: (1783, 12)
+[2026-02-04 17:22:38] [INFO] Identifying target column
+[2026-02-04 17:22:38] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-04 17:22:38] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-04 17:22:43] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-04 17:22:51] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-04 17:22:51] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-04 17:22:51] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-04 17:22:51] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-04 17:23:01] [WARNING] AutoGluon training failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call., falling back to simple training...
+[2026-02-04 17:23:02] [INFO] Training simple models: ['GBM']
+[2026-02-04 17:23:03] [INFO] GBM - accuracy: 0.9510
+[2026-02-04 17:23:03] [INFO] Best model: GBM with accuracy: 0.9510
+[2026-02-04 17:23:03] [INFO] [Training Agent] Confusion Matrix generated: [[219, 6], [10, 122]]
+[2026-02-04 17:23:05] [INFO] [Training Agent] Training complete. Score: 0.9510
