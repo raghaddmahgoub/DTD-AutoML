@@ -3,6 +3,7 @@ import pandas as pd
 from typing import TypedDict, Optional
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv
+from agents.preprocessing_agent.preprocessing_pipeline import PreprocessingPipelineAgent
 
 # Import modular agents from your folders
 from agents.eda_agent.eda_agent2 import EDAAgent
@@ -60,8 +61,16 @@ class DTDPipeline:
         """Preprocessing: Clean data based on Raw Analysis."""
         print("🛠️ [Stage 2] Running Preprocessing Agent...")
         # Simulate preprocessing output
-        # clean_path = state['data_path'].replace(".csv", "_clean.csv")
-        # state['clean_data_path'] = clean_path 
+        clean_path = state['data_path'].replace(".csv", "_clean.csv")
+        state['clean_data_path'] = clean_path 
+        agent = PreprocessingPipelineAgent()
+        prep_results = agent.run(
+            data_path=state['data_path'],
+            target_column=state['target_column']
+        )
+
+        state['preprocessing_results'] = prep_results
+
         if 'agent_messages' not in state:
             state['agent_messages'] = []
             

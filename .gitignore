@@ -2,6 +2,7 @@
 automl_env_310/
 venv/
 env/
+gp/
 
 # Environment Variables (SENSITIVE)
 .env
