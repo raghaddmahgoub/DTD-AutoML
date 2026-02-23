@@ -15,6 +15,7 @@ load_dotenv()
 class AgentState(TypedDict):
     """Shared pipeline memory."""
     data_path: str
+    clean_data_path: str
     target_column: str
     task_type: str
     analysis_report_path: Optional[str]
@@ -54,37 +55,38 @@ class DTDPipeline:
         agent.run(run_type="raw") # Internal route for raw analysis
         results = agent.export(output_dir="Output/raw")
         
-        print(f"✅ Raw analysis complete. Report: {results['report_path']}")
+        # print(f"✅ Raw analysis complete. Report: {results['report_path']}")
         return state
 
     def stage_preprocessing(self, state: AgentState):
         """Preprocessing: Clean data based on Raw Analysis."""
         print("🛠️ [Stage 2] Running Preprocessing Agent...")
-        # Simulate preprocessing output
-        clean_path = state['data_path'].replace(".csv", "_clean.csv")
-        state['clean_data_path'] = clean_path 
         agent = PreprocessingPipelineAgent()
+        # clean_path = state['data_path'].replace(".csv", "_clean.csv")
+        # state['clean_data_path'] = clean_path 
         prep_results = agent.run(
             data_path=state['data_path'],
             target_column=state['target_column']
         )
 
+        # Save full preprocessing output
         state['preprocessing_results'] = prep_results
 
-        if 'agent_messages' not in state:
-            state['agent_messages'] = []
-            
-        state['agent_messages'].append({
-            'agent': 'orchestrator',
-            'message': 'Preprocessing skipped; using raw data for subsequent stages.'
-        })
+        # ✅ Use exported FULL preprocessed dataset for next stages
+        state['clean_data_path'] = prep_results['exports']['full']
+
+        # ✅ Update inferred task type from preprocessing agent
+        state['task_type'] = prep_results['task_type']
+
+        print(f"✅ Preprocessed dataset saved at: {state['clean_data_path']}")
+        print(f"📊 Inferred task type: {state['task_type']}")
         return state
 
     def stage_clean_analysis(self, state: AgentState):
         """Second Analysis: Generate Directives for AutoML."""
         print("📊 [Stage 3] Running Post-Prep Analysis...")
-        # df = pd.read_csv(state['clean_data_path'])
-        df = pd.read_csv(state['data_path'])
+        df = pd.read_csv(state['clean_data_path'])
+        # df = pd.read_csv(state['data_path'])
         agent = EDAAgent(df, target_column=state['target_column'], df_name="clean_data")
         
         agent.run(run_type="clean") # Internal route for clean analysis
@@ -123,8 +125,8 @@ class DTDPipeline:
         # 4. Prepare the initial state for the AutoMLAgent
         # We pass the external directives into the sub-agent's starting state
         subagent_initial_state = {
-            # 'data_path': state['clean_data_path'],
-            'data_path': state['data_path'],
+            'data_path': state['clean_data_path'],
+            # 'data_path': state['data_path'],
             'target_column': target_col,
             'automl_directives': directives, # Handshake JSON
             'problem_type': task_type,

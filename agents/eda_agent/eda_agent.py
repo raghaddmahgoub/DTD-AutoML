@@ -1242,8 +1242,8 @@ class EDAAgent:
         else:
             raise ValueError(f"Unknown run_type '{run_type}'. Use 'raw' or 'clean'.")
 
-        result["report_path"] = self.generate_report(output_dir)
-        logger.info(f"[EDA Agent] HTML Report generated at: {result['report_path']}")
+        # result["report_path"] = self.generate_report(output_dir)
+        # logger.info(f"[EDA Agent] HTML Report generated at: {result['report_path']}")
         return result
 
     # ==================================================================

@@ -780,7 +780,7 @@ Provide your analysis and decision:
                 'presets': preset,
                 # FORCE SEQUENTIAL FOLD FITTING: This is the most important change for 2GB RAM
                 'ag_args_ensemble': {
-                    'fold_fitting_strategy': 'sequential',
+                    'fold_fitting_strategy': 'sequential_local',
                     'use_ray': False
                 },
                 # DISABLE DYNAMIC STACKING: Prevents the sub-fits that trigger Ray

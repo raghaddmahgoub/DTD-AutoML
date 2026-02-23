@@ -1,0 +1,9 @@
+{
+  "num_imputer": "mean",
+  "cat_imputer": "most_frequent",
+  "scaler": "StandardScaler",
+  "model": "rf",
+  "cv": 5,
+  "scoring": "accuracy",
+  "cv_mean_score": 0.9256140350877192
+}

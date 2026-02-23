@@ -32,3 +32,8 @@ catboost_info/
 *.pyd
 venv/
 .venv/
+
+Output/Preprocessing/train_preprocessed.csv
+Output/Preprocessing/test_preprocessed.csv
+Output/Preprocessing/full_preprocessed.csv
+Output/Preprocessing/best_pipeline.pkl

@@ -95,18 +95,33 @@ class PreprocessingPipelineAgent:
         # ---------------------------
         # TRAIN TEST SPLIT
         # ---------------------------
+        use_stratify = False
+
+        if task_type == "classification":
+            class_counts = y.value_counts()
+            
+            if class_counts.min() < 2:
+                print("⚠️ Dropping rare classes with <2 samples...")
+                valid_classes = class_counts[class_counts >= 2].index
+                df = df[df[target_column].isin(valid_classes)]
+                X = df.drop(columns=[target_column])
+                y = df[target_column]
+                use_stratify = True
+            else:
+                use_stratify = True
+
         X_train, X_test, y_train, y_test = train_test_split(
             X,
             y,
             test_size=0.2,
             random_state=42,
-            stratify=y if task_type == "classification" else None
+            stratify=y if use_stratify else None
         )
 
         # ---------------------------
         # IMPORT YOUR SEARCH FUNCTION
         # ---------------------------
-        from automl_preprocessing_search import automl_preprocessing_search
+        from agents.preprocessing_agent.automl_preprocessing_search import automl_preprocessing_search
 
         print("🔍 Running preprocessing + model search...")
 

@@ -3364,3 +3364,125 @@ Feature names seen at fit time, yet now missing:
 [2026-02-04 22:59:24] [INFO] [Training Agent] Confusion Matrix generated: [[219, 6], [10, 122]]
 [2026-02-04 22:59:59] [WARNING] Could not get LLM interpretation: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 54.991840268s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '54s'}]}}
 [2026-02-04 22:59:59] [INFO] [Training Agent] Training complete. Score: 0.9510
+
+
+=== New Run — 2026-02-23 14:13:56 ===
+
+
+=== New Run — 2026-02-23 14:14:43 ===
+[2026-02-23 14:14:43] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 14:14:44] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 14:14:44] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-23 14:14:46] [INFO] [EDA Agent] HTML Report generated at: Output\raw\raw_data_eda_report.html
+
+
+=== New Run — 2026-02-23 14:19:50 ===
+
+
+=== New Run — 2026-02-23 14:19:58 ===
+[2026-02-23 14:19:58] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 14:19:58] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 14:19:58] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-23 14:20:00] [INFO] [EDA Agent] HTML Report generated at: Output\raw\raw_data_eda_report.html
+
+
+=== New Run — 2026-02-23 14:22:21 ===
+
+
+=== New Run — 2026-02-23 14:22:28 ===
+[2026-02-23 14:22:28] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 14:22:28] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 14:22:28] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-23 14:22:29] [INFO] [EDA Agent] HTML Report generated at: Output\raw\raw_data_eda_report.html
+
+
+=== New Run — 2026-02-23 14:57:16 ===
+
+
+=== New Run — 2026-02-23 14:57:23 ===
+[2026-02-23 14:57:23] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 14:57:23] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 14:57:23] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-23 14:57:24] [INFO] [EDA Agent] HTML Report generated at: Output\raw\raw_data_eda_report.html
+
+
+=== New Run — 2026-02-23 14:59:56 ===
+
+
+=== New Run — 2026-02-23 15:00:00 ===
+[2026-02-23 15:00:00] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 15:00:00] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 15:00:00] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-23 15:00:02] [INFO] [EDA Agent] HTML Report generated at: Output\raw\raw_data_eda_report.html
+[2026-02-23 15:00:41] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-23 15:02:31] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-23 15:02:31] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-23 15:02:31] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-23 15:02:35] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+
+
+=== New Run — 2026-02-23 15:12:08 ===
+
+
+=== New Run — 2026-02-23 15:12:29 ===
+[2026-02-23 15:12:29] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 15:12:30] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 15:12:30] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-02-23 15:12:53 ===
+
+
+=== New Run — 2026-02-23 15:13:00 ===
+[2026-02-23 15:13:00] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 15:13:00] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 15:13:00] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-23 15:13:55] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-23 15:16:05] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-23 15:16:05] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-23 15:16:05] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-23 15:16:11] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-23 15:16:11] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-23 15:16:12] [INFO] Data loaded successfully. Shape: (1782, 2864)
+[2026-02-23 15:16:12] [INFO] Identifying target column
+[2026-02-23 15:16:12] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-23 15:16:12] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-23 15:16:33] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-23 15:16:45] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-23 15:16:45] [INFO] Mapped 'classification' to 'binary' (2 classes)
+[2026-02-23 15:16:45] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-23 15:16:45] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-23 15:17:24] [WARNING] AutoGluon training failed: No models were trained successfully during fit(). Inspect the log output or increase verbosity to determine why no models were fit. Alternatively, set `raise_on_no_models_fitted` to False during the fit call., falling back to simple training...
+[2026-02-23 15:17:25] [INFO] Training simple models: ['GBM']
+[2026-02-23 15:17:26] [INFO] GBM - accuracy: 0.9158
+[2026-02-23 15:17:26] [INFO] Best model: GBM with accuracy: 0.9158
+[2026-02-23 15:17:26] [INFO] [Training Agent] Confusion Matrix generated: [[217, 9], [16, 115]]
+[2026-02-23 15:17:29] [INFO] [Training Agent] Training complete. Score: 0.9158
+
+
+=== New Run — 2026-02-23 15:22:12 ===
+
+
+=== New Run — 2026-02-23 15:22:18 ===
+[2026-02-23 15:22:18] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 15:22:19] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 15:22:19] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-23 15:23:07] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-23 15:25:14] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-23 15:25:14] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-23 15:25:14] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-23 15:25:18] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-23 15:25:19] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-23 15:25:19] [INFO] Data loaded successfully. Shape: (1782, 2864)
+[2026-02-23 15:25:19] [INFO] Identifying target column
+[2026-02-23 15:25:19] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-23 15:25:19] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-23 15:25:53] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-23 15:26:02] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-23 15:26:02] [INFO] Mapped 'classification' to 'binary' (2 classes)
+[2026-02-23 15:26:02] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-23 15:26:02] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-23 15:26:36] [INFO] AutoGluon training complete. Best model: WeightedEnsemble_L2 (score: 0.8435)
+[2026-02-23 15:26:36] [INFO] Total models trained: 2
+[2026-02-23 15:26:37] [INFO] [Training Agent] Confusion Matrix generated: [[202, 24], [32, 99]]
+[2026-02-23 15:26:41] [INFO] [Training Agent] Training complete. Score: 0.8435
