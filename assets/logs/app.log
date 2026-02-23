@@ -3486,3 +3486,62 @@ Feature names seen at fit time, yet now missing:
 [2026-02-23 15:26:36] [INFO] Total models trained: 2
 [2026-02-23 15:26:37] [INFO] [Training Agent] Confusion Matrix generated: [[202, 24], [32, 99]]
 [2026-02-23 15:26:41] [INFO] [Training Agent] Training complete. Score: 0.8435
+
+
+=== New Run — 2026-02-23 15:46:06 ===
+
+
+=== New Run — 2026-02-23 15:46:13 ===
+
+
+=== New Run — 2026-02-23 15:47:40 ===
+
+
+=== New Run — 2026-02-23 15:47:48 ===
+[2026-02-23 15:54:38] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 15:54:38] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 15:54:38] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-23 15:55:29] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-23 15:57:34] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-23 15:57:34] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-23 15:57:34] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-23 15:57:39] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-23 15:57:39] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-23 15:57:40] [INFO] Data loaded successfully. Shape: (1782, 2864)
+[2026-02-23 15:57:40] [INFO] Identifying target column
+[2026-02-23 15:57:40] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-23 15:57:40] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-23 15:58:03] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-23 15:58:13] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-23 15:58:13] [INFO] Mapped 'classification' to 'binary' (2 classes)
+[2026-02-23 15:58:13] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-23 15:58:13] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-23 15:58:39] [INFO] AutoGluon training complete. Best model: WeightedEnsemble_L2 (score: 0.8435)
+[2026-02-23 15:58:39] [INFO] Total models trained: 2
+[2026-02-23 15:58:40] [INFO] [Training Agent] Confusion Matrix generated: [[202, 24], [32, 99]]
+[2026-02-23 15:58:43] [INFO] [Training Agent] Training complete. Score: 0.8435
+[2026-02-23 16:27:33] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 16:27:33] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 16:27:33] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-23 16:29:27] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-23 16:35:45] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-23 16:35:45] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-23 16:35:45] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-23 16:35:51] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-23 16:35:51] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-23 16:35:52] [INFO] Data loaded successfully. Shape: (1782, 2864)
+[2026-02-23 16:35:52] [INFO] Identifying target column
+[2026-02-23 16:35:52] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-23 16:35:52] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-23 16:36:17] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-23 16:36:25] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-23 16:36:25] [INFO] Mapped 'classification' to 'binary' (2 classes)
+[2026-02-23 16:36:25] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-23 16:36:25] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-23 16:36:46] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L1 (score: 0.8435)
+[2026-02-23 16:36:46] [INFO] Total models trained: 2
+[2026-02-23 16:36:46] [INFO] [Training Agent] Confusion Matrix generated: [[202, 24], [32, 99]]
+[2026-02-23 16:36:50] [INFO] [Training Agent] Training complete. Score: 0.8435
+[2026-02-23 16:46:18] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-23 16:46:18] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-23 16:46:18] [INFO] [EDA Agent] Exporting artifacts for raw stage...
