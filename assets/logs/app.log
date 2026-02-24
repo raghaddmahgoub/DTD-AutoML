@@ -3545,3 +3545,204 @@ Feature names seen at fit time, yet now missing:
 [2026-02-23 16:46:18] [INFO] [EDA Agent] Starting RAW data analysis...
 [2026-02-23 16:46:18] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
 [2026-02-23 16:46:18] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-02-24 00:18:35 ===
+
+
+=== New Run — 2026-02-24 00:19:29 ===
+[2026-02-24 00:19:29] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-24 00:19:30] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-24 00:19:30] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-24 00:20:21] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-24 00:22:16] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-24 00:22:16] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-24 00:22:16] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-24 00:22:20] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+
+
+=== New Run — 2026-02-24 00:23:14 ===
+
+
+=== New Run — 2026-02-24 00:23:27 ===
+[2026-02-24 00:23:27] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-24 00:23:27] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-24 00:23:27] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-24 00:24:07] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-24 00:26:14] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-24 00:26:14] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-24 00:26:14] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-24 00:26:19] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-24 00:27:05] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-24 00:27:05] [INFO] Data loaded successfully. Shape: (1782, 2864)
+[2026-02-24 00:27:05] [INFO] Identifying target column
+[2026-02-24 00:27:05] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-24 00:27:05] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-24 00:27:32] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-24 00:27:42] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-24 00:27:43] [INFO] Mapped 'classification' to 'binary' (2 classes)
+[2026-02-24 00:27:43] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-24 00:27:43] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-24 00:28:21] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L1 (score: 0.8435)
+[2026-02-24 00:28:21] [INFO] Total models trained: 2
+[2026-02-24 00:28:22] [INFO] [Training Agent] Confusion Matrix generated: [[202, 24], [32, 99]]
+[2026-02-24 00:28:25] [INFO] [Training Agent] Training complete. Score: 0.8435
+
+
+=== New Run — 2026-02-24 01:04:23 ===
+
+
+=== New Run — 2026-02-24 01:05:00 ===
+[2026-02-24 01:05:00] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-24 01:05:01] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-24 01:05:01] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-24 01:05:45] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-24 01:07:43] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-24 01:07:43] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-24 01:07:43] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-24 01:07:43] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-24 01:08:29] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-24 01:08:29] [INFO] Data loaded successfully. Shape: (1782, 2864)
+[2026-02-24 01:08:29] [INFO] Identifying target column
+[2026-02-24 01:08:29] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-24 01:08:29] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-24 01:08:36] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-24 01:08:53] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-24 01:08:53] [INFO] Mapped 'classification' to 'binary' (2 classes)
+[2026-02-24 01:08:53] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-24 01:08:53] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-24 01:09:32] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L1 (score: 0.8435)
+[2026-02-24 01:09:32] [INFO] Total models trained: 2
+[2026-02-24 01:09:33] [INFO] [Training Agent] Confusion Matrix generated: [[202, 24], [32, 99]]
+[2026-02-24 01:09:37] [INFO] [Training Agent] Training complete. Score: 0.8435
+
+
+=== New Run — 2026-02-24 01:23:28 ===
+
+
+=== New Run — 2026-02-24 01:23:46 ===
+[2026-02-24 01:30:23] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-24 01:30:23] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-24 01:30:23] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-24 01:31:04] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-24 01:33:06] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-24 01:33:06] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-24 01:33:06] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-24 01:33:06] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-24 01:33:50] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-24 01:33:51] [INFO] Data loaded successfully. Shape: (1782, 2864)
+[2026-02-24 01:33:51] [INFO] Identifying target column
+[2026-02-24 01:33:51] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-24 01:33:51] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-24 01:34:26] [ERROR] [Model Selection Agent] Error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 13.090303242s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '13s'}]}}
+[2026-02-24 01:34:26] [INFO] [Training Agent] Executing simple training strategy
+[2026-02-24 01:35:02] [INFO] Training simple models: ['RandomForest']
+[2026-02-24 01:35:03] [INFO] RandomForest - accuracy: 0.9158
+[2026-02-24 01:35:03] [INFO] Best model: RandomForest with accuracy: 0.9158
+[2026-02-24 01:35:03] [INFO] [Training Agent] Confusion Matrix generated: [[217, 9], [16, 115]]
+[2026-02-24 01:35:39] [WARNING] Could not get LLM interpretation: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 59.900604019s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '59s'}]}}
+[2026-02-24 01:35:39] [INFO] [Training Agent] Training complete. Score: 0.9158
+
+
+=== New Run — 2026-02-24 01:39:38 ===
+
+
+=== New Run — 2026-02-24 01:39:43 ===
+[2026-02-24 01:40:08] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-24 01:40:08] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-24 01:40:08] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-24 01:40:50] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-24 01:43:07] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-24 01:43:07] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-24 01:43:07] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-24 01:43:07] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+
+
+=== New Run — 2026-02-24 01:44:41 ===
+
+
+=== New Run — 2026-02-24 01:44:47 ===
+[2026-02-24 01:44:49] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-24 01:44:49] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-24 01:44:49] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-24 01:45:44] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-24 01:48:08] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-24 01:48:08] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-24 01:48:08] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-24 01:48:08] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-24 01:49:01] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-24 01:49:02] [INFO] Data loaded successfully. Shape: (1782, 2864)
+[2026-02-24 01:49:02] [INFO] Identifying target column
+[2026-02-24 01:49:02] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-24 01:49:02] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-24 01:49:38] [ERROR] [Model Selection Agent] Error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 1.334313031s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.5-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '1s'}]}}
+[2026-02-24 01:49:38] [INFO] [Training Agent] Executing simple training strategy
+[2026-02-24 01:50:14] [INFO] Training simple models: ['RandomForest']
+[2026-02-24 01:50:14] [INFO] RandomForest - accuracy: 0.9158
+[2026-02-24 01:50:14] [INFO] Best model: RandomForest with accuracy: 0.9158
+[2026-02-24 01:50:14] [INFO] [Training Agent] Confusion Matrix generated: [[217, 9], [16, 115]]
+[2026-02-24 01:50:49] [WARNING] Could not get LLM interpretation: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 50.142275898s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '50s'}]}}
+[2026-02-24 01:50:49] [INFO] [Training Agent] Training complete. Score: 0.9158
+
+
+=== New Run — 2026-02-24 01:51:00 ===
+
+
+=== New Run — 2026-02-24 01:51:05 ===
+[2026-02-24 01:51:08] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-24 01:51:08] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-24 01:51:08] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-24 01:51:55] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-24 01:54:16] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-24 01:54:16] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-24 01:54:16] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-24 01:54:16] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-24 01:55:04] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-24 01:55:04] [INFO] Data loaded successfully. Shape: (1782, 2864)
+[2026-02-24 01:55:04] [INFO] Identifying target column
+[2026-02-24 01:55:04] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-24 01:55:04] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-24 01:55:40] [ERROR] [Model Selection Agent] Error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 59.202298004s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '59s'}]}}
+[2026-02-24 01:55:40] [INFO] [Training Agent] Executing simple training strategy
+[2026-02-24 01:56:16] [INFO] Training simple models: ['RandomForest']
+[2026-02-24 01:56:17] [INFO] RandomForest - accuracy: 0.9158
+[2026-02-24 01:56:17] [INFO] Best model: RandomForest with accuracy: 0.9158
+[2026-02-24 01:56:17] [INFO] [Training Agent] Confusion Matrix generated: [[217, 9], [16, 115]]
+[2026-02-24 01:56:51] [WARNING] Could not get LLM interpretation: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 48.062154872s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '48s'}]}}
+[2026-02-24 01:56:51] [INFO] [Training Agent] Training complete. Score: 0.9158
+
+
+=== New Run — 2026-02-24 02:01:30 ===
+
+
+=== New Run — 2026-02-24 02:01:38 ===
+[2026-02-24 02:01:42] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-24 02:01:42] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-24 02:01:42] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-24 02:02:22] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-24 02:05:55] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-24 02:05:55] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-24 02:05:55] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-24 02:05:56] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-24 02:07:23] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-24 02:07:24] [INFO] Data loaded successfully. Shape: (1782, 2864)
+[2026-02-24 02:07:24] [INFO] Identifying target column
+[2026-02-24 02:07:24] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-24 02:07:24] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-24 02:08:00] [ERROR] [Model Selection Agent] Error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 38.753208731s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '38s'}]}}
+[2026-02-24 02:08:00] [INFO] [Training Agent] Executing simple training strategy
+[2026-02-24 02:08:36] [INFO] Training simple models: ['RandomForest']
+[2026-02-24 02:08:36] [INFO] RandomForest - accuracy: 0.9158
+[2026-02-24 02:08:36] [INFO] Best model: RandomForest with accuracy: 0.9158
+[2026-02-24 02:08:36] [INFO] [Training Agent] Confusion Matrix generated: [[217, 9], [16, 115]]
+[2026-02-24 02:09:11] [WARNING] Could not get LLM interpretation: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 28.349011838s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '28s'}]}}
+[2026-02-24 02:09:11] [INFO] [Training Agent] Training complete. Score: 0.9158
+
+
+=== New Run — 2026-02-24 02:17:14 ===
+
+
+=== New Run — 2026-02-24 02:17:29 ===
+[2026-02-24 02:17:31] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-24 02:17:31] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-24 02:17:31] [INFO] [EDA Agent] Exporting artifacts for raw stage...
