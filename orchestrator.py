@@ -3,6 +3,7 @@ import pandas as pd
 from typing import TypedDict, Optional
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv
+import json
 from agents.preprocessing_agent.preprocessing_pipeline import PreprocessingPipelineAgent
 
 # Import modular agents from your folders
@@ -21,6 +22,7 @@ class AgentState(TypedDict):
     analysis_report_path: Optional[str]
     automl_directives: Optional[dict]
     final_metrics: Optional[dict]
+    agent_output: Optional[dict]
 
 class DTDPipeline:
     def __init__(self):
@@ -55,7 +57,15 @@ class DTDPipeline:
         agent.run(run_type="raw") # Internal route for raw analysis
         results = agent.export(output_dir="Output/raw")
         
-        # print(f"✅ Raw analysis complete. Report: {results['report_path']}")
+        frontend_json_path = results.get("frontend_json_path")
+        with open(frontend_json_path, 'r', encoding='utf-8') as f:
+            analysis_data = json.load(f)
+
+        state["agent_output"] = {
+            "stage": "raw_analysis",
+            "raw_analysis": analysis_data, 
+        }
+
         return state
 
     def stage_preprocessing(self, state: AgentState):
@@ -80,6 +90,13 @@ class DTDPipeline:
 
         print(f"✅ Preprocessed dataset saved at: {state['clean_data_path']}")
         print(f"📊 Inferred task type: {state['task_type']}")
+        state["agent_output"] = {
+            "stage": "preprocessing",
+            "task_type": prep_results["task_type"],
+            "best_cv_score": prep_results["best_cv_score"],
+            "exported_files": prep_results["exports"]
+        }
+
         return state
 
     def stage_clean_analysis(self, state: AgentState):
@@ -94,6 +111,15 @@ class DTDPipeline:
         
         # Save the reformatted JSON directives for the AutoML agent
         state['automl_directives'] = results.get("automl_context")
+        frontend_json_path = results.get("frontend_json_path")
+        with open(frontend_json_path, 'r', encoding='utf-8') as f:
+            analysis_data = json.load(f)
+        
+        state["agent_output"] = {
+            "stage": "clean_analysis",
+            "clean_analysis": analysis_data, # Send the actual JSON object
+        }
+
         return state
 
     def stage_automl(self, state: AgentState):
@@ -144,13 +170,25 @@ class DTDPipeline:
                 state['error'] = final_subagent_state['error']
                 print(f"❌ Training failed: {state['error']}")
             else:
-                state['final_metrics'] = final_subagent_state.get('model_metrics')
+                metrics = final_subagent_state.get('model_metrics')
+                state['final_metrics'] = metrics
+
+                state["agent_output"] = {
+                    "stage": "automl_training",
+                    "best_model": metrics.get("best_model"),
+                    "best_score": metrics.get("best_score"),
+                    "all_metrics": metrics
+                }
                 print(f"✅ Training complete. Best Model: {state['final_metrics'].get('best_model')}")
                 print(f"📈 Final Score: {state['final_metrics'].get('best_score'):.4f}")
 
         except Exception as e:
             print(f"❌ Exception in Stage 4: {str(e)}")
             state['error'] = f"AutoML Stage failed: {str(e)}"
+            state["agent_output"] = {
+            "stage": "automl_training",
+            "error": state["error"]
+        }
 
         return state
     
@@ -169,19 +207,19 @@ class DTDPipeline:
             print(f"❌ Visualization failed: {e}")
             print("Falling back to ASCII representation:")
             print(self.workflow.get_graph().print_ascii())
+
 # --- Main Execution ---
-if __name__ == "__main__":
-    pipeline = DTDPipeline()
-    
-    # Starting state
-    inputs = {
-        "data_path": "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
-        "target_column": "Survived",
-        "task_type": "classification"
-    }
-    
-    result = pipeline.workflow.invoke(inputs)
-    print("\n🏁 Pipeline Finished. Best Model Metrics:", result['final_metrics'])
+# if __name__ == "__main__":
+#     pipeline = DTDPipeline()   
+#     # Starting state
+#     inputs = {
+#         "data_path": "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
+#         "target_column": "Survived",
+#         "task_type": "classification"
+#     }   
+#     result = pipeline.workflow.invoke(inputs)
+#     print("\n🏁 Pipeline Finished. Best Model Metrics:", result['final_metrics'])
+
     # pipeline.visualize_graph()
     # # To get a string compatible with Mermaid live editors or frontend renderers
     # mermaid_config = pipeline.workflow.get_graph().draw_mermaid()
