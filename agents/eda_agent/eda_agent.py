@@ -542,6 +542,8 @@ class EDAAgent:
 
         logger.info(f"[EDA Agent] {run_type.upper()} analysis complete. "
                     f"Found {len(self.report['eda_warnings'])} warnings.")
+        for i in self.report['eda_warnings']:
+            logger.warning(f" - {i['message']}")
         return self.report
 
     # ==================================================================
