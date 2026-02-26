@@ -40,8 +40,8 @@
 
 from typing import Any, Dict, Optional
 import pandas as pd
-from eda_agent import EDAAgent
-from eda_agent import TargetInferenceAgent
+from agents.eda_agent.eda_agent import EDAAgent
+from agents.eda_agent.eda_agent import TargetInferenceAgent
 import os
 
 def run_eda_with_target_resolution(
@@ -89,6 +89,7 @@ def run_eda_with_target_resolution(
     return report
 
 
+# filename = 'assets/data/Datasets/Regression Datasets/car_prices.csv'
 filename = 'assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
 df_name = os.path.splitext(os.path.basename(filename))[0]
 df = pd.read_csv(filename)
