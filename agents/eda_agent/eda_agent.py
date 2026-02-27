@@ -542,6 +542,8 @@ class EDAAgent:
 
         logger.info(f"[EDA Agent] {run_type.upper()} analysis complete. "
                     f"Found {len(self.report['eda_warnings'])} warnings.")
+        for i in self.report['eda_warnings']:
+            logger.warn(f" - {i['message']}")
         return self.report
 
     # ==================================================================
@@ -803,3 +805,94 @@ class EDAAgent:
             path = Path(dir_path)
             path.mkdir(parents=True, exist_ok=True)
             (path / filename).write_text(payload, encoding="utf-8")
+
+
+class TargetInferenceAgent:
+    """
+    Infers the most likely target column using structural, semantic,
+    and distributional heuristics.
+    """
+
+    ID_KEYWORDS = {"id", "uuid", "vin", "index"}
+    TARGET_KEYWORDS = {"target", "label", "class", "price", "score", "rating", "outcome"}
+
+    def __init__(self, df: pd.DataFrame):
+        self.df = df
+
+    def run(self) -> Dict[str, Any]:
+        scores: Dict[str, float] = {}
+    
+        n_rows = len(self.df)
+    
+        for col in self.df.columns:
+            series = self.df[col]
+            score = 0.0
+            name = col.lower()
+    
+            # --- Hard exclusions ---
+            if any(k in name for k in self.ID_KEYWORDS):
+                continue
+            
+            nunique = series.nunique(dropna=True)
+            missing_ratio = series.isna().mean()
+    
+            # --- Missingness (targets are usually observed) ---
+            if missing_ratio < 0.05:
+                score += 1.0
+            elif missing_ratio > 0.3:
+                score -= 1.0
+    
+            # --- Cardinality signal ---
+            if nunique == 2:
+                score += 3.0  # VERY strong signal (Survived)
+            elif 2 < nunique <= 10:
+                score += 1.5
+            elif nunique < n_rows:
+                score += 0.3
+    
+            # --- Distribution signal ---
+            if nunique > 1:
+                value_counts = series.value_counts(normalize=True, dropna=True)
+                majority_ratio = value_counts.iloc[0]
+    
+                if 0.5 <= majority_ratio <= 0.9:
+                    score += 1.0  # good classification target
+                elif majority_ratio > 0.95:
+                    score -= 1.0  # near-constant
+    
+            # --- Type signal ---
+            if pd.api.types.is_numeric_dtype(series):
+                score += 0.5  # reduced (was too dominant)
+            elif nunique <= 20:
+                score += 0.3
+    
+            # --- Semantic signals ---
+            POSITIVE_KEYWORDS = {"target", "label", "price", "score", "rating", "outcome"}
+            NEGATIVE_KEYWORDS = {"class", "level", "rank", "group"}
+    
+            if any(k in name for k in POSITIVE_KEYWORDS):
+                score += 2.5
+    
+            if any(k in name for k in NEGATIVE_KEYWORDS):
+                score -= 1.5  # penalize Pclass-style features
+    
+            scores[col] = score
+    
+        if not scores:
+            return {
+                "inferred_target": None,
+                "confidence": 0.0,
+                "alternatives": [],
+            }
+    
+        ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+        best_col, best_score = ranked[0]
+    
+        total = sum(abs(s) for _, s in ranked[:3]) or 1.0
+        confidence = round(min(0.95, best_score / total), 3)
+    
+        return {
+            "inferred_target": best_col,
+            "confidence": confidence,
+            "alternatives": [c for c, _ in ranked[1:3]],
+        }
