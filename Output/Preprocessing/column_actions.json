@@ -1,0 +1,135 @@
+{
+  "year": {
+    "type": "numeric",
+    "imputation": "median",
+    "imputation_value": 2012.0,
+    "encoding": null
+  },
+  "make": {
+    "type": "categorical",
+    "imputation": "missing",
+    "encoding": "hash",
+    "hash_features": 8,
+    "reason": "label_too_many_categories",
+    "llm_used": false
+  },
+  "model": {
+    "type": "categorical",
+    "imputation": "missing",
+    "encoding": "hash",
+    "hash_features": 8,
+    "reason": "label_too_many_categories",
+    "llm_used": false
+  },
+  "trim": {
+    "type": "categorical",
+    "imputation": "missing",
+    "encoding": "hash",
+    "hash_features": 8,
+    "reason": "label_too_many_categories",
+    "llm_used": false
+  },
+  "body": {
+    "type": "categorical",
+    "imputation": "missing",
+    "encoding": "hash",
+    "hash_features": 8,
+    "reason": "label_too_many_categories",
+    "llm_used": false
+  },
+  "transmission": {
+    "type": "categorical",
+    "imputation": "missing",
+    "encoding": "label",
+    "mapping": {
+      "Sedan": 0,
+      "automatic": 1,
+      "manual": 2,
+      "missing": 3,
+      "sedan": 4
+    },
+    "reason": "low_cardinality_categorical",
+    "llm_used": false
+  },
+  "vin": {
+    "action": "drop",
+    "reason": "high_cardinality_ratio>0.98"
+  },
+  "state": {
+    "type": "categorical",
+    "imputation": "missing",
+    "encoding": "hash",
+    "hash_features": 8,
+    "reason": "label_too_many_categories",
+    "llm_used": false
+  },
+  "condition": {
+    "type": "numeric",
+    "imputation": "median",
+    "imputation_value": 35.0,
+    "encoding": null
+  },
+  "odometer": {
+    "type": "numeric",
+    "imputation": "median",
+    "imputation_value": 52254.0,
+    "encoding": null
+  },
+  "color": {
+    "type": "categorical",
+    "imputation": "missing",
+    "encoding": "hash",
+    "hash_features": 8,
+    "reason": "label_too_many_categories",
+    "llm_used": false
+  },
+  "interior": {
+    "type": "categorical",
+    "imputation": "missing",
+    "encoding": "label",
+    "mapping": {
+      "beige": 0,
+      "black": 1,
+      "blue": 2,
+      "brown": 3,
+      "burgundy": 4,
+      "gold": 5,
+      "gray": 6,
+      "green": 7,
+      "missing": 8,
+      "off-white": 9,
+      "orange": 10,
+      "purple": 11,
+      "red": 12,
+      "silver": 13,
+      "tan": 14,
+      "white": 15,
+      "yellow": 16,
+      "\u2014": 17
+    },
+    "reason": "low_cardinality_categorical",
+    "llm_used": false
+  },
+  "seller": {
+    "type": "categorical",
+    "imputation": "missing",
+    "encoding": "hash",
+    "hash_features": 8,
+    "reason": "label_too_many_categories",
+    "llm_used": false
+  },
+  "mmr": {
+    "type": "numeric",
+    "imputation": "median",
+    "imputation_value": 12250.0,
+    "encoding": null
+  },
+  "saledate": {
+    "type": "categorical",
+    "imputation": "missing",
+    "encoding": "hash",
+    "hash_features": 8,
+    "reason": "label_too_many_categories",
+    "llm_used": false
+  }
+}

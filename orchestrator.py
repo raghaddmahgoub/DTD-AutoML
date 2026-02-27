@@ -10,6 +10,7 @@ from agents.preprocessing_agent.preprocessing_pipeline import PreprocessingPipel
 from agents.eda_agent.eda_agent import EDAAgent
 # from agents.preprocessing_agent.preprocessor import PreprocessingAgent
 from agents.automl_agent.automl_agent import AutoMLAgent
+from agents.preprocessing_agent.preprocessing_node import preprocessing_node
 
 load_dotenv()
 
@@ -43,6 +44,7 @@ class DTDPipeline:
         builder.add_edge("preprocessing", "clean_analysis")
         builder.add_edge("clean_analysis", "automl_training")
         builder.add_edge("automl_training", END)
+        # builder.add_edge("clean_analysis", END)
 
         return builder.compile()
 
@@ -68,37 +70,78 @@ class DTDPipeline:
 
         return state
 
+    # def stage_preprocessing(self, state: AgentState):
+    #     """Preprocessing: Clean data based on Raw Analysis."""
+    #     print("🛠️ [Stage 2] Running Preprocessing Agent...")
+    #     agent = PreprocessingPipelineAgent()
+    #     # clean_path = state['data_path'].replace(".csv", "_clean.csv")
+    #     # state['clean_data_path'] = clean_path 
+    #     prep_results = agent.run(
+    #         data_path=state['data_path'],
+    #         target_column=state['target_column']
+    #     )
+
+    #     # Save full preprocessing output
+    #     state['preprocessing_results'] = prep_results
+
+    #     # ✅ Use exported FULL preprocessed dataset for next stages
+    #     state['clean_data_path'] = prep_results['exports']['full']
+
+    #     # ✅ Update inferred task type from preprocessing agent
+    #     state['task_type'] = prep_results['task_type']
+
+    #     print(f"✅ Preprocessed dataset saved at: {state['clean_data_path']}")
+    #     print(f"📊 Inferred task type: {state['task_type']}")
+    #     state["agent_output"] = {
+    #         "stage": "preprocessing",
+    #         "task_type": prep_results["task_type"],
+    #         "best_cv_score": prep_results["best_cv_score"],
+    #         "exported_files": prep_results["exports"]
+    #     }
+
+    #     return state
     def stage_preprocessing(self, state: AgentState):
-        """Preprocessing: Clean data based on Raw Analysis."""
-        print("🛠️ [Stage 2] Running Preprocessing Agent...")
-        agent = PreprocessingPipelineAgent()
-        # clean_path = state['data_path'].replace(".csv", "_clean.csv")
-        # state['clean_data_path'] = clean_path 
-        prep_results = agent.run(
-            data_path=state['data_path'],
-            target_column=state['target_column']
-        )
+        """Preprocessing using PreprocessingNode from test.py"""
+        print("🛠️ [Stage 2] Running Preprocessing Node...")
 
-        # Save full preprocessing output
-        state['preprocessing_results'] = prep_results
-
-        # ✅ Use exported FULL preprocessed dataset for next stages
-        state['clean_data_path'] = prep_results['exports']['full']
-
-        # ✅ Update inferred task type from preprocessing agent
-        state['task_type'] = prep_results['task_type']
-
-        print(f"✅ Preprocessed dataset saved at: {state['clean_data_path']}")
-        print(f"📊 Inferred task type: {state['task_type']}")
-        state["agent_output"] = {
-            "stage": "preprocessing",
-            "task_type": prep_results["task_type"],
-            "best_cv_score": prep_results["best_cv_score"],
-            "exported_files": prep_results["exports"]
+        # Prepare state expected by preprocessing_node
+        preprocessing_state = {
+            "dataset_path": state["data_path"],
+            "target_column": state["target_column"],
+            "output_folder": "Output/Preprocessing"
         }
 
-        return state
+        # Run the node
+        result_state = preprocessing_node(preprocessing_state)
 
+        # Handle failure
+        if result_state.get("status") != "success":
+            print(f"❌ Preprocessing failed: {result_state.get('error')}")
+            state["error"] = result_state.get("error")
+            state["agent_output"] = {
+                "stage": "preprocessing",
+                "error": state["error"]
+            }
+            return state
+
+        state["clean_data_path"] = result_state["full_dataset_path"]
+
+        state["agent_output"] = {
+            "stage": "preprocessing",
+            "X_train": result_state["X_train_path"],
+            "X_test": result_state["X_test_path"],
+            "y_train": result_state["y_train_path"],
+            "y_test": result_state["y_test_path"],
+            "full_dataset": result_state["full_dataset_path"],
+            "summary": result_state["summary_path"],
+            "column_actions": result_state["column_actions_path"]
+        }
+
+        print(f"✅ Preprocessing complete.")
+        print(f"📂 Output folder: {result_state['output_folder']}")
+
+        return state
+    
     def stage_clean_analysis(self, state: AgentState):
         """Second Analysis: Generate Directives for AutoML."""
         print("📊 [Stage 3] Running Post-Prep Analysis...")
@@ -209,16 +252,26 @@ class DTDPipeline:
             print(self.workflow.get_graph().print_ascii())
 
 # --- Main Execution ---
-# if __name__ == "__main__":
-#     pipeline = DTDPipeline()   
-#     # Starting state
-#     inputs = {
-#         "data_path": "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
-#         "target_column": "Survived",
-#         "task_type": "classification"
-#     }   
-#     result = pipeline.workflow.invoke(inputs)
-#     print("\n🏁 Pipeline Finished. Best Model Metrics:", result['final_metrics'])
+if __name__ == "__main__":
+    pipeline = DTDPipeline()   
+    # Starting state
+    # inputs = {
+    #     "data_path": "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
+    #     "target_column": "Survived",
+    #     "task_type": "classification"
+    # }   
+    # inputs = {
+    #     "data_path": "assets/data/Datasets/Classification Datasets/Iris.csv",
+    #     "target_column": "Species",
+    #     "task_type": "classification"
+    # }   
+    inputs = {
+        "data_path": "assets/data/Datasets/Regression Datasets/car_prices.csv",
+        "target_column": "sellingprice",
+        "task_type": "regression"
+    }   
+    result = pipeline.workflow.invoke(inputs)
+    print("\n🏁 Pipeline Finished. Best Model Metrics:", result['final_metrics'])
 
     # pipeline.visualize_graph()
     # # To get a string compatible with Mermaid live editors or frontend renderers

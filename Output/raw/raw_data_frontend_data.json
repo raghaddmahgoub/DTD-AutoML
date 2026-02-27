@@ -1,273 +1,421 @@
 {
   "metadata": {
     "df_name": "raw_data",
-    "timestamp": "2026-02-24T02:17:31.923225",
+    "timestamp": "2026-02-28T01:41:25.424842",
     "run_type": "raw"
   },
   "report": {
     "run_type": "raw",
     "dataset_summary": {
-      "n_rows": 1783,
-      "n_columns": 12,
+      "n_rows": 558837,
+      "n_columns": 16,
       "column_types": {
-        "numerical": [],
+        "numerical": [
+          "year",
+          "condition",
+          "odometer",
+          "mmr",
+          "sellingprice"
+        ],
         "categorical": [
-          "PassengerId",
-          "Survived",
-          "Pclass",
-          "Name",
-          "Sex",
-          "Age",
-          "SibSp",
-          "Parch",
-          "Ticket",
-          "Fare",
-          "Cabin",
-          "Embarked"
+          "make",
+          "model",
+          "trim",
+          "body",
+          "transmission",
+          "vin",
+          "state",
+          "color",
+          "interior",
+          "seller",
+          "saledate"
         ],
         "datetime": [],
         "boolean": []
       },
-      "memory_usage_mb": 1.21,
-      "duplicate_rows": 891,
-      "target_column": "Survived",
-      "target_dtype": "object"
+      "memory_usage_mb": 417.91,
+      "duplicate_rows": 0,
+      "target_column": "sellingprice",
+      "target_dtype": "float64"
     },
     "feature_scale_analysis": {
-      "wide_scale_features": [],
-      "heavy_tailed_features": [],
-      "approximately_standard_scale_features": []
+      "wide_scale_features": [
+        "odometer"
+      ],
+      "heavy_tailed_features": [
+        "odometer",
+        "mmr"
+      ],
+      "approximately_standard_scale_features": [
+        "year"
+      ]
     },
     "column_profiles": {
-      "PassengerId": {
-        "data_type": "categorical",
-        "dtype": "object",
+      "year": {
+        "data_type": "numeric",
+        "dtype": "int64",
         "missing_count": 0,
         "missing_ratio": 0.0,
-        "unique_count": 892,
+        "unique_count": 34,
         "is_unique_per_row": false,
-        "top_values": {
-          "891": 2,
-          "1": 2,
-          "2": 2,
-          "3": 2,
-          "4": 2
-        },
-        "is_high_cardinality": true
+        "mean": 2010.0389,
+        "std": 3.9669,
+        "min": 1982.0,
+        "max": 2015.0,
+        "median": 2012.0,
+        "q1": 2007.0,
+        "q3": 2013.0,
+        "iqr": 6.0,
+        "skewness": -1.1832,
+        "kurtosis": 1.0105,
+        "zero_count": 0,
+        "outlier_count_iqr": 4021,
+        "outlier_ratio_iqr": 0.0072,
+        "is_normal": false
       },
-      "Survived": {
+      "make": {
         "data_type": "categorical",
         "dtype": "object",
-        "missing_count": 0,
-        "missing_ratio": 0.0,
-        "unique_count": 3,
+        "missing_count": 10301,
+        "missing_ratio": 0.0184,
+        "unique_count": 96,
         "is_unique_per_row": false,
         "top_values": {
-          "0": 1098,
-          "1": 684,
-          "Survived": 1
+          "Ford": 93554,
+          "Chevrolet": 60197,
+          "Nissan": 53946,
+          "Toyota": 39871,
+          "Dodge": 30710
         },
         "is_high_cardinality": false
       },
-      "Pclass": {
+      "model": {
         "data_type": "categorical",
         "dtype": "object",
-        "missing_count": 0,
-        "missing_ratio": 0.0,
+        "missing_count": 10399,
+        "missing_ratio": 0.0186,
+        "unique_count": 973,
+        "is_unique_per_row": false,
+        "top_values": {
+          "Altima": 19349,
+          "F-150": 14479,
+          "Fusion": 12946,
+          "Camry": 12545,
+          "Escape": 11861
+        },
+        "is_high_cardinality": false
+      },
+      "trim": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 10651,
+        "missing_ratio": 0.0191,
+        "unique_count": 1963,
+        "is_unique_per_row": false,
+        "top_values": {
+          "Base": 55817,
+          "SE": 43648,
+          "LX": 20757,
+          "Limited": 18367,
+          "LT": 16915
+        },
+        "is_high_cardinality": false
+      },
+      "body": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 13195,
+        "missing_ratio": 0.0236,
+        "unique_count": 87,
+        "is_unique_per_row": false,
+        "top_values": {
+          "Sedan": 199437,
+          "SUV": 119292,
+          "sedan": 41906,
+          "suv": 24552,
+          "Hatchback": 21380
+        },
+        "is_high_cardinality": false
+      },
+      "transmission": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 65352,
+        "missing_ratio": 0.1169,
         "unique_count": 4,
         "is_unique_per_row": false,
         "top_values": {
-          "3": 982,
-          "1": 432,
-          "2": 368,
-          "Pclass": 1
+          "automatic": 475915,
+          "manual": 17544,
+          "sedan": 15,
+          "Sedan": 11
         },
         "is_high_cardinality": false
       },
-      "Name": {
-        "data_type": "categorical",
-        "dtype": "object",
-        "missing_count": 0,
-        "missing_ratio": 0.0,
-        "unique_count": 892,
-        "is_unique_per_row": false,
-        "top_values": {
-          "Dooley, Mr. Patrick": 2,
-          "Braund, Mr. Owen Harris": 2,
-          "Cumings, Mrs. John Bradley (Florence Briggs Thayer)": 2,
-          "Heikkinen, Miss. Laina": 2,
-          "Futrelle, Mrs. Jacques Heath (Lily May Peel)": 2
-        },
-        "is_high_cardinality": true
-      },
-      "Sex": {
-        "data_type": "categorical",
-        "dtype": "object",
-        "missing_count": 0,
-        "missing_ratio": 0.0,
-        "unique_count": 3,
-        "is_unique_per_row": false,
-        "top_values": {
-          "male": 1154,
-          "female": 628,
-          "Sex": 1
-        },
-        "is_high_cardinality": false
-      },
-      "Age": {
-        "data_type": "categorical",
-        "dtype": "object",
-        "missing_count": 354,
-        "missing_ratio": 0.1985,
-        "unique_count": 89,
-        "is_unique_per_row": false,
-        "top_values": {
-          "24": 60,
-          "22": 54,
-          "18": 52,
-          "19": 50,
-          "28": 50
-        },
-        "is_high_cardinality": false
-      },
-      "SibSp": {
-        "data_type": "categorical",
-        "dtype": "object",
-        "missing_count": 0,
-        "missing_ratio": 0.0,
-        "unique_count": 8,
-        "is_unique_per_row": false,
-        "top_values": {
-          "0": 1216,
-          "1": 418,
-          "2": 56,
-          "4": 36,
-          "3": 32
-        },
-        "is_high_cardinality": false
-      },
-      "Parch": {
-        "data_type": "categorical",
-        "dtype": "object",
-        "missing_count": 0,
-        "missing_ratio": 0.0,
-        "unique_count": 8,
-        "is_unique_per_row": false,
-        "top_values": {
-          "0": 1356,
-          "1": 236,
-          "2": 160,
-          "5": 10,
-          "3": 10
-        },
-        "is_high_cardinality": false
-      },
-      "Ticket": {
-        "data_type": "categorical",
-        "dtype": "object",
-        "missing_count": 0,
-        "missing_ratio": 0.0,
-        "unique_count": 682,
-        "is_unique_per_row": false,
-        "top_values": {
-          "347082": 14,
-          "1601": 14,
-          "CA. 2343": 14,
-          "3101295": 12,
-          "CA 2144": 12
-        },
-        "is_high_cardinality": false
-      },
-      "Fare": {
-        "data_type": "categorical",
-        "dtype": "object",
-        "missing_count": 0,
-        "missing_ratio": 0.0,
-        "unique_count": 249,
-        "is_unique_per_row": false,
-        "top_values": {
-          "8.05": 86,
-          "13": 84,
-          "7.8958": 76,
-          "7.75": 68,
-          "26": 62
-        },
-        "is_high_cardinality": false
-      },
-      "Cabin": {
-        "data_type": "categorical",
-        "dtype": "object",
-        "missing_count": 1374,
-        "missing_ratio": 0.7706,
-        "unique_count": 148,
-        "is_unique_per_row": false,
-        "top_values": {
-          "G6": 8,
-          "C23 C25 C27": 8,
-          "B96 B98": 8,
-          "F33": 6,
-          "F2": 6
-        },
-        "is_high_cardinality": false
-      },
-      "Embarked": {
+      "vin": {
         "data_type": "categorical",
         "dtype": "object",
         "missing_count": 4,
-        "missing_ratio": 0.0022,
-        "unique_count": 4,
+        "missing_ratio": 0.0,
+        "unique_count": 550297,
         "is_unique_per_row": false,
         "top_values": {
-          "S": 1288,
-          "C": 336,
-          "Q": 154,
-          "Embarked": 1
+          "automatic": 22,
+          "wbanv13588cz57827": 5,
+          "trusc28n241022003": 4,
+          "5uxfe43579l274932": 4,
+          "wddgf56x78f009940": 4
+        },
+        "is_high_cardinality": true
+      },
+      "state": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 64,
+        "is_unique_per_row": false,
+        "top_values": {
+          "fl": 82945,
+          "ca": 73148,
+          "pa": 53907,
+          "tx": 45913,
+          "ga": 34750
+        },
+        "is_high_cardinality": false
+      },
+      "condition": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 11820,
+        "missing_ratio": 0.0212,
+        "unique_count": 41,
+        "is_unique_per_row": false,
+        "mean": 30.6724,
+        "std": 13.4028,
+        "min": 1.0,
+        "max": 49.0,
+        "median": 35.0,
+        "q1": 23.0,
+        "q3": 42.0,
+        "iqr": 19.0,
+        "skewness": -0.833,
+        "kurtosis": -0.2234,
+        "zero_count": 0,
+        "outlier_count_iqr": 0,
+        "outlier_ratio_iqr": 0.0,
+        "is_normal": false
+      },
+      "odometer": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 94,
+        "missing_ratio": 0.0002,
+        "unique_count": 172278,
+        "is_unique_per_row": false,
+        "mean": 68320.0178,
+        "std": 53398.5428,
+        "min": 1.0,
+        "max": 999999.0,
+        "median": 52254.0,
+        "q1": 28371.0,
+        "q3": 99109.0,
+        "iqr": 70738.0,
+        "skewness": 1.8432,
+        "kurtosis": 13.5489,
+        "zero_count": 0,
+        "outlier_count_iqr": 10375,
+        "outlier_ratio_iqr": 0.0186,
+        "is_normal": false
+      },
+      "color": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 749,
+        "missing_ratio": 0.0013,
+        "unique_count": 46,
+        "is_unique_per_row": false,
+        "top_values": {
+          "black": 110970,
+          "white": 106673,
+          "silver": 83389,
+          "gray": 82857,
+          "blue": 51139
+        },
+        "is_high_cardinality": false
+      },
+      "interior": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 749,
+        "missing_ratio": 0.0013,
+        "unique_count": 17,
+        "is_unique_per_row": false,
+        "top_values": {
+          "black": 244329,
+          "gray": 178581,
+          "beige": 59758,
+          "tan": 44093,
+          "\u2014": 17077
+        },
+        "is_high_cardinality": false
+      },
+      "seller": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 14263,
+        "is_unique_per_row": false,
+        "top_values": {
+          "nissan-infiniti lt": 19693,
+          "ford motor credit company llc": 19162,
+          "the hertz corporation": 18299,
+          "santander consumer": 15285,
+          "avis corporation": 12540
+        },
+        "is_high_cardinality": false
+      },
+      "mmr": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 38,
+        "missing_ratio": 0.0001,
+        "unique_count": 1101,
+        "is_unique_per_row": false,
+        "mean": 13769.3775,
+        "std": 9679.9672,
+        "min": 25.0,
+        "max": 182000.0,
+        "median": 12250.0,
+        "q1": 7100.0,
+        "q3": 18300.0,
+        "iqr": 11200.0,
+        "skewness": 1.9976,
+        "kurtosis": 11.4433,
+        "zero_count": 0,
+        "outlier_count_iqr": 16315,
+        "outlier_ratio_iqr": 0.0292,
+        "is_normal": false
+      },
+      "sellingprice": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 12,
+        "missing_ratio": 0.0,
+        "unique_count": 1887,
+        "is_unique_per_row": false,
+        "mean": 13611.3588,
+        "std": 9749.5016,
+        "min": 1.0,
+        "max": 230000.0,
+        "median": 12100.0,
+        "q1": 6900.0,
+        "q3": 18200.0,
+        "iqr": 11300.0,
+        "skewness": 1.9534,
+        "kurtosis": 11.1146,
+        "zero_count": 0,
+        "outlier_count_iqr": 16354,
+        "outlier_ratio_iqr": 0.0293,
+        "is_normal": false
+      },
+      "saledate": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 12,
+        "missing_ratio": 0.0,
+        "unique_count": 3766,
+        "is_unique_per_row": false,
+        "top_values": {
+          "Tue Feb 10 2015 01:30:00 GMT-0800 (PST)": 5334,
+          "Tue Feb 17 2015 01:30:00 GMT-0800 (PST)": 5016,
+          "Tue Jan 27 2015 01:30:00 GMT-0800 (PST)": 4902,
+          "Tue Jan 20 2015 01:30:00 GMT-0800 (PST)": 4731,
+          "Tue Mar 03 2015 01:30:00 GMT-0800 (PST)": 4653
         },
         "is_high_cardinality": false
       }
     },
     "target_analysis": {
-      "column": "Survived",
-      "dtype": "object",
-      "task_type": "classification",
-      "n_classes": 3,
-      "is_binary": false,
-      "class_distribution": {
-        "0": 0.6158,
-        "1": 0.3836,
-        "Survived": 0.0006
-      },
-      "minority_class_ratio": 0.0006,
-      "majority_class_ratio": 0.6158,
-      "imbalance_ratio": 1098.0,
-      "imbalance_severity": "severe",
-      "target_entropy": 0.967,
-      "min_samples_per_class": 1,
-      "requires_stratification": true,
-      "rare_class_risk": true
+      "column": "sellingprice",
+      "dtype": "float64",
+      "task_type": "regression",
+      "mean": 13611.3588,
+      "std": 9749.5016,
+      "variance": 95052781.991,
+      "min": 1.0,
+      "max": 230000.0,
+      "range": 229999.0,
+      "skewness": 1.9534,
+      "skew_severity": "high",
+      "kurtosis": 11.1146,
+      "outlier_ratio_iqr": 0.0293,
+      "heavy_tailed": true,
+      "low_variance_target": false
     },
     "data_quality_report": {
       "missing_values": {
-        "total_missing_cells": 1732,
+        "total_missing_cells": 123376,
         "columns_with_missing": {
-          "Age": {
-            "missing_count": 354,
-            "missing_ratio": 0.1985
+          "make": {
+            "missing_count": 10301,
+            "missing_ratio": 0.0184
           },
-          "Cabin": {
-            "missing_count": 1374,
-            "missing_ratio": 0.7706
+          "model": {
+            "missing_count": 10399,
+            "missing_ratio": 0.0186
           },
-          "Embarked": {
+          "trim": {
+            "missing_count": 10651,
+            "missing_ratio": 0.0191
+          },
+          "body": {
+            "missing_count": 13195,
+            "missing_ratio": 0.0236
+          },
+          "transmission": {
+            "missing_count": 65352,
+            "missing_ratio": 0.1169
+          },
+          "vin": {
             "missing_count": 4,
-            "missing_ratio": 0.0022
+            "missing_ratio": 0.0
+          },
+          "condition": {
+            "missing_count": 11820,
+            "missing_ratio": 0.0212
+          },
+          "odometer": {
+            "missing_count": 94,
+            "missing_ratio": 0.0002
+          },
+          "color": {
+            "missing_count": 749,
+            "missing_ratio": 0.0013
+          },
+          "interior": {
+            "missing_count": 749,
+            "missing_ratio": 0.0013
+          },
+          "mmr": {
+            "missing_count": 38,
+            "missing_ratio": 0.0001
+          },
+          "sellingprice": {
+            "missing_count": 12,
+            "missing_ratio": 0.0
+          },
+          "saledate": {
+            "missing_count": 12,
+            "missing_ratio": 0.0
           }
         },
-        "n_columns_with_missing": 3
+        "n_columns_with_missing": 13
       },
       "duplicates": {
-        "duplicate_row_count": 891,
-        "duplicate_ratio": 0.4997
+        "duplicate_row_count": 0,
+        "duplicate_ratio": 0.0
       },
       "low_variance_columns": {
         "constant_columns": [],
@@ -279,152 +427,676 @@
       }
     },
     "relationship_insights": {
-      "numeric_correlations": null,
+      "numeric_correlations": {
+        "threshold": 0.5,
+        "strong_pairs": [
+          {
+            "feature_1": "year",
+            "feature_2": "odometer",
+            "correlation": -0.773
+          },
+          {
+            "feature_1": "year",
+            "feature_2": "mmr",
+            "correlation": 0.597
+          },
+          {
+            "feature_1": "odometer",
+            "feature_2": "mmr",
+            "correlation": -0.588
+          }
+        ]
+      },
       "target_relationships": {
-        "target_type": "categorical",
-        "group_means": {},
-        "cramers_v": {
-          "PassengerId": 0.0,
-          "Pclass": 0.747,
-          "Name": 0.0,
-          "Sex": 0.805,
-          "Age": 0.0,
-          "SibSp": 0.722,
-          "Parch": 0.718,
-          "Ticket": 0.0,
-          "Fare": 0.0,
-          "Cabin": 0.0,
-          "Embarked": 0.718
+        "target_type": "numeric",
+        "feature_correlations": {
+          "year": 0.586,
+          "condition": 0.322,
+          "odometer": -0.582,
+          "mmr": 0.984
         }
       }
     },
     "eda_warnings": [
       {
-        "type": "high_missingness",
-        "columns": [
-          "Cabin"
-        ],
-        "message": "Columns with > 50% missing values detected."
-      },
-      {
         "type": "high_cardinality_categoricals",
         "columns": [
-          "PassengerId",
-          "Name"
+          "vin"
         ],
         "message": "High-cardinality categoricals detected."
       },
       {
-        "type": "class_imbalance",
-        "imbalance_ratio": 1098.0,
-        "message": "Target shows class imbalance (majority/minority \u2265 3)."
+        "type": "non_normal_columns",
+        "columns": [
+          "year",
+          "condition",
+          "odometer",
+          "mmr",
+          "sellingprice"
+        ],
+        "message": "Non-normal numeric columns (Shapiro-Wilk)."
       }
     ],
-    "total_feature_count": 11,
+    "total_feature_count": 15,
     "multicollinearity": {
       "threshold": 0.7,
-      "pairs": []
+      "pairs": [
+        {
+          "feature_1": "year",
+          "feature_2": "odometer",
+          "correlation": -0.773
+        }
+      ]
     },
     "signal_analysis": {
-      "classification_feature_analysis": {
-        "univariate_class_signal": {}
+      "regression_feature_analysis": {
+        "linear_signal_strength": {
+          "year": 0.586,
+          "condition": 0.322,
+          "odometer": 0.582,
+          "mmr": 0.984
+        },
+        "non_linear_candidates": []
       }
     }
   },
   "visualizations": {
     "missing_values_chart": [
       {
-        "column": "Age",
-        "count": 354,
-        "ratio": 0.1985
+        "column": "make",
+        "count": 10301,
+        "ratio": 0.0184
       },
       {
-        "column": "Cabin",
-        "count": 1374,
-        "ratio": 0.7706
+        "column": "model",
+        "count": 10399,
+        "ratio": 0.0186
       },
       {
-        "column": "Embarked",
+        "column": "trim",
+        "count": 10651,
+        "ratio": 0.0191
+      },
+      {
+        "column": "body",
+        "count": 13195,
+        "ratio": 0.0236
+      },
+      {
+        "column": "transmission",
+        "count": 65352,
+        "ratio": 0.1169
+      },
+      {
+        "column": "vin",
         "count": 4,
-        "ratio": 0.0022
+        "ratio": 0.0
+      },
+      {
+        "column": "condition",
+        "count": 11820,
+        "ratio": 0.0212
+      },
+      {
+        "column": "odometer",
+        "count": 94,
+        "ratio": 0.0002
+      },
+      {
+        "column": "color",
+        "count": 749,
+        "ratio": 0.0013
+      },
+      {
+        "column": "interior",
+        "count": 749,
+        "ratio": 0.0013
+      },
+      {
+        "column": "mmr",
+        "count": 38,
+        "ratio": 0.0001
+      },
+      {
+        "column": "sellingprice",
+        "count": 12,
+        "ratio": 0.0
+      },
+      {
+        "column": "saledate",
+        "count": 12,
+        "ratio": 0.0
       }
     ],
-    "numeric_distributions": {},
-    "categorical_distributions": {
-      "PassengerId": {
-        "891": 2,
-        "1": 2,
-        "2": 2,
-        "3": 2,
-        "4": 2
+    "numeric_distributions": {
+      "year": {
+        "histogram": {
+          "counts": [
+            3,
+            15,
+            11,
+            19,
+            69,
+            67,
+            337,
+            1103,
+            851,
+            3695,
+            8590,
+            6468,
+            22996,
+            38736,
+            26913,
+            62347,
+            47079,
+            48548,
+            200483,
+            90507
+          ],
+          "bins": [
+            1982.0,
+            1983.65,
+            1985.3,
+            1986.95,
+            1988.6,
+            1990.25,
+            1991.9,
+            1993.55,
+            1995.2,
+            1996.85,
+            1998.5,
+            2000.15,
+            2001.8,
+            2003.45,
+            2005.1,
+            2006.75,
+            2008.4,
+            2010.05,
+            2011.7,
+            2013.35,
+            2015.0
+          ]
+        },
+        "raw_sample": [
+          2014,
+          2003,
+          2007,
+          2011,
+          2012,
+          2012,
+          2012,
+          2014,
+          2011,
+          2005,
+          2012,
+          2013,
+          2012,
+          2013,
+          2002,
+          2012,
+          2008,
+          2013,
+          2014,
+          2011,
+          2008,
+          2007,
+          2015,
+          2006,
+          2012,
+          2008,
+          2014,
+          2008,
+          2013,
+          2012,
+          2013,
+          2006,
+          2013,
+          2013,
+          2011,
+          2011,
+          2011,
+          2005,
+          2012,
+          2009,
+          2013,
+          2008,
+          2009,
+          2009,
+          2007,
+          2013,
+          2012,
+          1998,
+          2004,
+          2012
+        ]
       },
-      "Pclass": {
-        "3": 982,
-        "1": 432,
-        "2": 368,
-        "Pclass": 1
+      "condition": {
+        "histogram": {
+          "counts": [
+            38957,
+            31144,
+            0,
+            0,
+            182,
+            360,
+            421,
+            42604,
+            15256,
+            17514,
+            40824,
+            38106,
+            19184,
+            28017,
+            49894,
+            64581,
+            23073,
+            74779,
+            24947,
+            37174
+          ],
+          "bins": [
+            1.0,
+            3.4,
+            5.8,
+            8.2,
+            10.6,
+            13.0,
+            15.399999999999999,
+            17.8,
+            20.2,
+            22.599999999999998,
+            25.0,
+            27.4,
+            29.799999999999997,
+            32.2,
+            34.6,
+            37.0,
+            39.4,
+            41.8,
+            44.199999999999996,
+            46.6,
+            49.0
+          ]
+        },
+        "raw_sample": [
+          32.0,
+          42.0,
+          28.0,
+          4.0,
+          31.0,
+          5.0,
+          35.0,
+          5.0,
+          37.0,
+          4.0,
+          43.0,
+          24.0,
+          39.0,
+          27.0,
+          35.0,
+          36.0,
+          42.0,
+          47.0,
+          27.0,
+          21.0,
+          41.0,
+          19.0,
+          37.0,
+          25.0,
+          49.0,
+          34.0,
+          37.0,
+          46.0,
+          39.0,
+          21.0,
+          45.0,
+          2.0,
+          38.0,
+          41.0,
+          26.0,
+          27.0,
+          2.0,
+          41.0,
+          35.0,
+          41.0,
+          36.0,
+          31.0,
+          19.0,
+          19.0,
+          39.0,
+          36.0,
+          5.0,
+          28.0,
+          32.0,
+          38.0
+        ]
       },
-      "Name": {
-        "Dooley, Mr. Patrick": 2,
-        "Braund, Mr. Owen Harris": 2,
-        "Cumings, Mrs. John Bradley (Florence Briggs Thayer)": 2,
-        "Heikkinen, Miss. Laina": 2,
-        "Futrelle, Mrs. Jacques Heath (Lily May Peel)": 2
+      "odometer": {
+        "histogram": {
+          "counts": [
+            270148,
+            151333,
+            90419,
+            34732,
+            9223,
+            2144,
+            488,
+            133,
+            27,
+            15,
+            3,
+            1,
+            1,
+            2,
+            0,
+            0,
+            0,
+            0,
+            0,
+            74
+          ],
+          "bins": [
+            1.0,
+            50000.9,
+            100000.8,
+            150000.7,
+            200000.6,
+            250000.5,
+            300000.4,
+            350000.3,
+            400000.2,
+            450000.10000000003,
+            500000.0,
+            549999.9,
+            599999.8,
+            649999.7000000001,
+            699999.6,
+            749999.5,
+            799999.4,
+            849999.3,
+            899999.2000000001,
+            949999.1,
+            999999.0
+          ]
+        },
+        "raw_sample": [
+          14664.0,
+          66012.0,
+          59866.0,
+          24407.0,
+          29443.0,
+          100540.0,
+          156320.0,
+          53409.0,
+          98452.0,
+          26077.0,
+          120514.0,
+          153961.0,
+          4048.0,
+          17416.0,
+          34658.0,
+          128527.0,
+          49514.0,
+          78177.0,
+          64890.0,
+          141072.0,
+          56384.0,
+          4365.0,
+          40002.0,
+          56074.0,
+          93639.0,
+          45871.0,
+          110929.0,
+          24366.0,
+          106164.0,
+          116187.0,
+          25035.0,
+          33648.0,
+          39694.0,
+          53016.0,
+          34376.0,
+          23099.0,
+          111282.0,
+          97353.0,
+          68380.0,
+          86951.0,
+          18404.0,
+          41857.0,
+          87343.0,
+          126549.0,
+          62626.0,
+          153808.0,
+          85685.0,
+          101071.0,
+          12938.0,
+          117846.0
+        ]
       },
-      "Sex": {
-        "male": 1154,
-        "female": 628,
-        "Sex": 1
-      },
-      "Age": {
-        "24": 60,
-        "22": 54,
-        "18": 52,
-        "19": 50,
-        "28": 50
-      },
-      "SibSp": {
-        "0": 1216,
-        "1": 418,
-        "2": 56,
-        "4": 36,
-        "3": 32
-      },
-      "Parch": {
-        "0": 1356,
-        "1": 236,
-        "2": 160,
-        "5": 10,
-        "3": 10
-      },
-      "Ticket": {
-        "347082": 14,
-        "1601": 14,
-        "CA. 2343": 14,
-        "3101295": 12,
-        "CA 2144": 12
-      },
-      "Fare": {
-        "8.05": 86,
-        "13": 84,
-        "7.8958": 76,
-        "7.75": 68,
-        "26": 62
-      },
-      "Cabin": {
-        "G6": 8,
-        "C23 C25 C27": 8,
-        "B96 B98": 8,
-        "F33": 6,
-        "F2": 6
-      },
-      "Embarked": {
-        "S": 1288,
-        "C": 336,
-        "Q": 154,
-        "Embarked": 1
+      "mmr": {
+        "histogram": {
+          "counts": [
+            183653,
+            233843,
+            97378,
+            29973,
+            8704,
+            2879,
+            978,
+            576,
+            381,
+            180,
+            86,
+            49,
+            31,
+            20,
+            19,
+            14,
+            14,
+            10,
+            8,
+            3
+          ],
+          "bins": [
+            25.0,
+            9123.75,
+            18222.5,
+            27321.25,
+            36420.0,
+            45518.75,
+            54617.5,
+            63716.25,
+            72815.0,
+            81913.75,
+            91012.5,
+            100111.25,
+            109210.0,
+            118308.75,
+            127407.5,
+            136506.25,
+            145605.0,
+            154703.75,
+            163802.5,
+            172901.25,
+            182000.0
+          ]
+        },
+        "raw_sample": [
+          4950.0,
+          13800.0,
+          4575.0,
+          11100.0,
+          11000.0,
+          2450.0,
+          5225.0,
+          21100.0,
+          9050.0,
+          12050.0,
+          8425.0,
+          10850.0,
+          3425.0,
+          4425.0,
+          14250.0,
+          19600.0,
+          23800.0,
+          4875.0,
+          10050.0,
+          11500.0,
+          4700.0,
+          17350.0,
+          9200.0,
+          4700.0,
+          40700.0,
+          19750.0,
+          8100.0,
+          52800.0,
+          4800.0,
+          11250.0,
+          11700.0,
+          56700.0,
+          18250.0,
+          2575.0,
+          2075.0,
+          11150.0,
+          20600.0,
+          12200.0,
+          1050.0,
+          14100.0,
+          14900.0,
+          2900.0,
+          875.0,
+          4900.0,
+          12750.0,
+          22100.0,
+          2600.0,
+          9075.0,
+          27700.0,
+          2900.0
+        ]
       }
     },
-    "correlation_matrix": null
+    "categorical_distributions": {
+      "make": {
+        "Ford": 93554,
+        "Chevrolet": 60197,
+        "Nissan": 53946,
+        "Toyota": 39871,
+        "Dodge": 30710
+      },
+      "model": {
+        "Altima": 19349,
+        "F-150": 14479,
+        "Fusion": 12946,
+        "Camry": 12545,
+        "Escape": 11861
+      },
+      "trim": {
+        "Base": 55817,
+        "SE": 43648,
+        "LX": 20757,
+        "Limited": 18367,
+        "LT": 16915
+      },
+      "body": {
+        "Sedan": 199437,
+        "SUV": 119292,
+        "sedan": 41906,
+        "suv": 24552,
+        "Hatchback": 21380
+      },
+      "transmission": {
+        "automatic": 475915,
+        "manual": 17544,
+        "sedan": 15,
+        "Sedan": 11
+      },
+      "vin": {
+        "automatic": 22,
+        "wbanv13588cz57827": 5,
+        "trusc28n241022003": 4,
+        "5uxfe43579l274932": 4,
+        "wddgf56x78f009940": 4
+      },
+      "state": {
+        "fl": 82945,
+        "ca": 73148,
+        "pa": 53907,
+        "tx": 45913,
+        "ga": 34750
+      },
+      "color": {
+        "black": 110970,
+        "white": 106673,
+        "silver": 83389,
+        "gray": 82857,
+        "blue": 51139
+      },
+      "interior": {
+        "black": 244329,
+        "gray": 178581,
+        "beige": 59758,
+        "tan": 44093,
+        "\u2014": 17077
+      },
+      "seller": {
+        "nissan-infiniti lt": 19693,
+        "ford motor credit company llc": 19162,
+        "the hertz corporation": 18299,
+        "santander consumer": 15285,
+        "avis corporation": 12540
+      },
+      "saledate": {
+        "Tue Feb 10 2015 01:30:00 GMT-0800 (PST)": 5334,
+        "Tue Feb 17 2015 01:30:00 GMT-0800 (PST)": 5016,
+        "Tue Jan 27 2015 01:30:00 GMT-0800 (PST)": 4902,
+        "Tue Jan 20 2015 01:30:00 GMT-0800 (PST)": 4731,
+        "Tue Mar 03 2015 01:30:00 GMT-0800 (PST)": 4653
+      }
+    },
+    "correlation_matrix": {
+      "columns": [
+        "year",
+        "condition",
+        "odometer",
+        "mmr",
+        "sellingprice"
+      ],
+      "values": [
+        [
+          1.0,
+          0.34,
+          -0.773,
+          0.597,
+          0.586
+        ],
+        [
+          0.34,
+          1.0,
+          -0.318,
+          0.281,
+          0.322
+        ],
+        [
+          -0.773,
+          -0.318,
+          1.0,
+          -0.588,
+          -0.582
+        ],
+        [
+          0.597,
+          0.281,
+          -0.588,
+          1.0,
+          0.984
+        ],
+        [
+          0.586,
+          0.322,
+          -0.582,
+          0.984,
+          1.0
+        ]
+      ]
+    }
   }
 }

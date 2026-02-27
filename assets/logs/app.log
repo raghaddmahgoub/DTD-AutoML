@@ -3766,3 +3766,378 @@ Feature names seen at fit time, yet now missing:
 === New Run — 2026-02-26 01:59:32 ===
 [2026-02-26 01:59:32] [INFO] [EDA Agent] Starting RAW data analysis...
 [2026-02-26 01:59:32] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+
+
+=== New Run — 2026-02-28 00:27:11 ===
+
+
+=== New Run — 2026-02-28 00:27:35 ===
+
+
+=== New Run — 2026-02-28 00:27:55 ===
+
+
+=== New Run — 2026-02-28 00:28:00 ===
+
+
+=== New Run — 2026-02-28 00:28:35 ===
+
+
+=== New Run — 2026-02-28 00:28:40 ===
+
+
+=== New Run — 2026-02-28 00:29:09 ===
+
+
+=== New Run — 2026-02-28 00:29:15 ===
+[2026-02-28 00:29:15] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 00:29:15] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 00:29:15] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 00:29:15] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 00:29:15] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:29:15] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-02-28 00:31:29 ===
+
+
+=== New Run — 2026-02-28 00:31:34 ===
+[2026-02-28 00:31:34] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 00:31:34] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 00:31:34] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 00:31:34] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 00:31:34] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:31:34] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-02-28 00:33:20 ===
+
+
+=== New Run — 2026-02-28 00:33:25 ===
+[2026-02-28 00:33:25] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 00:33:25] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 00:33:25] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 00:33:25] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 00:33:25] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:33:25] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+
+
+=== New Run — 2026-02-28 00:36:27 ===
+
+
+=== New Run — 2026-02-28 00:36:33 ===
+[2026-02-28 00:36:33] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 00:36:33] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 00:36:33] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 00:36:33] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 00:36:33] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:36:33] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 00:36:33] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 00:36:33] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-02-28 00:36:33] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 00:36:33] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 00:36:33] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 00:36:33] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 00:36:33] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+
+
+=== New Run — 2026-02-28 00:38:22 ===
+
+
+=== New Run — 2026-02-28 00:38:28 ===
+[2026-02-28 00:38:28] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 00:38:28] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 00:38:28] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 00:38:28] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 00:38:28] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:38:28] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 00:38:28] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 00:38:28] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-02-28 00:38:28] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 00:38:28] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 00:38:28] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 00:38:28] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 00:38:28] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+
+
+=== New Run — 2026-02-28 00:50:23 ===
+
+
+=== New Run — 2026-02-28 00:50:28 ===
+[2026-02-28 00:50:28] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 00:50:28] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 00:50:28] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 00:50:28] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 00:50:28] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:50:28] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 00:50:28] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 00:50:28] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 00:50:28] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 00:50:28] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 00:50:28] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:50:28] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 00:50:28] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 00:50:28] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+
+
+=== New Run — 2026-02-28 00:52:07 ===
+
+
+=== New Run — 2026-02-28 00:52:12 ===
+[2026-02-28 00:52:12] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 00:52:12] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 00:52:12] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 00:52:12] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 00:52:12] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:52:12] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 00:52:12] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 00:52:13] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 00:52:13] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 00:52:13] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 00:52:13] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:52:13] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 00:52:13] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 00:52:13] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 00:52:13] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 00:52:13] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-02-28 00:52:13] [INFO] Identifying target column
+[2026-02-28 00:52:13] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-28 00:52:13] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 00:52:19] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 00:52:27] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 00:52:27] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-28 00:52:27] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-28 00:52:27] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-28 00:52:49] [WARNING] AutoGluon training failed: path is on mount 'D:', start on mount 'C:', falling back to simple training...
+[2026-02-28 00:52:50] [INFO] Training simple models: ['GBM']
+[2026-02-28 00:52:50] [INFO] GBM - accuracy: 0.9021
+[2026-02-28 00:52:50] [INFO] Best model: GBM with accuracy: 0.9021
+[2026-02-28 00:52:50] [INFO] [Training Agent] Confusion Matrix generated: [[203, 22], [17, 115]]
+[2026-02-28 00:52:56] [INFO] [Training Agent] Training complete. Score: 0.9021
+
+
+=== New Run — 2026-02-28 00:57:21 ===
+
+
+=== New Run — 2026-02-28 00:57:27 ===
+[2026-02-28 00:57:27] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 00:57:27] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 00:57:27] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 00:57:27] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 00:57:27] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:57:27] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 00:57:27] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 00:57:27] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 00:57:27] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 00:57:27] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 00:57:27] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 00:57:27] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 00:57:27] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 00:57:27] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 00:57:27] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 00:57:27] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-02-28 00:57:27] [INFO] Identifying target column
+[2026-02-28 00:57:27] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-28 00:57:27] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 00:57:33] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 00:57:38] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 00:57:38] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-28 00:57:38] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-28 00:57:38] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-28 00:58:01] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L2 (score: 0.9228)
+[2026-02-28 00:58:01] [INFO] Total models trained: 4
+[2026-02-28 00:58:02] [INFO] [Training Agent] Confusion Matrix generated: [[212, 13], [12, 120]]
+[2026-02-28 00:58:06] [INFO] [Training Agent] Training complete. Score: 0.9228
+
+
+=== New Run — 2026-02-28 01:06:45 ===
+
+
+=== New Run — 2026-02-28 01:06:50 ===
+[2026-02-28 01:06:50] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 01:06:50] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 01:06:50] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 01:06:50] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 01:06:50] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 01:06:50] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 01:06:50] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 01:06:51] [INFO] [EDA Agent] CLEAN analysis complete. Found 3 warnings.
+[2026-02-28 01:06:51] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 01:06:51] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 01:06:51] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+[2026-02-28 01:06:51] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 01:06:51] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 01:06:51] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 01:06:51] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 01:06:51] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-02-28 01:06:51] [INFO] Identifying target column
+[2026-02-28 01:06:51] [INFO] Target column identified: Survived, Problem type: classification
+[2026-02-28 01:06:51] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 01:06:58] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 01:07:04] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 01:07:04] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-28 01:07:04] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-28 01:07:04] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-28 01:07:25] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L2 (score: 0.9228)
+[2026-02-28 01:07:25] [INFO] Total models trained: 4
+[2026-02-28 01:07:26] [INFO] [Training Agent] Confusion Matrix generated: [[212, 13], [12, 120]]
+[2026-02-28 01:07:29] [INFO] [Training Agent] Training complete. Score: 0.9228
+
+
+=== New Run — 2026-02-28 01:20:12 ===
+
+
+=== New Run — 2026-02-28 01:20:17 ===
+[2026-02-28 01:20:17] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 01:20:17] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+
+
+=== New Run — 2026-02-28 01:22:36 ===
+
+
+=== New Run — 2026-02-28 01:22:41 ===
+[2026-02-28 01:22:41] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 01:22:41] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 01:22:41] [WARNING]  - Likely identifier columns (unique per row).
+[2026-02-28 01:22:41] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 01:22:41] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 01:22:41] [INFO] [EDA Agent] Starting CLEAN data analysis...
+
+
+=== New Run — 2026-02-28 01:28:04 ===
+
+
+=== New Run — 2026-02-28 01:28:09 ===
+[2026-02-28 01:28:09] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 01:28:09] [INFO] [EDA Agent] RAW analysis complete. Found 0 warnings.
+[2026-02-28 01:28:09] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 01:28:09] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 01:28:09] [INFO] [EDA Agent] CLEAN analysis complete. Found 1 warnings.
+[2026-02-28 01:28:09] [WARNING]  - Dataset contains 3 duplicate rows.
+[2026-02-28 01:28:09] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 01:28:09] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 01:28:09] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+
+
+=== New Run — 2026-02-28 01:32:43 ===
+
+
+=== New Run — 2026-02-28 01:32:49 ===
+[2026-02-28 01:32:49] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 01:32:49] [INFO] [EDA Agent] RAW analysis complete. Found 0 warnings.
+[2026-02-28 01:32:49] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 01:32:49] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 01:32:49] [INFO] [EDA Agent] CLEAN analysis complete. Found 1 warnings.
+[2026-02-28 01:32:49] [WARNING]  - Dataset contains 3 duplicate rows.
+[2026-02-28 01:32:49] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 01:32:49] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 01:32:49] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+
+
+=== New Run — 2026-02-28 01:38:44 ===
+
+
+=== New Run — 2026-02-28 01:38:49 ===
+[2026-02-28 01:38:49] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 01:38:49] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 01:38:49] [WARNING]  - Likely identifier columns (unique per row).
+[2026-02-28 01:38:49] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 01:38:49] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 01:38:49] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 01:38:49] [INFO] [EDA Agent] CLEAN analysis complete. Found 1 warnings.
+[2026-02-28 01:38:49] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 01:38:49] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 01:38:49] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 01:38:49] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 01:38:49] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 01:38:49] [INFO] Data loaded successfully. Shape: (150, 5)
+[2026-02-28 01:38:49] [INFO] Identifying target column
+[2026-02-28 01:38:49] [INFO] Target column identified: Species, Problem type: classification
+[2026-02-28 01:38:49] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 01:38:56] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 01:39:02] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 01:39:02] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-02-28 01:39:02] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-28 01:39:02] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-28 01:39:08] [INFO] AutoGluon training complete. Best model: LightGBM_BAG_L1 (score: 0.9583)
+[2026-02-28 01:39:08] [INFO] Total models trained: 2
+[2026-02-28 01:39:08] [INFO] [Training Agent] Confusion Matrix generated: [[10, 0, 0], [0, 9, 0], [0, 0, 11]]
+[2026-02-28 01:39:11] [INFO] [Training Agent] Training complete. Score: 0.9583
+
+
+=== New Run — 2026-02-28 01:41:11 ===
+
+
+=== New Run — 2026-02-28 01:41:16 ===
+[2026-02-28 01:41:17] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 01:41:25] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 01:41:25] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 01:41:25] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 01:41:25] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 01:42:17] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 01:42:33] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-02-28 01:42:33] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 01:42:33] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 01:42:33] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 01:42:33] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 01:42:33] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 01:42:41] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 01:42:43] [INFO] Data loaded successfully. Shape: (558837, 71)
+[2026-02-28 01:42:43] [INFO] Identifying target column
+[2026-02-28 01:42:43] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-02-28 01:42:43] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 01:42:51] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 01:42:58] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 01:42:58] [INFO] Training AutoGluon with models: ['GBM', 'XGB'], time_limit: 300s, preset: best_quality...
+[2026-02-28 01:42:58] [WARNING] Unknown model 'XGB' - skipping. Valid AutoGluon models: ['GBM', 'XGB', 'GBM', 'CAT', 'NN_TORCH', 'NN_TORCH', 'FASTAI', 'RF', 'RF', 'XT', 'XT', 'KNN', 'LR', 'LR', 'LR', 'LR']
+[2026-02-28 01:42:59] [WARNING] AutoGluon training failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 457035, falling back to simple training...
+[2026-02-28 01:42:59] [INFO] Training simple models: ['GBM']
+[2026-02-28 01:43:00] [WARNING] Failed to train GBM: Input y contains NaN.
+[2026-02-28 01:43:00] [WARNING] All selected models failed, using default RandomForest...
+[2026-02-28 01:43:00] [ERROR] [Training Agent] Error: Input y contains NaN.
+Traceback (most recent call last):
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 801, in _train_with_autogluon
+    predictor.fit(train_data, **fit_kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\common\utils\decorators.py", line 34, in _call
+    return f(*gargs, **gkwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\predictor\predictor.py", line 1412, in fit
+    self._fit(ag_fit_kwargs=ag_fit_kwargs, ag_post_fit_kwargs=ag_post_fit_kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\predictor\predictor.py", line 1418, in _fit
+    self._learner.fit(**ag_fit_kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\learner\abstract_learner.py", line 159, in fit
+    return self._fit(X=X, X_val=X_val, **kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\learner\default_learner.py", line 95, in _fit
+    X, y, X_val, y_val, X_test, y_test, X_unlabeled, holdout_frac, num_bag_folds, groups = self.general_data_processing(
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\learner\default_learner.py", line 205, in general_data_processing
+    X = self._check_for_non_finite_values(X, name="train", is_train=True)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\learner\default_learner.py", line 356, in _check_for_non_finite_values
+    raise ValueError(
+ValueError: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 457035
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 440, in training_agent
+    trained_model, metrics = self._train_with_autogluon(X_train, y_train, problem_type, automl_config)
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 839, in _train_with_autogluon
+    return self._train_simple_models(X, y, problem_type, [fallback_models[0]] if fallback_models else ['RandomForest'])
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 927, in _train_simple_models
+    best_model.fit(X_train, y_train)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\base.py", line 1365, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 359, in fit
+    X, y = validate_data(
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 2971, in validate_data
+    X, y = check_X_y(X, y, **check_params)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 1385, in check_X_y
+    y = _check_y(y, multi_output=multi_output, y_numeric=y_numeric, estimator=estimator)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 1395, in _check_y
+    y = check_array(
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 1105, in check_array
+    _assert_all_finite(
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 120, in _assert_all_finite
+    _assert_all_finite_element_wise(
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 169, in _assert_all_finite_element_wise
+    raise ValueError(msg_err)
+ValueError: Input y contains NaN.
+

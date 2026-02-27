@@ -718,8 +718,9 @@ Provide your analysis and decision:
             
             # Create a unique path for this predictor to avoid conflicts
             import tempfile
-            predictor_path = os.path.join(tempfile.gettempdir(), f"autogluon_predictor_{os.getpid()}_{int(time.time())}")
-            
+            # predictor_path = os.path.join(tempfile.gettempdir(), f"autogluon_predictor_{os.getpid()}_{int(time.time())}")
+            predictor_path = os.path.abspath("Output/AutoGluonModels")
+            os.makedirs(predictor_path, exist_ok=True)
             # Create predictor (AutoGluon will auto-select the best metric if not specified)
             predictor = TabularPredictor(
                 label=target_col_name,
