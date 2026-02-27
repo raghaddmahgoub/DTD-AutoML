@@ -30,11 +30,10 @@ catboost_info/
 *.pyc
 *.pyo
 *.pyd
+*.csv
 venv/
 .venv/
 
-Output/Preprocessing/train_preprocessed.csv
-Output/Preprocessing/test_preprocessed.csv
-Output/Preprocessing/full_preprocessed.csv
+Output/Preprocessing/*.csv
 Output/Preprocessing/best_pipeline.pkl
 Output/clean/clean_data_frontend_data.json
