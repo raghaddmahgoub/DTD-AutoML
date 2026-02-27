@@ -1,0 +1,67 @@
+{
+  "run_timestamp": "20260227_031646",
+  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "target_column": "Survived",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The dataset exhibits significant multicollinearity, particularly among features like 'PassengerId', 'Name', 'Ticket', and 'Cabin', with many correlations of 1.0. This strongly suggests that these features are acting as unique identifiers rather than generalizable predictive attributes. If treated as standard categorical features, they would lead to an extremely high-dimensional and sparse feature space, making traditional 'Simple Training' models prone to severe overfitting and requiring extensive manual feature engineering (e.g., dropping these identifier columns or applying very specific, cautious encoding strategies). \\n\\nAutoGluon is designed to automatically handle such complexities, including high-cardinality categorical features, by employing advanced feature processing, robust regularization, and ensemble learning techniques. Its ability to intelligently select and combine diverse models makes it highly effective at discerning true predictive signals from noise or identifiers, leading to better generalization performance without manual intervention. The strong, generalizable signals from 'Pclass', 'Sex', 'SibSp', 'Parch', and 'Embarked' can be effectively leveraged by AutoGluon's sophisticated model stacking and hyperparameter optimization.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  }\n}\n```"
+  },
+  "training_results": {
+    "training_method": "AutoGluon",
+    "best_model": "LightGBM_BAG_L1",
+    "best_score": 0.8435087719298245,
+    "metric_name": "score",
+    "models_trained": 4,
+    "all_models": [
+      "LightGBM_BAG_L1",
+      "WeightedEnsemble_L2",
+      "WeightedEnsemble_L2_FULL",
+      "LightGBM_BAG_L1_FULL"
+    ],
+    "all_scores": [
+      0.8435087719298245,
+      0.8435087719298245,
+      NaN,
+      NaN
+    ],
+    "confusion_matrix": [
+      [
+        205,
+        21
+      ],
+      [
+        30,
+        101
+      ]
+    ],
+    "best_params_per_model": {},
+    "optuna_refined_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 180,
+      "preset": "high_quality"
+    }
+  },
+  "agent_messages": [
+    {
+      "agent": "training",
+      "message": "Training complete. Here's a brief interpretation:\n\n1.  **Performance assessment:** The model shows **good** performance with a best score of 0.8435, achieved by a LightGBM ensemble. AutoGluon efficiently identified a strong model with only 4 models trained.\n2.  **Confusion Matrix:** There are slightly more **False Negatives (30)** than False Positives (21), meaning the model more often misses positive cases than incorrectly flags negative ones.\n3.  **Recommendations:** Consider the business impact of False Negatives; if they are more costly, focus on strategies to reduce them (e.g., adjusting class weights, collecting more data for the positive class). Further improvements could involve exploring more advanced AutoGluon settings (e.g., longer training time, deeper ensembles) or targeted feature engineering."
+    }
+  ],
+  "workflow": {
+    "final_step": "model_trained",
+    "error": null
+  }
+}

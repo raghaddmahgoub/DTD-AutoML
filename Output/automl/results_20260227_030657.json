@@ -1,0 +1,67 @@
+{
+  "run_timestamp": "20260227_030657",
+  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "target_column": "Survived",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The task is classification, and while some features like 'Sex' and 'Pclass' show very strong univariate signals, there's extensive multicollinearity, particularly involving highly granular categorical features such as 'PassengerId', 'Name', 'Ticket', and 'Cabin'. Many of these features exhibit 1.0 correlation with each other for individual passenger entries, indicating they act as unique identifiers or highly specific attributes. While some specific categories within 'Age', 'Fare', 'Ticket', and 'Cabin' show strong signals, the overall feature space is complex due to the high cardinality and intricate relationships implied by the multicollinearity. AutoGluon is well-suited for handling such diverse feature types, automatically performing feature engineering, and building robust ensembles that can capture both linear and non-linear patterns, making it a more efficient and potentially higher-performing choice than a simple training approach which would require significant manual feature engineering to address these complexities.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [\"RandomForest\", \"XGBoost\", \"LogisticRegression\"]\n}\n```"
+  },
+  "training_results": {
+    "training_method": "AutoGluon",
+    "best_model": "LightGBM_BAG_L1",
+    "best_score": 0.8435087719298245,
+    "metric_name": "score",
+    "models_trained": 4,
+    "all_models": [
+      "LightGBM_BAG_L1",
+      "WeightedEnsemble_L2",
+      "WeightedEnsemble_L2_FULL",
+      "LightGBM_BAG_L1_FULL"
+    ],
+    "all_scores": [
+      0.8435087719298245,
+      0.8435087719298245,
+      NaN,
+      NaN
+    ],
+    "confusion_matrix": [
+      [
+        205,
+        21
+      ],
+      [
+        30,
+        101
+      ]
+    ],
+    "best_params_per_model": {},
+    "optuna_refined_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 180,
+      "preset": "high_quality"
+    }
+  },
+  "agent_messages": [
+    {
+      "agent": "training",
+      "message": "Training complete. 1.  **Performance Assessment:** The model achieved a good performance with a best score of 0.8435 using LightGBM_BAG_L1, indicating strong predictive capability for an initial AutoML run.\n2.  **Confusion Matrix:** There are more False Negatives (30) than False Positives (21), meaning the model more frequently misses actual positive cases.\n3.  **Recommendations:** To improve, focus on reducing False Negatives by exploring additional feature engineering, collecting more data for the positive class, or adjusting class weights during training if the cost of False Negatives is higher."
+    }
+  ],
+  "workflow": {
+    "final_step": "model_trained",
+    "error": null
+  }
+}

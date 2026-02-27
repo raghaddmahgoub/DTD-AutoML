@@ -135,9 +135,15 @@ class DTDPipeline:
         }
 
         try:
-            # 5. Invoke the AutoMLAgent's internal graph
+                    # 5. Use run() instead of graph.invoke() so _save_outputs() is triggered
             print(f"⏳ Training models for {target_col}...")
-            final_subagent_state = automl_agent_instance.graph.invoke(subagent_initial_state)
+            final_subagent_state = automl_agent_instance.run(
+                data_path         = state['clean_data_path'],
+                target_column     = target_col,
+                output_dir        = "Output/automl",   # JSON + MD + pkl saved here
+                automl_directives = directives,        # pass EDA directives into sub-agent
+                problem_type      = task_type          # pass task type into sub-agent
+            )
 
             # 6. Capture results back into the main orchestrator state
             if final_subagent_state.get('error'):
@@ -145,8 +151,12 @@ class DTDPipeline:
                 print(f"❌ Training failed: {state['error']}")
             else:
                 state['final_metrics'] = final_subagent_state.get('model_metrics')
+                state['saved_files']   = final_subagent_state.get('saved_files', {})
                 print(f"✅ Training complete. Best Model: {state['final_metrics'].get('best_model')}")
                 print(f"📈 Final Score: {state['final_metrics'].get('best_score'):.4f}")
+                print(f"💾 Saved outputs:")
+                for ftype, fpath in state['saved_files'].items():
+                    print(f"   {ftype:10s} → {fpath}")
 
         except Exception as e:
             print(f"❌ Exception in Stage 4: {str(e)}")
