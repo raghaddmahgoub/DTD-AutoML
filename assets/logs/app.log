@@ -3766,3 +3766,40 @@ Feature names seen at fit time, yet now missing:
 === New Run — 2026-02-26 01:59:32 ===
 [2026-02-26 01:59:32] [INFO] [EDA Agent] Starting RAW data analysis...
 [2026-02-26 01:59:32] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+
+
+=== New Run — 2026-02-28 16:03:40 ===
+[2026-02-28 16:03:40] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 16:03:40] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 16:03:40] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 16:03:40] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 16:03:40] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+
+
+=== New Run — 2026-02-28 16:03:55 ===
+[2026-02-28 16:04:01] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 16:04:06] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 16:04:06] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 16:04:06] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+
+
+=== New Run — 2026-02-28 16:04:20 ===
+[2026-02-28 16:04:20] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 16:04:20] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 16:04:20] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 16:04:20] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+
+
+=== New Run — 2026-02-28 16:05:54 ===
+[2026-02-28 16:05:54] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 16:05:54] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 16:05:54] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 16:05:54] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).
+
+
+=== New Run — 2026-02-28 16:06:33 ===
+[2026-02-28 16:06:33] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 16:06:33] [INFO] [EDA Agent] RAW analysis complete. Found 3 warnings.
+[2026-02-28 16:06:33] [WARNING]  - Columns with > 50% missing values detected.
+[2026-02-28 16:06:33] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 16:06:33] [WARNING]  - Target shows class imbalance (majority/minority ≥ 3).

@@ -44,6 +44,7 @@ from agents.eda_agent.eda_agent import EDAAgent
 from agents.eda_agent.eda_agent import TargetInferenceAgent
 import os
 
+
 def run_eda_with_target_resolution(
     df: pd.DataFrame,
     target_column: Optional[str] = None,
@@ -53,23 +54,29 @@ def run_eda_with_target_resolution(
     """
     Resolve target column (user-provided or inferred) and execute EDA.
     """
-
     target_metadata = {
         "source": "user",
         "confidence": 1.0,
         "alternatives": [],
+        "scores": {},
     }
-
     resolved_target = target_column
 
     # --- Infer target if not provided ---
     if target_column is None:
         inference = TargetInferenceAgent(df).run()
-        resolved_target = inference["inferred_target"]
+        resolved_target = inference.get("inferred_target")
+
+        if resolved_target is None:
+            raise ValueError(
+                "TargetInferenceAgent could not infer a valid target column."
+            )
+
         target_metadata = {
             "source": "inferred",
-            "confidence": inference["confidence"],
-            "alternatives": inference["alternatives"],
+            "confidence": inference.get("confidence", 0.0),
+            "alternatives": inference.get("alternatives", []),
+            "scores": inference.get("scores", {}),
         }
 
     # --- Run EDA ---
@@ -78,9 +85,8 @@ def run_eda_with_target_resolution(
         target_column=resolved_target,
         df_name=df_name,
     )
-    report = eda.run(run_type=run_type)
 
-    # --- Attach target provenance (CRITICAL) ---
+    report = eda.run(run_type=run_type)
     report["target_metadata"] = {
         "target_column": resolved_target,
         **target_metadata,
@@ -88,9 +94,10 @@ def run_eda_with_target_resolution(
 
     return report
 
-
-# filename = 'assets/data/Datasets/Regression Datasets/car_prices.csv'
-filename = 'assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
+#filename = 'assets/data/Datasets/Regression Datasets/car_prices.csv'
+#filename = 'assets/data/Datasets/Regression Datasets/Life Expectancy Data.csv'
+#filename = 'R:/GP/assets/data/Datasets/Classification Datasets/Loan Prediction.csv'
+filename = 'R:/GP/assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
 df_name = os.path.splitext(os.path.basename(filename))[0]
 df = pd.read_csv(filename)
 report = run_eda_with_target_resolution(
