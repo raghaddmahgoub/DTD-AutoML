@@ -1,0 +1,36 @@
+{
+  "run_timestamp": "20260228_031621",
+  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "target_column": "sellingprice",
+  "problem_type": "regression",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The primary indicator for choosing AutoGluon is the 'high' skew severity of the target variable ('sellingprice'). High skew often implies that the underlying relationships between features and the target are non-linear or complex, and that simple linear models would likely struggle without extensive manual feature engineering or target transformations. AutoGluon, with its ensemble learning capabilities and diverse model zoo (including tree-based models like GBM and XGBoost, which are robust to skewed targets and non-linearities), is well-suited to automatically discover and leverage these complex patterns to achieve better predictive performance. There's no information suggesting linear signals or a very small dataset that would favor 'Simple Training'.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  }\n}\n```"
+  },
+  "training_results": {
+    "training_method": null,
+    "best_model": null,
+    "best_score": null,
+    "metric_name": "score",
+    "models_trained": null,
+    "all_models": [],
+    "all_scores": [],
+    "confusion_matrix": null,
+    "best_params_per_model": {},
+    "optuna_refined_config": null
+  },
+  "agent_messages": [],
+  "workflow": {
+    "final_step": "error",
+    "error": "Failed to train model: Input y contains NaN."
+  }
+}
