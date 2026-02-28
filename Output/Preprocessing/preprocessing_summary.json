@@ -1,0 +1,75 @@
+{
+  "dataset": "car_prices.csv",
+  "target_column": "sellingprice",
+  "rows": 558837,
+  "features": 70,
+  "numeric_columns": [
+    "year",
+    "condition",
+    "odometer",
+    "mmr"
+  ],
+  "categorical_columns": [
+    "transmission",
+    "interior"
+  ],
+  "label_encoded_columns": [
+    "transmission",
+    "interior"
+  ],
+  "hashed_columns": [
+    "make",
+    "model",
+    "trim",
+    "body",
+    "state",
+    "color",
+    "seller",
+    "saledate"
+  ],
+  "dropped_columns": [
+    "vin"
+  ],
+  "test_size": 0.2,
+  "random_state": 42,
+  "llm": {
+    "enabled": true,
+    "provider": "gemini",
+    "model": "gemini-1.5-flash",
+    "env_var": "GEMINI_API_KEY"
+  },
+  "scaling": {
+    "method": "standard",
+    "means": [
+      2010.038927272174,
+      30.76389895443573,
+      68317.31535850346,
+      13769.274180127659
+    ],
+    "scales": [
+      3.9668600661893976,
+      13.274932517586626,
+      53394.41036225376,
+      9679.637503984119
+    ],
+    "columns": [
+      "year",
+      "condition",
+      "odometer",
+      "mmr"
+    ]
+  },
+  "hashing": {
+    "features": 8,
+    "columns": [
+      "make",
+      "model",
+      "trim",
+      "body",
+      "state",
+      "color",
+      "seller",
+      "saledate"
+    ]
+  }
+}

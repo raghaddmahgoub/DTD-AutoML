@@ -4141,3 +4141,117 @@ Traceback (most recent call last):
     raise ValueError(msg_err)
 ValueError: Input y contains NaN.
 
+
+
+=== New Run — 2026-02-28 02:55:26 ===
+
+
+=== New Run — 2026-02-28 02:56:24 ===
+[2026-02-28 02:56:26] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 02:56:34] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 02:56:34] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 02:56:34] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 02:56:34] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 02:57:58] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 02:58:20] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-02-28 02:58:20] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 02:58:20] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 02:58:20] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 02:58:20] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 02:58:20] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+
+
+=== New Run — 2026-02-28 02:58:50 ===
+
+
+=== New Run — 2026-02-28 02:58:58 ===
+[2026-02-28 02:59:01] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-02-28 02:59:15] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-02-28 02:59:15] [WARNING]  - High-cardinality categoricals detected.
+[2026-02-28 02:59:15] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 02:59:15] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-02-28 03:00:21] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-02-28 03:00:43] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-02-28 03:00:43] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-02-28 03:00:43] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-02-28 03:00:43] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-02-28 03:00:43] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-02-28 03:00:43] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-02-28 03:00:52] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-02-28 03:00:55] [INFO] Data loaded successfully. Shape: (558837, 71)
+[2026-02-28 03:00:55] [INFO] Identifying target column
+[2026-02-28 03:00:55] [INFO] Target column identified: sellingprice, Problem type: regression
+[2026-02-28 03:00:55] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-02-28 03:01:02] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-02-28 03:01:10] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-02-28 03:01:11] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-02-28 03:01:11] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-02-28 03:01:11] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-02-28 03:01:18] [WARNING] [Optuna+AutoGluon] Trial 0 failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 543129
+[2026-02-28 03:01:19] [WARNING] [Optuna+AutoGluon] Trial 1 failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 543129
+[2026-02-28 03:01:20] [WARNING] [Optuna+AutoGluon] Trial 2 failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 543129
+[2026-02-28 03:01:20] [WARNING] [Optuna+AutoGluon] Trial 3 failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 543129
+[2026-02-28 03:01:21] [WARNING] [Optuna+AutoGluon] Trial 4 failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 543129
+[2026-02-28 03:01:21] [WARNING] [Optuna+AutoGluon] Trial 5 failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 543129
+[2026-02-28 03:01:22] [WARNING] [Optuna+AutoGluon] Trial 6 failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 543129
+[2026-02-28 03:01:23] [WARNING] [Optuna+AutoGluon] Trial 7 failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 543129
+[2026-02-28 03:01:23] [WARNING] [Optuna+AutoGluon] Trial 8 failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 543129
+[2026-02-28 03:01:24] [WARNING] [Optuna+AutoGluon] Trial 9 failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 543129
+[2026-02-28 03:01:24] [INFO] [Optuna+AutoGluon] Best config found: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 03:01:24] [INFO] [Optuna+AutoGluon] Best score: -inf
+[2026-02-28 03:01:24] [INFO] [Training Agent] Refined config from Optuna: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 03:01:24] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-02-28 03:01:24] [INFO] Training AutoGluon with models: ['GBM'], time_limit: 270s, preset: medium_quality...
+[2026-02-28 03:01:24] [WARNING] AutoGluon training failed: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 457035, falling back to simple training...
+[2026-02-28 03:01:26] [INFO] Training simple models with Optuna HPO: ['GBM']
+[2026-02-28 03:01:26] [INFO] [Optuna] Tuning GBM ...
+[2026-02-28 03:01:26] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-02-28 03:01:26] [WARNING] Failed to tune GBM: Input y contains NaN.
+[2026-02-28 03:01:26] [WARNING] All selected models failed — falling back to default RandomForest
+[2026-02-28 03:01:26] [ERROR] [Training Agent] Error: Input y contains NaN.
+Traceback (most recent call last):
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 825, in _train_with_autogluon
+    predictor.fit(train_data, **fit_kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\common\utils\decorators.py", line 34, in _call
+    return f(*gargs, **gkwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\predictor\predictor.py", line 1412, in fit
+    self._fit(ag_fit_kwargs=ag_fit_kwargs, ag_post_fit_kwargs=ag_post_fit_kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\predictor\predictor.py", line 1418, in _fit
+    self._learner.fit(**ag_fit_kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\learner\abstract_learner.py", line 159, in fit
+    return self._fit(X=X, X_val=X_val, **kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\learner\default_learner.py", line 95, in _fit
+    X, y, X_val, y_val, X_test, y_test, X_unlabeled, holdout_frac, num_bag_folds, groups = self.general_data_processing(
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\learner\default_learner.py", line 205, in general_data_processing
+    X = self._check_for_non_finite_values(X, name="train", is_train=True)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\autogluon\tabular\learner\default_learner.py", line 356, in _check_for_non_finite_values
+    raise ValueError(
+ValueError: train dataset label column cannot contain non-finite values (NaN, Inf, Ninf). First invalid label at data idx: 457035
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 462, in training_agent
+    trained_model, metrics = self._train_with_autogluon(
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 863, in _train_with_autogluon
+    return self._train_simple_models(X, y, problem_type, [fallback_models[0]] if fallback_models else ['RandomForest'])
+  File "D:\Codes\GP\GP code\agents\automl_agent\automl_agent.py", line 1255, in _train_simple_models
+    best_model.fit(X_train, y_train)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\base.py", line 1365, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\ensemble\_forest.py", line 359, in fit
+    X, y = validate_data(
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 2971, in validate_data
+    X, y = check_X_y(X, y, **check_params)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 1385, in check_X_y
+    y = _check_y(y, multi_output=multi_output, y_numeric=y_numeric, estimator=estimator)
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 1395, in _check_y
+    y = check_array(
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 1105, in check_array
+    _assert_all_finite(
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 120, in _assert_all_finite
+    _assert_all_finite_element_wise(
+  File "D:\Codes\GP\GP code\venv\lib\site-packages\sklearn\utils\validation.py", line 169, in _assert_all_finite_element_wise
+    raise ValueError(msg_err)
+ValueError: Input y contains NaN.
+
