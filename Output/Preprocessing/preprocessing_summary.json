@@ -1,26 +1,32 @@
 {
-  "dataset": "California Housing Prices.csv",
-  "target_column": "median_house_value",
-  "rows": 41281,
-  "features": 57,
+  "dataset": "1772321330530.csv",
+  "target_column": "Survived",
+  "rows": 1782,
+  "features": 21,
   "numeric_columns": [],
   "categorical_columns": [
-    "ocean_proximity"
+    "Pclass",
+    "Sex",
+    "SibSp",
+    "Parch",
+    "Embarked"
   ],
   "label_encoded_columns": [
-    "ocean_proximity"
+    "Pclass",
+    "Sex",
+    "SibSp",
+    "Parch",
+    "Embarked"
   ],
   "hashed_columns": [
-    "longitude",
-    "latitude",
-    "housing_median_age",
-    "total_rooms",
-    "total_bedrooms",
-    "population",
-    "households"
+    "Age",
+    "Fare"
   ],
   "dropped_columns": [
-    "median_income"
+    "PassengerId",
+    "Name",
+    "Ticket",
+    "Cabin"
   ],
   "test_size": 0.2,
   "random_state": 42,
@@ -39,13 +45,8 @@
   "hashing": {
     "features": 8,
     "columns": [
-      "longitude",
-      "latitude",
-      "housing_median_age",
-      "total_rooms",
-      "total_bedrooms",
-      "population",
-      "households"
+      "Age",
+      "Fare"
     ]
   }
 }

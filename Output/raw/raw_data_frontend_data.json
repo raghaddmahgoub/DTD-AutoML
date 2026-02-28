@@ -1,34 +1,36 @@
 {
   "metadata": {
     "df_name": "raw_data",
-    "timestamp": "2026-02-28T17:49:42.657400",
+    "timestamp": "2026-03-01T01:28:52.716091",
     "run_type": "raw"
   },
   "report": {
     "run_type": "raw",
     "dataset_summary": {
-      "n_rows": 41281,
-      "n_columns": 10,
+      "n_rows": 1783,
+      "n_columns": 12,
       "column_types": {
         "numerical": [],
         "categorical": [
-          "longitude",
-          "latitude",
-          "housing_median_age",
-          "total_rooms",
-          "total_bedrooms",
-          "population",
-          "households",
-          "median_income",
-          "median_house_value",
-          "ocean_proximity"
+          "PassengerId",
+          "Survived",
+          "Pclass",
+          "Name",
+          "Sex",
+          "Age",
+          "SibSp",
+          "Parch",
+          "Ticket",
+          "Fare",
+          "Cabin",
+          "Embarked"
         ],
         "datetime": [],
         "boolean": []
       },
-      "memory_usage_mb": 24.75,
-      "duplicate_rows": 20640,
-      "target_column": "median_house_value",
+      "memory_usage_mb": 1.21,
+      "duplicate_rows": 891,
+      "target_column": "Survived",
       "target_dtype": "object"
     },
     "feature_scale_analysis": {
@@ -37,198 +39,234 @@
       "approximately_standard_scale_features": []
     },
     "column_profiles": {
-      "longitude": {
+      "PassengerId": {
         "data_type": "categorical",
         "dtype": "object",
         "missing_count": 0,
         "missing_ratio": 0.0,
-        "unique_count": 845,
+        "unique_count": 892,
         "is_unique_per_row": false,
         "top_values": {
-          "-118.31": 324,
-          "-118.3": 320,
-          "-118.29": 296,
-          "-118.27": 288,
-          "-118.32": 284
+          "891": 2,
+          "1": 2,
+          "2": 2,
+          "3": 2,
+          "4": 2
         },
-        "is_high_cardinality": false
+        "is_high_cardinality": true
       },
-      "latitude": {
+      "Survived": {
         "data_type": "categorical",
         "dtype": "object",
         "missing_count": 0,
         "missing_ratio": 0.0,
-        "unique_count": 863,
+        "unique_count": 3,
         "is_unique_per_row": false,
         "top_values": {
-          "34.06": 488,
-          "34.05": 472,
-          "34.08": 468,
-          "34.07": 462,
-          "34.04": 442
+          "0": 1098,
+          "1": 684,
+          "Survived": 1
         },
         "is_high_cardinality": false
       },
-      "housing_median_age": {
+      "Pclass": {
         "data_type": "categorical",
         "dtype": "object",
         "missing_count": 0,
         "missing_ratio": 0.0,
-        "unique_count": 53,
+        "unique_count": 4,
         "is_unique_per_row": false,
         "top_values": {
-          "52.0": 2546,
-          "36.0": 1724,
-          "35.0": 1648,
-          "16.0": 1542,
-          "17.0": 1396
+          "3": 982,
+          "1": 432,
+          "2": 368,
+          "Pclass": 1
         },
         "is_high_cardinality": false
       },
-      "total_rooms": {
+      "Name": {
         "data_type": "categorical",
         "dtype": "object",
         "missing_count": 0,
         "missing_ratio": 0.0,
-        "unique_count": 5927,
+        "unique_count": 892,
         "is_unique_per_row": false,
         "top_values": {
-          "1527.0": 36,
-          "1582.0": 34,
-          "1613.0": 34,
-          "2127.0": 32,
-          "1607.0": 30
+          "Dooley, Mr. Patrick": 2,
+          "Braund, Mr. Owen Harris": 2,
+          "Cumings, Mrs. John Bradley (Florence Briggs Thayer)": 2,
+          "Heikkinen, Miss. Laina": 2,
+          "Futrelle, Mrs. Jacques Heath (Lily May Peel)": 2
         },
-        "is_high_cardinality": false
+        "is_high_cardinality": true
       },
-      "total_bedrooms": {
-        "data_type": "categorical",
-        "dtype": "object",
-        "missing_count": 414,
-        "missing_ratio": 0.01,
-        "unique_count": 1924,
-        "is_unique_per_row": false,
-        "top_values": {
-          "280.0": 110,
-          "331.0": 102,
-          "345.0": 100,
-          "343.0": 98,
-          "393.0": 98
-        },
-        "is_high_cardinality": false
-      },
-      "population": {
+      "Sex": {
         "data_type": "categorical",
         "dtype": "object",
         "missing_count": 0,
         "missing_ratio": 0.0,
-        "unique_count": 3889,
+        "unique_count": 3,
         "is_unique_per_row": false,
         "top_values": {
-          "891.0": 50,
-          "1052.0": 48,
-          "850.0": 48,
-          "1227.0": 48,
-          "761.0": 48
+          "male": 1154,
+          "female": 628,
+          "Sex": 1
         },
         "is_high_cardinality": false
       },
-      "households": {
+      "Age": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 354,
+        "missing_ratio": 0.1985,
+        "unique_count": 89,
+        "is_unique_per_row": false,
+        "top_values": {
+          "24": 60,
+          "22": 54,
+          "18": 52,
+          "19": 50,
+          "28": 50
+        },
+        "is_high_cardinality": false
+      },
+      "SibSp": {
         "data_type": "categorical",
         "dtype": "object",
         "missing_count": 0,
         "missing_ratio": 0.0,
-        "unique_count": 1816,
+        "unique_count": 8,
         "is_unique_per_row": false,
         "top_values": {
-          "306.0": 114,
-          "386.0": 112,
-          "335.0": 112,
-          "282.0": 110,
-          "429.0": 108
+          "0": 1216,
+          "1": 418,
+          "2": 56,
+          "4": 36,
+          "3": 32
         },
         "is_high_cardinality": false
       },
-      "median_income": {
+      "Parch": {
         "data_type": "categorical",
         "dtype": "object",
         "missing_count": 0,
         "missing_ratio": 0.0,
-        "unique_count": 12929,
+        "unique_count": 8,
         "is_unique_per_row": false,
         "top_values": {
-          "3.125": 98,
-          "15.0001": 98,
-          "2.875": 92,
-          "4.125": 88,
-          "2.625": 88
+          "0": 1356,
+          "1": 236,
+          "2": 160,
+          "5": 10,
+          "3": 10
         },
         "is_high_cardinality": false
       },
-      "median_house_value": {
+      "Ticket": {
         "data_type": "categorical",
         "dtype": "object",
         "missing_count": 0,
         "missing_ratio": 0.0,
-        "unique_count": 3843,
+        "unique_count": 682,
         "is_unique_per_row": false,
         "top_values": {
-          "500001.0": 1930,
-          "137500.0": 244,
-          "162500.0": 234,
-          "112500.0": 206,
-          "187500.0": 186
+          "347082": 14,
+          "1601": 14,
+          "CA. 2343": 14,
+          "3101295": 12,
+          "CA 2144": 12
         },
         "is_high_cardinality": false
       },
-      "ocean_proximity": {
+      "Fare": {
         "data_type": "categorical",
         "dtype": "object",
         "missing_count": 0,
         "missing_ratio": 0.0,
-        "unique_count": 6,
+        "unique_count": 249,
         "is_unique_per_row": false,
         "top_values": {
-          "<1H OCEAN": 18272,
-          "INLAND": 13102,
-          "NEAR OCEAN": 5316,
-          "NEAR BAY": 4580,
-          "ISLAND": 10
+          "8.05": 86,
+          "13": 84,
+          "7.8958": 76,
+          "7.75": 68,
+          "26": 62
+        },
+        "is_high_cardinality": false
+      },
+      "Cabin": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 1374,
+        "missing_ratio": 0.7706,
+        "unique_count": 148,
+        "is_unique_per_row": false,
+        "top_values": {
+          "G6": 8,
+          "C23 C25 C27": 8,
+          "B96 B98": 8,
+          "F33": 6,
+          "F2": 6
+        },
+        "is_high_cardinality": false
+      },
+      "Embarked": {
+        "data_type": "categorical",
+        "dtype": "object",
+        "missing_count": 4,
+        "missing_ratio": 0.0022,
+        "unique_count": 4,
+        "is_unique_per_row": false,
+        "top_values": {
+          "S": 1288,
+          "C": 336,
+          "Q": 154,
+          "Embarked": 1
         },
         "is_high_cardinality": false
       }
     },
     "target_analysis": {
-      "column": "median_house_value",
+      "column": "Survived",
       "dtype": "float64",
-      "task_type": "regression",
-      "mean": 206855.8169,
-      "std": 115394.2181,
-      "variance": 13315825574.112,
-      "min": 14999.0,
-      "max": 500001.0,
-      "range": 485002.0,
-      "skewness": 0.9777,
-      "skew_severity": "moderate",
-      "kurtosis": 0.3277,
-      "outlier_ratio_iqr": 0.0519,
-      "heavy_tailed": false,
-      "low_variance_target": false
+      "task_type": "classification",
+      "n_classes": 2,
+      "is_binary": true,
+      "class_distribution": {
+        "0.0": 0.6162,
+        "1.0": 0.3838
+      },
+      "minority_class_ratio": 0.3838,
+      "majority_class_ratio": 0.6162,
+      "imbalance_ratio": 1.61,
+      "imbalance_severity": "none",
+      "target_entropy": 0.9607,
+      "min_samples_per_class": 684,
+      "requires_stratification": true,
+      "rare_class_risk": false
     },
     "data_quality_report": {
       "missing_values": {
-        "total_missing_cells": 414,
+        "total_missing_cells": 1732,
         "columns_with_missing": {
-          "total_bedrooms": {
-            "missing_count": 414,
-            "missing_ratio": 0.01
+          "Age": {
+            "missing_count": 354,
+            "missing_ratio": 0.1985
+          },
+          "Cabin": {
+            "missing_count": 1374,
+            "missing_ratio": 0.7706
+          },
+          "Embarked": {
+            "missing_count": 4,
+            "missing_ratio": 0.0022
           }
         },
-        "n_columns_with_missing": 1
+        "n_columns_with_missing": 3
       },
       "duplicates": {
-        "duplicate_row_count": 20640,
-        "duplicate_ratio": 0.5
+        "duplicate_row_count": 891,
+        "duplicate_ratio": 0.4997
       },
       "low_variance_columns": {
         "constant_columns": [],
@@ -245,103 +283,140 @@
         "target_type": "categorical",
         "group_means": {},
         "cramers_v": {
-          "longitude": 0.0,
-          "latitude": 0.0,
-          "housing_median_age": 0.0,
-          "total_rooms": 0.0,
-          "total_bedrooms": 0.0,
-          "population": 0.0,
-          "households": 0.0,
-          "median_income": 0.0,
-          "ocean_proximity": 0.629
+          "PassengerId": 0.0,
+          "Pclass": 0.747,
+          "Name": 0.0,
+          "Sex": 0.805,
+          "Age": 0.0,
+          "SibSp": 0.722,
+          "Parch": 0.718,
+          "Ticket": 0.0,
+          "Fare": 0.0,
+          "Cabin": 0.0,
+          "Embarked": 0.718
         }
       }
     },
-    "eda_warnings": [],
-    "total_feature_count": 9,
+    "eda_warnings": [
+      {
+        "type": "high_missingness",
+        "columns": [
+          "Cabin"
+        ],
+        "message": "Columns with > 50% missing values detected."
+      },
+      {
+        "type": "high_cardinality_categoricals",
+        "columns": [
+          "PassengerId",
+          "Name"
+        ],
+        "message": "High-cardinality categoricals detected."
+      }
+    ],
+    "total_feature_count": 11,
     "multicollinearity": {
       "threshold": 0.7,
       "pairs": []
     },
     "signal_analysis": {
-      "regression_feature_analysis": {
-        "linear_signal_strength": {},
-        "non_linear_candidates": []
+      "classification_feature_analysis": {
+        "univariate_class_signal": {}
       }
     }
   },
   "visualizations": {
     "missing_values_chart": [
       {
-        "column": "total_bedrooms",
-        "count": 414,
-        "ratio": 0.01
+        "column": "Age",
+        "count": 354,
+        "ratio": 0.1985
+      },
+      {
+        "column": "Cabin",
+        "count": 1374,
+        "ratio": 0.7706
+      },
+      {
+        "column": "Embarked",
+        "count": 4,
+        "ratio": 0.0022
       }
     ],
     "numeric_distributions": {},
     "categorical_distributions": {
-      "longitude": {
-        "-118.31": 324,
-        "-118.3": 320,
-        "-118.29": 296,
-        "-118.27": 288,
-        "-118.32": 284
+      "PassengerId": {
+        "891": 2,
+        "1": 2,
+        "2": 2,
+        "3": 2,
+        "4": 2
       },
-      "latitude": {
-        "34.06": 488,
-        "34.05": 472,
-        "34.08": 468,
-        "34.07": 462,
-        "34.04": 442
+      "Pclass": {
+        "3": 982,
+        "1": 432,
+        "2": 368,
+        "Pclass": 1
       },
-      "housing_median_age": {
-        "52.0": 2546,
-        "36.0": 1724,
-        "35.0": 1648,
-        "16.0": 1542,
-        "17.0": 1396
+      "Name": {
+        "Dooley, Mr. Patrick": 2,
+        "Braund, Mr. Owen Harris": 2,
+        "Cumings, Mrs. John Bradley (Florence Briggs Thayer)": 2,
+        "Heikkinen, Miss. Laina": 2,
+        "Futrelle, Mrs. Jacques Heath (Lily May Peel)": 2
       },
-      "total_rooms": {
-        "1527.0": 36,
-        "1582.0": 34,
-        "1613.0": 34,
-        "2127.0": 32,
-        "1607.0": 30
+      "Sex": {
+        "male": 1154,
+        "female": 628,
+        "Sex": 1
       },
-      "total_bedrooms": {
-        "280.0": 110,
-        "331.0": 102,
-        "345.0": 100,
-        "343.0": 98,
-        "393.0": 98
+      "Age": {
+        "24": 60,
+        "22": 54,
+        "18": 52,
+        "19": 50,
+        "28": 50
       },
-      "population": {
-        "891.0": 50,
-        "1052.0": 48,
-        "850.0": 48,
-        "1227.0": 48,
-        "761.0": 48
+      "SibSp": {
+        "0": 1216,
+        "1": 418,
+        "2": 56,
+        "4": 36,
+        "3": 32
       },
-      "households": {
-        "306.0": 114,
-        "386.0": 112,
-        "335.0": 112,
-        "282.0": 110,
-        "429.0": 108
+      "Parch": {
+        "0": 1356,
+        "1": 236,
+        "2": 160,
+        "5": 10,
+        "3": 10
       },
-      "median_income": {
-        "3.125": 98,
-        "15.0001": 98,
-        "2.875": 92,
-        "4.125": 88,
-        "2.625": 88
+      "Ticket": {
+        "347082": 14,
+        "1601": 14,
+        "CA. 2343": 14,
+        "3101295": 12,
+        "CA 2144": 12
       },
-      "ocean_proximity": {
-        "<1H OCEAN": 18272,
-        "INLAND": 13102,
-        "NEAR OCEAN": 5316,
-        "NEAR BAY": 4580,
-        "ISLAND": 10
+      "Fare": {
+        "8.05": 86,
+        "13": 84,
+        "7.8958": 76,
+        "7.75": 68,
+        "26": 62
+      },
+      "Cabin": {
+        "G6": 8,
+        "C23 C25 C27": 8,
+        "B96 B98": 8,
+        "F33": 6,
+        "F2": 6
+      },
+      "Embarked": {
+        "S": 1288,
+        "C": 336,
+        "Q": 154,
+        "Embarked": 1
       }
     },
     "correlation_matrix": null

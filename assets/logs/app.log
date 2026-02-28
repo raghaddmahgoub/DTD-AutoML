@@ -4737,3 +4737,295 @@ ValueError: Unknown label type: unknown. Maybe you are trying to fit a classifie
 [2026-02-28 17:52:33] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260228_175233.md
 [2026-02-28 17:52:33] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260228_175233.pkl
 [2026-02-28 17:52:33] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-02-28 23:15:33 ===
+
+
+=== New Run — 2026-02-28 23:15:41 ===
+
+
+=== New Run — 2026-03-01 00:31:40 ===
+
+
+=== New Run — 2026-03-01 00:32:28 ===
+
+
+=== New Run — 2026-03-01 00:37:23 ===
+
+
+=== New Run — 2026-03-01 00:37:31 ===
+
+
+=== New Run — 2026-03-01 00:39:21 ===
+
+
+=== New Run — 2026-03-01 00:39:29 ===
+[2026-03-01 00:39:46] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-01 00:39:46] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-03-01 00:39:46] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-01 00:39:46] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-01 00:39:46] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-03-01 00:40:46] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-01 00:40:47] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-03-01 00:40:47] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-01 00:40:47] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-01 00:40:47] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-03-01 00:40:48] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-03-01 00:40:48] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-03-01 00:40:48] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-01 00:40:48] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-01 00:40:48] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-03-01 00:40:48] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-03-01 00:40:48] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-03-01 00:40:49] [INFO] Starting AutoML agent workflow
+[2026-03-01 00:40:49] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-03-01 00:40:49] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-03-01 00:40:49] [INFO] Identifying target column
+[2026-03-01 00:40:49] [INFO] Problem type pre-set by orchestrator: classification
+[2026-03-01 00:40:49] [INFO] Target column: Survived, Problem type: classification
+[2026-03-01 00:40:49] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-03-01 00:40:54] [INFO] [Training Agent] Executing AutoGluon training strategy
+[2026-03-01 00:41:30] [INFO] [Training Agent] Running Optuna HPO to refine AutoGluon config...
+[2026-03-01 00:41:33] [INFO] [Optuna+AutoGluon] Starting 10 trials over config space
+[2026-03-01 00:41:33] [INFO] [Optuna+AutoGluon] LLM base config: {'models': ['GBM', 'XGB'], 'time_limit': 300, 'preset': 'best_quality'}
+[2026-03-01 00:41:33] [INFO] [Optuna+AutoGluon] Model subsets to explore: [['GBM'], ['XGB'], ['GBM', 'XGB']]
+[2026-03-01 00:41:50] [INFO] [Optuna+AutoGluon] Trial 0: preset=medium_quality, time=270s, models=['GBM'] → score=0.8811
+[2026-03-01 00:42:22] [WARNING] [Optuna+AutoGluon] Trial 1 failed: path is on mount 'D:', start on mount 'C:'
+[2026-03-01 00:42:27] [INFO] [Optuna+AutoGluon] Trial 2: preset=medium_quality, time=150s, models=['GBM'] → score=0.8811
+[2026-03-01 00:43:09] [WARNING] [Optuna+AutoGluon] Trial 3 failed: path is on mount 'D:', start on mount 'C:'
+[2026-03-01 00:43:22] [WARNING] [Optuna+AutoGluon] Trial 4 failed: path is on mount 'D:', start on mount 'C:'
+[2026-03-01 00:43:38] [WARNING] [Optuna+AutoGluon] Trial 5 failed: path is on mount 'D:', start on mount 'C:'
+[2026-03-01 00:44:12] [WARNING] [Optuna+AutoGluon] Trial 6 failed: path is on mount 'D:', start on mount 'C:'
+[2026-03-01 00:44:25] [WARNING] [Optuna+AutoGluon] Trial 7 failed: path is on mount 'D:', start on mount 'C:'
+[2026-03-01 00:44:44] [WARNING] [Optuna+AutoGluon] Trial 8 failed: path is on mount 'D:', start on mount 'C:'
+[2026-03-01 00:45:04] [WARNING] [Optuna+AutoGluon] Trial 9 failed: path is on mount 'D:', start on mount 'C:'
+[2026-03-01 00:45:04] [INFO] [Optuna+AutoGluon] Best config found: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-03-01 00:45:04] [INFO] [Optuna+AutoGluon] Best score: 0.8811
+[2026-03-01 00:45:04] [INFO] [Training Agent] Refined config from Optuna: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-03-01 00:45:04] [INFO] Initializing AutoGluon predictor with config: {'models': ['GBM'], 'time_limit': 270, 'preset': 'medium_quality'}
+[2026-03-01 00:45:04] [INFO] Mapped 'classification' to 'multiclass' (3 classes)
+[2026-03-01 00:45:04] [WARNING] AutoGluon training failed: 'AutoMLAgent' object has no attribute 'dataset_path', falling back to simple training...
+[2026-03-01 00:45:05] [INFO] Training simple models with Optuna HPO: ['GBM']
+[2026-03-01 00:45:05] [INFO] [Optuna] Tuning GBM ...
+[2026-03-01 00:45:05] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:06] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:06] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:07] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:07] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:08] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:08] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:08] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:09] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:10] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:10] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:11] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:11] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:11] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:12] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:12] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:13] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:13] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:13] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:14] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:14] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:15] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:16] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:16] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:16] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:17] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:18] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:18] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:18] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:19] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:19] [WARNING] Unknown model 'GBM', falling back to RandomForest
+[2026-03-01 00:45:20] [INFO] [Optuna] GBM → best params: {}
+[2026-03-01 00:45:20] [INFO] [Optuna] GBM → accuracy: 0.9021
+[2026-03-01 00:45:20] [INFO] Best model: GBM with accuracy: 0.9021
+[2026-03-01 00:45:20] [INFO] [Training Agent] Confusion Matrix generated: [[203, 22], [17, 115]]
+[2026-03-01 00:45:58] [INFO] [Training Agent] Training complete. Score: 0.9021
+[2026-03-01 00:45:58] [INFO] Workflow completed successfully!
+[2026-03-01 00:45:58] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260301_004558.json
+[2026-03-01 00:45:58] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260301_004558.md
+[2026-03-01 00:45:58] [INFO] [Save Outputs] AutoGluon predictor path pickled → Output\automl\best_model_20260301_004558.pkl
+[2026-03-01 00:45:58] [INFO] [Save Outputs] To reload: TabularPredictor.load('None')
+[2026-03-01 00:45:58] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-03-01 00:45:58] [INFO] [Save Outputs]   json       → Output\automl\results_20260301_004558.json
+[2026-03-01 00:45:58] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260301_004558.md
+[2026-03-01 00:45:58] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260301_004558.pkl
+[2026-03-01 00:45:58] [INFO] [Save Outputs] ─────────────────────────────────────
+[2026-03-01 00:54:28] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-01 00:54:29] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-03-01 00:54:29] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-01 00:54:29] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-01 00:54:29] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-03-01 00:54:29] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-03-01 00:54:30] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-03-01 00:54:30] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-01 00:54:30] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-01 00:54:30] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-03-01 00:54:30] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-03-01 00:54:30] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-03-01 00:54:30] [INFO] Starting AutoML agent workflow
+[2026-03-01 00:54:30] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-03-01 00:54:30] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-03-01 00:54:30] [INFO] Identifying target column
+[2026-03-01 00:54:30] [INFO] Problem type pre-set by orchestrator: classification
+[2026-03-01 00:54:30] [INFO] Target column: Survived, Problem type: classification
+[2026-03-01 00:54:30] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-03-01 00:55:06] [ERROR] [Model Selection Agent] Error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 29.278990418s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.5-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '29s'}]}}
+[2026-03-01 00:55:06] [INFO] [Training Agent] Executing simple training strategy
+[2026-03-01 00:55:06] [INFO] Training simple models with Optuna HPO: ['RandomForest']
+[2026-03-01 00:55:06] [INFO] [Optuna] Tuning RandomForest ...
+[2026-03-01 00:55:46] [INFO] [Optuna] RandomForest → best params: {'n_estimators': 442, 'max_depth': 12, 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt'}
+[2026-03-01 00:55:46] [INFO] [Optuna] RandomForest → accuracy: 0.8916
+[2026-03-01 00:55:46] [INFO] Best model: RandomForest with accuracy: 0.8916
+[2026-03-01 00:55:46] [INFO] [Training Agent] Confusion Matrix generated: [[208, 17], [25, 107]]
+[2026-03-01 00:56:22] [WARNING] Could not get LLM interpretation: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 13.04074327s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '13s'}]}}
+[2026-03-01 00:56:22] [INFO] [Training Agent] Training complete. Score: 0.8916
+[2026-03-01 00:56:22] [ERROR] Workflow completed with error: Failed in model selection: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 29.278990418s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.5-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '29s'}]}}
+[2026-03-01 00:56:22] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260301_005622.json
+[2026-03-01 00:56:22] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260301_005622.md
+[2026-03-01 00:56:22] [INFO] [Save Outputs] Sklearn model pickled → Output\automl\best_model_20260301_005622.pkl
+[2026-03-01 00:56:22] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-03-01 00:56:22] [INFO] [Save Outputs]   json       → Output\automl\results_20260301_005622.json
+[2026-03-01 00:56:22] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260301_005622.md
+[2026-03-01 00:56:22] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260301_005622.pkl
+[2026-03-01 00:56:22] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-03-01 00:58:17 ===
+
+
+=== New Run — 2026-03-01 00:58:25 ===
+[2026-03-01 00:58:51] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-01 00:58:51] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-03-01 00:58:51] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-01 00:58:51] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-01 00:58:51] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-03-01 00:58:52] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-03-01 00:58:52] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-03-01 00:58:52] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-01 00:58:52] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-01 00:58:52] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-03-01 00:58:52] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-03-01 00:58:52] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-03-01 00:58:53] [INFO] Starting AutoML agent workflow
+[2026-03-01 00:58:53] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-03-01 00:58:53] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-03-01 00:58:53] [INFO] Identifying target column
+[2026-03-01 00:58:53] [INFO] Problem type pre-set by orchestrator: classification
+[2026-03-01 00:58:53] [INFO] Target column: Survived, Problem type: classification
+[2026-03-01 00:58:53] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-03-01 00:59:29] [ERROR] [Model Selection Agent] Error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 6.153279333s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '6s'}]}}
+[2026-03-01 00:59:29] [INFO] [Training Agent] Executing simple training strategy
+[2026-03-01 00:59:30] [INFO] Training simple models with Optuna HPO: ['RandomForest']
+[2026-03-01 00:59:30] [INFO] [Optuna] Tuning RandomForest ...
+[2026-03-01 01:00:21] [INFO] [Optuna] RandomForest → best params: {'n_estimators': 442, 'max_depth': 12, 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt'}
+[2026-03-01 01:00:21] [INFO] [Optuna] RandomForest → accuracy: 0.8916
+[2026-03-01 01:00:21] [INFO] Best model: RandomForest with accuracy: 0.8916
+[2026-03-01 01:00:21] [INFO] [Training Agent] Confusion Matrix generated: [[208, 17], [25, 107]]
+[2026-03-01 01:00:57] [WARNING] Could not get LLM interpretation: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 38.199032214s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.5-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '38s'}]}}
+[2026-03-01 01:00:57] [INFO] [Training Agent] Training complete. Score: 0.8916
+[2026-03-01 01:00:57] [ERROR] Workflow completed with error: Failed in model selection: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 6.153279333s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '6s'}]}}
+[2026-03-01 01:00:57] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260301_010057.json
+[2026-03-01 01:00:57] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260301_010057.md
+[2026-03-01 01:00:57] [INFO] [Save Outputs] Sklearn model pickled → Output\automl\best_model_20260301_010057.pkl
+[2026-03-01 01:00:57] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-03-01 01:00:57] [INFO] [Save Outputs]   json       → Output\automl\results_20260301_010057.json
+[2026-03-01 01:00:57] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260301_010057.md
+[2026-03-01 01:00:57] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260301_010057.pkl
+[2026-03-01 01:00:57] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-03-01 01:06:45 ===
+
+
+=== New Run — 2026-03-01 01:06:54 ===
+[2026-03-01 01:15:39] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-01 01:15:40] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-03-01 01:15:40] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-01 01:15:40] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-01 01:15:40] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-03-01 01:17:59] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-01 01:18:00] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-03-01 01:18:00] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-01 01:18:00] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-01 01:18:00] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-03-01 01:18:01] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-03-01 01:18:01] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-03-01 01:18:01] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-01 01:18:01] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-01 01:18:01] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-03-01 01:18:01] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-03-01 01:18:01] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-03-01 01:18:02] [INFO] Starting AutoML agent workflow
+[2026-03-01 01:18:02] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-03-01 01:18:02] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-03-01 01:18:02] [INFO] Identifying target column
+[2026-03-01 01:18:02] [INFO] Problem type pre-set by orchestrator: classification
+[2026-03-01 01:18:02] [INFO] Target column: Survived, Problem type: classification
+[2026-03-01 01:18:02] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-03-01 01:18:41] [ERROR] [Model Selection Agent] Error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 55.106286779s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '55s'}]}}
+[2026-03-01 01:18:41] [INFO] [Training Agent] Executing simple training strategy
+[2026-03-01 01:18:43] [INFO] Training simple models with Optuna HPO: ['RandomForest']
+[2026-03-01 01:18:43] [INFO] [Optuna] Tuning RandomForest ...
+[2026-03-01 01:19:45] [INFO] [Optuna] RandomForest → best params: {'n_estimators': 442, 'max_depth': 12, 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt'}
+[2026-03-01 01:19:45] [INFO] [Optuna] RandomForest → accuracy: 0.8916
+[2026-03-01 01:19:45] [INFO] Best model: RandomForest with accuracy: 0.8916
+[2026-03-01 01:19:46] [INFO] [Training Agent] Confusion Matrix generated: [[208, 17], [25, 107]]
+[2026-03-01 01:20:23] [WARNING] Could not get LLM interpretation: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 12.678252554s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.5-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '12s'}]}}
+[2026-03-01 01:20:23] [INFO] [Training Agent] Training complete. Score: 0.8916
+[2026-03-01 01:20:23] [ERROR] Workflow completed with error: Failed in model selection: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 55.106286779s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '55s'}]}}
+[2026-03-01 01:20:23] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260301_012023.json
+[2026-03-01 01:20:23] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260301_012023.md
+[2026-03-01 01:20:23] [INFO] [Save Outputs] Sklearn model pickled → Output\automl\best_model_20260301_012023.pkl
+[2026-03-01 01:20:23] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-03-01 01:20:23] [INFO] [Save Outputs]   json       → Output\automl\results_20260301_012023.json
+[2026-03-01 01:20:23] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260301_012023.md
+[2026-03-01 01:20:23] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260301_012023.pkl
+[2026-03-01 01:20:23] [INFO] [Save Outputs] ─────────────────────────────────────
+
+
+=== New Run — 2026-03-01 01:22:57 ===
+
+
+=== New Run — 2026-03-01 01:23:21 ===
+[2026-03-01 01:28:51] [INFO] [EDA Agent] Starting RAW data analysis...
+[2026-03-01 01:28:52] [INFO] [EDA Agent] RAW analysis complete. Found 2 warnings.
+[2026-03-01 01:28:52] [WARNING]  - Columns with > 50% missing values detected.
+[2026-03-01 01:28:52] [WARNING]  - High-cardinality categoricals detected.
+[2026-03-01 01:28:52] [INFO] [EDA Agent] Exporting artifacts for raw stage...
+[2026-03-01 01:28:53] [INFO] [EDA Agent] Starting CLEAN data analysis...
+[2026-03-01 01:28:55] [INFO] [EDA Agent] CLEAN analysis complete. Found 2 warnings.
+[2026-03-01 01:28:55] [WARNING]  - Numeric columns with > 5 % outliers (IQR).
+[2026-03-01 01:28:55] [WARNING]  - Non-normal numeric columns (Shapiro-Wilk).
+[2026-03-01 01:28:55] [INFO] [EDA Agent] Exporting artifacts for clean stage...
+[2026-03-01 01:28:55] [INFO] [EDA Agent] Generating Meaningful JSON directives for AutoML Agent...
+[2026-03-01 01:28:55] [INFO] [EDA Agent] AutoML context saved to Output/clean.
+[2026-03-01 01:28:56] [INFO] Starting AutoML agent workflow
+[2026-03-01 01:28:56] [INFO] Loading data from: Output\Preprocessing\full_preprocessed.csv
+[2026-03-01 01:28:56] [INFO] Data loaded successfully. Shape: (1783, 22)
+[2026-03-01 01:28:56] [INFO] Identifying target column
+[2026-03-01 01:28:56] [INFO] Problem type pre-set by orchestrator: classification
+[2026-03-01 01:28:56] [INFO] Target column: Survived, Problem type: classification
+[2026-03-01 01:28:56] [INFO] [Model Selection Agent] Starting selection using external directives
+[2026-03-01 01:29:33] [ERROR] [Model Selection Agent] Error: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 2.43866049s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.5-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '2s'}]}}
+[2026-03-01 01:29:33] [INFO] [Training Agent] Executing simple training strategy
+[2026-03-01 01:29:35] [INFO] Training simple models with Optuna HPO: ['RandomForest']
+[2026-03-01 01:29:35] [INFO] [Optuna] Tuning RandomForest ...
+[2026-03-01 01:30:28] [INFO] [Optuna] RandomForest → best params: {'n_estimators': 442, 'max_depth': 12, 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt'}
+[2026-03-01 01:30:28] [INFO] [Optuna] RandomForest → accuracy: 0.8916
+[2026-03-01 01:30:28] [INFO] Best model: RandomForest with accuracy: 0.8916
+[2026-03-01 01:30:29] [INFO] [Training Agent] Confusion Matrix generated: [[208, 17], [25, 107]]
+[2026-03-01 01:31:07] [WARNING] Could not get LLM interpretation: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 28.60297189s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-2.5-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '28s'}]}}
+[2026-03-01 01:31:07] [INFO] [Training Agent] Training complete. Score: 0.8916
+[2026-03-01 01:31:07] [ERROR] Workflow completed with error: Failed in model selection: Error calling model 'gemini-2.5-flash' (RESOURCE_EXHAUSTED): 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-2.5-flash\nPlease retry in 2.43866049s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-2.5-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '2s'}]}}
+[2026-03-01 01:31:07] [INFO] [Save Outputs] JSON saved → Output\automl\results_20260301_013107.json
+[2026-03-01 01:31:07] [INFO] [Save Outputs] Markdown saved → Output\automl\report_20260301_013107.md
+[2026-03-01 01:31:07] [INFO] [Save Outputs] Sklearn model pickled → Output\automl\best_model_20260301_013107.pkl
+[2026-03-01 01:31:07] [INFO] [Save Outputs] ── Saved files ──────────────────────
+[2026-03-01 01:31:07] [INFO] [Save Outputs]   json       → Output\automl\results_20260301_013107.json
+[2026-03-01 01:31:07] [INFO] [Save Outputs]   markdown   → Output\automl\report_20260301_013107.md
+[2026-03-01 01:31:07] [INFO] [Save Outputs]   pickle     → Output\automl\best_model_20260301_013107.pkl
+[2026-03-01 01:31:07] [INFO] [Save Outputs] ─────────────────────────────────────
