@@ -182,21 +182,30 @@ class EDAAgent:
         if self.target is None or self.target not in self.df.columns:
             return None
 
+        # 1. Get clean series
         series = self.df[self.target].dropna()
-        dtype = str(series.dtype)
+        
+        # 2. ATTEMPT COERCION: Check if 'object' type is actually numeric data
+        numeric_test = pd.to_numeric(series, errors='coerce')
+        # If at least 80% of non-null values can be numbers, treat as numeric
+        is_actually_numeric = numeric_test.notna().mean() > 0.8
+        
+        if is_actually_numeric:
+            series = numeric_test.dropna()
+            dtype = str(series.dtype)
+        else:
+            dtype = str(series.dtype)
 
         analysis: Dict[str, Any] = {
             "column": self.target,
             "dtype": dtype,
         }
 
-        is_numeric = pd.api.types.is_numeric_dtype(series)
+        # 3. Use the coerced numeric status for task detection
         unique_values = series.unique()
 
-        # ─────────────────────────────────────────────
-        # REGRESSION TARGET
-        # ─────────────────────────────────────────────
-        if is_numeric and len(unique_values) > 20:
+        # REGRESSION TARGET: Now catches coerced numeric objects
+        if is_actually_numeric and len(unique_values) > 20:
             q1 = series.quantile(0.25)
             q3 = series.quantile(0.75)
             iqr = q3 - q1
@@ -224,7 +233,6 @@ class EDAAgent:
                 "heavy_tailed": bool(kurt > 3),
                 "low_variance_target": bool(series.var() < 1e-3),
             })
-
             return analysis
 
         # ─────────────────────────────────────────────
@@ -637,38 +645,43 @@ class EDAAgent:
         df = self.df
         y = df[self.target]
 
-        numeric_features = df.select_dtypes(include=["number"]).columns
-        numeric_features = [c for c in numeric_features if c != self.target]
+        numeric_features = df.select_dtypes(include=["number"]).columns.tolist()
+        if self.target in numeric_features:
+            numeric_features.remove(self.target)
 
         f_scores = {}
-
         for feature in numeric_features:
-            valid = df[[feature, self.target]].dropna()
+            # Coerce both to ensure no strings remain
+            temp_df = pd.DataFrame({
+                'feat': pd.to_numeric(df[feature], errors='coerce'),
+                'targ': df[self.target]
+            }).dropna()
 
-            # Skip weak samples
-            if valid.shape[0] < 50:
+            if temp_df.shape[0] < 50:
                 continue
 
-            X_feat = valid[[feature]].values
-            y_valid = valid[self.target].values
-
             try:
-                score, _ = f_classif(X_feat, y_valid)
+                score, _ = f_classif(temp_df[['feat']], temp_df['targ'])
                 f_scores[feature] = round(float(score[0]), 4)
             except Exception:
                 continue
 
-        return {
-            "univariate_class_signal": f_scores
-        }
+        return {"univariate_class_signal": f_scores}
 
     def _regression_signal_analysis(self) -> Dict[str, Any]:
-        numeric_cols = self.df.select_dtypes(include=["number"]).columns
-        numeric_cols = [c for c in numeric_cols if c != self.target]
+        # 1. Select numeric features
+        numeric_cols = self.df.select_dtypes(include=["number"]).columns.tolist()
+        if self.target in numeric_cols:
+            numeric_cols.remove(self.target)
 
-        target = self.df[self.target]
+        # 2. FORCE target to numeric (handle the 'object' dtype issue)
+        target = pd.to_numeric(self.df[self.target], errors='coerce')
+        
+        # 3. Clean numeric features to avoid the numpy conversion error
+        df_numeric = self.df[numeric_cols].apply(pd.to_numeric, errors='coerce')
 
-        pearson = self.df[numeric_cols].corrwith(target).dropna()
+        # 4. Calculate correlation only on valid numeric pairs
+        pearson = df_numeric.corrwith(target).dropna()
 
         return {
             "linear_signal_strength": pearson.abs().round(3).to_dict(),

@@ -14,6 +14,9 @@ from dotenv import load_dotenv
 from src.utils.data_analyzer import DataAnalyzer
 from src.utils.logger import Logger
 # Load environment variables
+import pickle
+from datetime import datetime
+import json
 load_dotenv()
 
 logger = Logger()
@@ -199,30 +202,35 @@ Provide your analysis in a clear, structured format:
             state['step'] = 'error'
         
         return state
-    
+        
     def identify_target_node(self, state: AgentState) -> AgentState:
-        """Identify or validate the target column."""
         try:
             logger.info("Identifying target column")
             target_col = state.get('target_column')
-            
+
             if target_col:
                 self.data_analyzer.identify_target_column(target_col)
             else:
                 target_col = self.data_analyzer.identify_target_column()
-            
-            problem_type = self.data_analyzer.determine_problem_type()
-            
+
+            # ── FIX: only auto-detect problem type if not already set by orchestrator ──
+            problem_type = state.get('problem_type')
+            if not problem_type:
+                problem_type = self.data_analyzer.determine_problem_type()
+                logger.info(f"Problem type auto-detected: {problem_type}")
+            else:
+                logger.info(f"Problem type pre-set by orchestrator: {problem_type}")
+
             state['target_column'] = target_col
-            state['problem_type'] = problem_type
-            state['step'] = 'target_identified'
-            logger.info(f"Target column identified: {target_col}, Problem type: {problem_type}")
-            
+            state['problem_type']  = problem_type
+            state['step']          = 'target_identified'
+            logger.info(f"Target column: {target_col}, Problem type: {problem_type}")
+
         except Exception as e:
             logger.error(f"Error identifying target: {str(e)}", e)
             state['error'] = f"Failed to identify target: {str(e)}"
-            state['step'] = 'error'
-        
+            state['step']  = 'error'
+
         return state
     
     # def model_selection_agent(self, state: AgentState) -> AgentState:
@@ -422,11 +430,23 @@ Provide your analysis in a clear, structured format:
             except Exception as e:
                 training_insight = "Executing training strategy..."
             
-            # Execute training
-            data = state['data']
+            # 1. LOAD AND COERCE DATA TYPES
+            data = state['data'].copy()
             target_column = state['target_column']
+            
+            # FORCE Target to numeric for Regression
+            if state['problem_type'] == 'regression':
+                data[target_column] = pd.to_numeric(data[target_column], errors='coerce')
+                # Drop rows where target coercion failed (e.g. if there were actual strings)
+                data = data.dropna(subset=[target_column])
+
             problem_type = state['problem_type']
             X = data.drop(columns=[target_column])
+            # Automatically convert any other 'object' columns to numeric if possible
+            # This handles features that were also loaded as strings
+            for col in X.select_dtypes(include=['object']).columns:
+                X[col] = pd.to_numeric(X[col], errors='ignore')
+                
             X_encoded = pd.get_dummies(X, drop_first=True)
             y = data[target_column]
 
@@ -435,10 +455,31 @@ Provide your analysis in a clear, structured format:
             from sklearn.metrics import confusion_matrix
             X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2, random_state=42)
 
+            # ── AFTER (Optuna-tuned AutoGluon) ──
             if use_automl:
                 automl_config = state.get('automl_config', {})
-                trained_model, metrics = self._train_with_autogluon(X_train, y_train, problem_type, automl_config)
-                # AutoGluon needs its own internal test data format
+
+                # ── NEW: Optuna searches for the best AutoGluon config first ──
+                # Split a small validation set from X_train for Optuna scoring
+                from sklearn.model_selection import train_test_split as _tts
+                X_tr_opt, X_val_opt, y_tr_opt, y_val_opt = _tts(
+                    X_train, y_train, test_size=0.2, random_state=42
+                )
+                logger.info("[Training Agent] Running Optuna HPO to refine AutoGluon config...")
+                refined_config = self._tune_autogluon_with_optuna(
+                    X_tr_opt, y_tr_opt,
+                    X_val_opt, y_val_opt,
+                    problem_type,
+                    base_config=automl_config,
+                    n_trials=10          # ← raise to 20-30 if you have more time/RAM
+                )
+                logger.info(f"[Training Agent] Refined config from Optuna: {refined_config}")
+
+                # ── Final full training with the Optuna-optimized config ──
+                trained_model, metrics = self._train_with_autogluon(
+                    X_train, y_train, problem_type, refined_config
+                )
+                metrics['optuna_refined_config'] = refined_config   # store in metrics for reporting
                 y_pred = trained_model.predict(X_test)
             else:
                 selected_models = state.get('selected_models', []) or ['RandomForest']
@@ -717,9 +758,18 @@ Provide your analysis and decision:
                 logger.info(f"Mapped 'classification' to '{ag_problem_type}' ({unique_targets} classes)")
             
             # Create a unique path for this predictor to avoid conflicts
-            import tempfile
-            predictor_path = os.path.join(tempfile.gettempdir(), f"autogluon_predictor_{os.getpid()}_{int(time.time())}")
-            
+            # import tempfile
+            # predictor_path = os.path.join(tempfile.gettempdir(), f"autogluon_predictor_{os.getpid()}_{int(time.time())}")
+            from pathlib import Path
+            import time
+
+            # Anchor to dataset directory
+            base_dir = Path(self.dataset_path).resolve().parent
+
+            predictor_path = base_dir / "Output" / "AutoGluonModels" / f"run_{int(time.time())}"
+            predictor_path.mkdir(parents=True, exist_ok=True)
+
+            predictor_path = str(predictor_path)
             # Create predictor (AutoGluon will auto-select the best metric if not specified)
             predictor = TabularPredictor(
                 label=target_col_name,
@@ -836,148 +886,695 @@ Provide your analysis and decision:
             # Fallback to simple training
             fallback_models = config.get('models', ['RandomForest'])
             return self._train_simple_models(X, y, problem_type, [fallback_models[0]] if fallback_models else ['RandomForest'])
-    
+    def _tune_autogluon_with_optuna(self,X_train: pd.DataFrame,y_train: pd.Series,X_val: pd.DataFrame,y_val: pd.Series,problem_type: str,base_config: dict, n_trials: int = 10) -> dict:
+        """
+        Use Optuna to search over AutoGluon's top-level config.
+        Refines the LLM's automl_config before the final full training run.
+        Returns the best config dict (same shape as automl_config).
+        """
+        import optuna
+        from autogluon.tabular import TabularPredictor
+        import tempfile
+
+        # Map problem type exactly like _train_with_autogluon does
+        ag_problem_type = problem_type
+        if problem_type == 'classification':
+            ag_problem_type = 'binary' if y_train.nunique() == 2 else 'multiclass'
+
+        # Use the LLM's suggested models as the search pool
+        llm_suggested_models = base_config.get('models', ['GBM', 'XGB', 'CAT'])
+        llm_time_limit       = base_config.get('time_limit', 300)
+        llm_preset           = base_config.get('preset', 'best_quality')
+
+        # Build candidate model subsets from the LLM's list (pairs + full set)
+        model_pool = llm_suggested_models
+        model_subsets = []
+        # All individual models
+        for m in model_pool:
+            model_subsets.append([m])
+        # All pairs
+        for i in range(len(model_pool)):
+            for j in range(i + 1, len(model_pool)):
+                model_subsets.append([model_pool[i], model_pool[j]])
+        # Full set
+        if len(model_pool) > 2:
+            model_subsets.append(model_pool)
+
+        logger.info(f"[Optuna+AutoGluon] Starting {n_trials} trials over config space")
+        logger.info(f"[Optuna+AutoGluon] LLM base config: {base_config}")
+        logger.info(f"[Optuna+AutoGluon] Model subsets to explore: {model_subsets}")
+
+        train_df = X_train.copy()
+        train_df['target'] = y_train.values
+        val_df = X_val.copy()
+        val_df['target'] = y_val.values
+
+        def objective(trial: optuna.Trial) -> float:
+            # Search over the LLM-suggested time range (±50% of LLM suggestion)
+            time_limit = trial.suggest_int(
+                'time_limit',
+                max(30, int(llm_time_limit * 0.5)),
+                int(llm_time_limit * 1.5),
+                step=30
+            )
+            # Search over preset quality levels
+            preset = trial.suggest_categorical(
+                'preset',
+                ['medium_quality', 'high_quality', 'best_quality']
+            )
+            # Pick a model subset from the LLM's suggested pool
+            subset_idx = trial.suggest_int('subset_idx', 0, len(model_subsets) - 1)
+            chosen_models = model_subsets[subset_idx]
+
+            path = os.path.join(
+                tempfile.gettempdir(),
+                f"ag_optuna_t{trial.number}_{os.getpid()}"
+            )
+
+            try:
+                predictor = TabularPredictor(
+                    label='target',
+                    problem_type=ag_problem_type,
+                    path=path,
+                    verbosity=0
+                )
+                predictor.fit(
+                    train_df,
+                    presets=preset,
+                    time_limit=time_limit,
+                    hyperparameters={m: {} for m in chosen_models},
+                    # Match your existing memory-safe settings
+                    ag_args_ensemble={
+                        'fold_fitting_strategy': 'sequential_local',
+                        'use_ray': False
+                    },
+                    dynamic_stacking=False,
+                    save_space=True,
+                )
+                score_dict = predictor.evaluate(val_df, silent=True)
+                # AutoGluon returns {metric_name: value}; grab the first one
+                score = float(list(score_dict.values())[0])
+                logger.info(
+                    f"[Optuna+AutoGluon] Trial {trial.number}: "
+                    f"preset={preset}, time={time_limit}s, "
+                    f"models={chosen_models} → score={score:.4f}"
+                )
+                return score
+
+            except Exception as e:
+                logger.warn(f"[Optuna+AutoGluon] Trial {trial.number} failed: {str(e)}")
+                return -float('inf')   # penalize failed trials
+
+        optuna.logging.set_verbosity(optuna.logging.WARNING)
+        study = optuna.create_study(
+            direction='maximize',
+            sampler=optuna.samplers.TPESampler(seed=42)
+        )
+        study.optimize(objective, n_trials=n_trials, show_progress_bar=False)
+
+        best = study.best_params
+        best_config = {
+            'models':      model_subsets[best['subset_idx']],
+            'time_limit':  best['time_limit'],
+            'preset':      best['preset'],
+        }
+
+        logger.info(f"[Optuna+AutoGluon] Best config found: {best_config}")
+        logger.info(f"[Optuna+AutoGluon] Best score: {study.best_value:.4f}")
+
+        return best_config
+    def _tune_with_optuna(self, X_train, X_test, y_train, y_test, problem_type: str, model_name: str, n_trials: int = 30):
+        """
+        Run Optuna HPO for a single model. Returns best model and its score.
+        """
+        import optuna
+        from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingClassifier, GradientBoostingRegressor
+        from sklearn.linear_model import LogisticRegression, LinearRegression
+        from sklearn.metrics import accuracy_score, r2_score
+        
+        optuna.logging.set_verbosity(optuna.logging.WARNING)  # Suppress Optuna noise
+
+        def objective(trial):
+            model_name_lower = model_name.lower()
+            
+            if "randomforest" in model_name_lower:
+                params = {
+                    "n_estimators": trial.suggest_int("n_estimators", 50, 500),
+                    "max_depth": trial.suggest_int("max_depth", 3, 20),
+                    "min_samples_split": trial.suggest_int("min_samples_split", 2, 20),
+                    "min_samples_leaf": trial.suggest_int("min_samples_leaf", 1, 10),
+                }
+                model = (RandomForestClassifier(**params, random_state=42, n_jobs=-1) 
+                        if problem_type == "classification" 
+                        else RandomForestRegressor(**params, random_state=42, n_jobs=-1))
+
+            elif "gradient" in model_name_lower:
+                params = {
+                    "n_estimators": trial.suggest_int("n_estimators", 50, 500),
+                    "learning_rate": trial.suggest_float("learning_rate", 1e-4, 0.3, log=True),
+                    "max_depth": trial.suggest_int("max_depth", 2, 10),
+                    "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+                }
+                model = (GradientBoostingClassifier(**params, random_state=42) 
+                        if problem_type == "classification" 
+                        else GradientBoostingRegressor(**params, random_state=42))
+
+            elif "xgb" in model_name_lower or "xgboost" in model_name_lower:
+                import xgboost as xgb
+                params = {
+                    "n_estimators": trial.suggest_int("n_estimators", 50, 500),
+                    "learning_rate": trial.suggest_float("learning_rate", 1e-4, 0.3, log=True),
+                    "max_depth": trial.suggest_int("max_depth", 2, 10),
+                    "subsample": trial.suggest_float("subsample", 0.5, 1.0),
+                    "colsample_bytree": trial.suggest_float("colsample_bytree", 0.5, 1.0),
+                    "reg_alpha": trial.suggest_float("reg_alpha", 1e-8, 10.0, log=True),
+                }
+                model = (xgb.XGBClassifier(**params, random_state=42, eval_metric="logloss") 
+                        if problem_type == "classification" 
+                        else xgb.XGBRegressor(**params, random_state=42))
+
+            elif "logistic" in model_name_lower:
+                params = {
+                    "C": trial.suggest_float("C", 1e-4, 100.0, log=True),
+                    "solver": trial.suggest_categorical("solver", ["lbfgs", "saga"]),
+                }
+                model = LogisticRegression(**params, max_iter=1000, random_state=42)
+
+            else:
+                # Fallback: no tuning, just fit default
+                model = (RandomForestClassifier(random_state=42) 
+                        if problem_type == "classification" 
+                        else RandomForestRegressor(random_state=42))
+
+            model.fit(X_train, y_train)
+            preds = model.predict(X_test)
+            return accuracy_score(y_test, preds) if problem_type == "classification" else r2_score(y_test, preds)
+
+        direction = "maximize"  # Both accuracy and r2 are maximized
+        study = optuna.create_study(direction=direction, sampler=optuna.samplers.TPESampler(seed=42))
+        study.optimize(objective, n_trials=n_trials, show_progress_bar=False)
+
+        # Re-train with the best params found
+        best_params = study.best_params
+        logger.info(f"[Optuna] Best params for {model_name}: {best_params}")
+        
+        # Rebuild the best model using best_params
+        # (reuse the same branching logic for safety)
+        model_name_lower = model_name.lower()
+        if "randomforest" in model_name_lower:
+            best_model = (RandomForestClassifier(**best_params, random_state=42, n_jobs=-1)
+                        if problem_type == "classification"
+                        else RandomForestRegressor(**best_params, random_state=42, n_jobs=-1))
+        elif "gradient" in model_name_lower:
+            best_model = (GradientBoostingClassifier(**best_params, random_state=42)
+                        if problem_type == "classification"
+                        else GradientBoostingRegressor(**best_params, random_state=42))
+        elif "xgb" in model_name_lower or "xgboost" in model_name_lower:
+            import xgboost as xgb
+            best_model = (xgb.XGBClassifier(**best_params, random_state=42, eval_metric="logloss")
+                        if problem_type == "classification"
+                        else xgb.XGBRegressor(**best_params, random_state=42))
+        elif "logistic" in model_name_lower:
+            best_model = LogisticRegression(**best_params, max_iter=1000, random_state=42)
+        else:
+            best_model = (RandomForestClassifier(random_state=42)
+                        if problem_type == "classification"
+                        else RandomForestRegressor(random_state=42))
+
+        best_model.fit(X_train, y_train)
+        best_score = study.best_value
+
+        return best_model, best_score, best_params, study
     def _train_simple_models(self, X: pd.DataFrame, y: pd.Series, problem_type: str, model_names: list[str]) -> tuple:
         """
         Train models using simple scikit-learn approach with LLM-selected models.
+        Optuna is used for hyperparameter tuning for each model.
         """
+        import optuna
         from sklearn.model_selection import train_test_split
-        from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingClassifier, GradientBoostingRegressor
+        from sklearn.ensemble import (RandomForestClassifier, RandomForestRegressor,
+                                    GradientBoostingClassifier, GradientBoostingRegressor)
         from sklearn.linear_model import LogisticRegression, LinearRegression
-        from sklearn.metrics import accuracy_score, r2_score, f1_score, mean_squared_error
-        
+        from sklearn.metrics import accuracy_score, r2_score
+
+        optuna.logging.set_verbosity(optuna.logging.WARNING)  # Suppress Optuna noise
+
         try:
             import xgboost as xgb
             xgb_available = True
         except ImportError:
             xgb_available = False
             logger.warn("XGBoost not available, will use GradientBoosting as alternative")
-        
+
         # Ensure we have a valid list to iterate over
         if not model_names or not isinstance(model_names, list):
             model_names = ['RandomForest', 'GradientBoosting'] if problem_type == 'classification' else ['RandomForest']
-            
-        logger.info(f"Training simple models: {model_names}")
-        
+
+        logger.info(f"Training simple models with Optuna HPO: {model_names}")
+
         X_processed = pd.get_dummies(X, drop_first=True)
         X_train, X_test, y_train, y_test = train_test_split(
             X_processed, y, test_size=0.2, random_state=42
         )
-        
-        best_model = None
-        best_score = -float('inf')
-        best_model_name = None
+
         best_metric_name = 'accuracy' if problem_type == 'classification' else 'r2_score'
-        all_results = []
-        
+
+        # ─────────────────────────────────────────────
+        # Inner helper: build a model from name + params
+        # ─────────────────────────────────────────────
+        def build_model(model_name: str, params: dict):
+            name_lower = model_name.lower()
+            if 'randomforest' in name_lower:
+                return (RandomForestClassifier(**params, random_state=42, n_jobs=-1)
+                        if problem_type == 'classification'
+                        else RandomForestRegressor(**params, random_state=42, n_jobs=-1))
+            elif ('xgboost' in name_lower or 'xgb' in name_lower) and xgb_available:
+                return (xgb.XGBClassifier(**params, random_state=42, eval_metric='logloss')
+                        if problem_type == 'classification'
+                        else xgb.XGBRegressor(**params, random_state=42))
+            elif 'gradient' in name_lower:
+                return (GradientBoostingClassifier(**params, random_state=42)
+                        if problem_type == 'classification'
+                        else GradientBoostingRegressor(**params, random_state=42))
+            elif 'logistic' in name_lower:
+                return LogisticRegression(**params, max_iter=1000, random_state=42)
+            elif 'linear' in name_lower:
+                return LinearRegression()
+            else:
+                # Unknown model name → fallback to RandomForest
+                logger.warn(f"Unknown model '{model_name}', falling back to RandomForest")
+                return (RandomForestClassifier(random_state=42, n_jobs=-1)
+                        if problem_type == 'classification'
+                        else RandomForestRegressor(random_state=42, n_jobs=-1))
+
+        # ─────────────────────────────────────────────
+        # Inner helper: define the Optuna search space
+        # ─────────────────────────────────────────────
+        def suggest_params(trial: optuna.Trial, model_name: str) -> dict:
+            name_lower = model_name.lower()
+            if 'randomforest' in name_lower:
+                return {
+                    'n_estimators':      trial.suggest_int('n_estimators', 50, 500),
+                    'max_depth':         trial.suggest_int('max_depth', 3, 20),
+                    'min_samples_split': trial.suggest_int('min_samples_split', 2, 20),
+                    'min_samples_leaf':  trial.suggest_int('min_samples_leaf', 1, 10),
+                    'max_features':      trial.suggest_categorical('max_features', ['sqrt', 'log2', None]),
+                }
+            elif ('xgboost' in name_lower or 'xgb' in name_lower) and xgb_available:
+                return {
+                    'n_estimators':      trial.suggest_int('n_estimators', 50, 500),
+                    'learning_rate':     trial.suggest_float('learning_rate', 1e-4, 0.3, log=True),
+                    'max_depth':         trial.suggest_int('max_depth', 2, 10),
+                    'subsample':         trial.suggest_float('subsample', 0.5, 1.0),
+                    'colsample_bytree':  trial.suggest_float('colsample_bytree', 0.5, 1.0),
+                    'reg_alpha':         trial.suggest_float('reg_alpha', 1e-8, 10.0, log=True),
+                    'reg_lambda':        trial.suggest_float('reg_lambda', 1e-8, 10.0, log=True),
+                }
+            elif 'gradient' in name_lower:
+                return {
+                    'n_estimators':  trial.suggest_int('n_estimators', 50, 500),
+                    'learning_rate': trial.suggest_float('learning_rate', 1e-4, 0.3, log=True),
+                    'max_depth':     trial.suggest_int('max_depth', 2, 10),
+                    'subsample':     trial.suggest_float('subsample', 0.5, 1.0),
+                    'max_features':  trial.suggest_categorical('max_features', ['sqrt', 'log2', None]),
+                }
+            elif 'logistic' in name_lower:
+                return {
+                    'C':      trial.suggest_float('C', 1e-4, 100.0, log=True),
+                    'solver': trial.suggest_categorical('solver', ['lbfgs', 'saga']),
+                }
+            else:
+                # LinearRegression and unknown models have no meaningful hyperparameters to tune
+                return {}
+
+        # ─────────────────────────────────────────────
+        # Optuna objective factory (one study per model)
+        # ─────────────────────────────────────────────
+        def make_objective(model_name: str):
+            def objective(trial: optuna.Trial) -> float:
+                params = suggest_params(trial, model_name)
+                model  = build_model(model_name, params)
+                model.fit(X_train, y_train)
+                preds  = model.predict(X_test)
+                return (accuracy_score(y_test, preds)
+                        if problem_type == 'classification'
+                        else r2_score(y_test, preds))
+            return objective
+
+        # ─────────────────────────────────────────────
+        # Main training loop — one Optuna study per model
+        # ─────────────────────────────────────────────
+        best_model      = None
+        best_score      = -float('inf')
+        best_model_name = None
+        all_results     = []
+
         for model_name in model_names:
             try:
-                if problem_type == 'classification':
-                    if 'RandomForest' in model_name or 'randomforest' in model_name.lower():
-                        model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-                    elif ('XGBoost' in model_name or 'xgboost' in model_name.lower() or 'xgb' in model_name.lower()) and xgb_available:
-                        model = xgb.XGBClassifier(n_estimators=100, random_state=42, eval_metric='logloss')
-                    elif 'GradientBoosting' in model_name or 'gradient' in model_name.lower():
-                        model = GradientBoostingClassifier(n_estimators=100, random_state=42)
-                    elif 'LogisticRegression' in model_name or 'logistic' in model_name.lower():
-                        model = LogisticRegression(max_iter=1000, random_state=42)
-                    else:
-                        model = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=-1)
-                    
-                    model.fit(X_train, y_train)
-                    score = accuracy_score(y_test, model.predict(X_test))
-                    
-                else:  # regression
-                    if 'RandomForest' in model_name or 'randomforest' in model_name.lower():
-                        model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-                    elif ('XGBoost' in model_name or 'xgboost' in model_name.lower() or 'xgb' in model_name.lower()) and xgb_available:
-                        model = xgb.XGBRegressor(n_estimators=100, random_state=42)
-                    elif 'GradientBoosting' in model_name or 'gradient' in model_name.lower():
-                        model = GradientBoostingRegressor(n_estimators=100, random_state=42)
-                    elif 'LinearRegression' in model_name or 'linear' in model_name.lower():
-                        model = LinearRegression()
-                    else:
-                        model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-                    
-                    model.fit(X_train, y_train)
-                    score = r2_score(y_test, model.predict(X_test))
-                
+                logger.info(f"[Optuna] Tuning {model_name} ...")
+
+                study = optuna.create_study(
+                    direction='maximize',
+                    sampler=optuna.samplers.TPESampler(seed=42)
+                )
+                study.optimize(
+                    make_objective(model_name),
+                    n_trials=30,              # ← tune this per your time budget
+                    show_progress_bar=False
+                )
+
+                best_params = study.best_params
+                best_trial_score = study.best_value
+
+                # Re-train final model on full training set with the best params found
+                final_model = build_model(model_name, best_params)
+                final_model.fit(X_train, y_train)
+
+                logger.info(f"[Optuna] {model_name} → best params: {best_params}")
+                logger.info(f"[Optuna] {model_name} → {best_metric_name}: {best_trial_score:.4f}")
+
                 all_results.append({
-                    'model_name': model_name,
-                    'score': float(score)
+                    'model_name':  model_name,
+                    'score':       float(best_trial_score),
+                    'best_params': best_params
                 })
-                
-                if score > best_score:
-                    best_score = score
-                    best_model = model
+
+                if best_trial_score > best_score:
+                    best_score      = best_trial_score
+                    best_model      = final_model
                     best_model_name = model_name
-                
-                logger.info(f"{model_name} - {best_metric_name}: {score:.4f}")
-                
+
             except Exception as e:
-                logger.warn(f"Failed to train {model_name}: {str(e)}")
+                logger.warn(f"Failed to tune {model_name}: {str(e)}")
                 continue
-        
-        # Fallback if the loop didn't produce a model
+
+        # ─────────────────────────────────────────────
+        # Fallback if every model in the loop failed
+        # ─────────────────────────────────────────────
         if best_model is None:
-            logger.warn("All selected models failed, using default RandomForest...")
+            logger.warn("All selected models failed — falling back to default RandomForest")
             best_model_name = 'RandomForest'
-            best_model = RandomForestClassifier() if problem_type == 'classification' else RandomForestRegressor()
+            best_model = (RandomForestClassifier(random_state=42)
+                        if problem_type == 'classification'
+                        else RandomForestRegressor(random_state=42))
             best_model.fit(X_train, y_train)
-            best_score = best_model.score(X_test, y_test)
-            all_results = [{'model_name': 'RandomForest', 'score': float(best_score)}]
+            best_score  = best_model.score(X_test, y_test)
+            all_results = [{'model_name': 'RandomForest', 'score': float(best_score), 'best_params': {}}]
 
         metrics = {
-            'best_model': best_model_name,
-            'best_score': float(best_score),
-            'metric_name': best_metric_name,
-            'models_trained': len(all_results),
-            'all_models': [r['model_name'] for r in all_results],
-            'all_scores': [r['score'] for r in all_results],
-            'training_method': 'Simple'
+            'best_model':          best_model_name,
+            'best_score':          float(best_score),
+            'metric_name':         best_metric_name,
+            'models_trained':      len(all_results),
+            'all_models':          [r['model_name']  for r in all_results],
+            'all_scores':          [r['score']        for r in all_results],
+            'best_params_per_model': {r['model_name']: r.get('best_params', {}) for r in all_results},
+            'training_method':     'Simple+Optuna'
         }
-        
+
         logger.info(f"Best model: {metrics['best_model']} with {best_metric_name}: {best_score:.4f}")
-        
+
         return best_model, metrics
-    
-    def run(self, data_path: str, target_column: str = None) -> dict:
+    def _save_outputs(self, state: AgentState, output_dir: str = "outputs") -> dict:
         """
-        Run the complete AutoML workflow.
-        
-        Args:
-            data_path: Path to the data file
-            target_column: Optional target column name (will be auto-detected if not provided)
+        Save all training stage outputs:
+        - results.json  → full metrics, configs, reasoning
+        - report.md     → human-readable markdown report
+        - best_model.pkl → pickled best trained model (sklearn) or note for AutoGluon
         
         Returns:
-            dict: Final state with results
+            dict: paths to all saved files
+        """
+        import pickle
+        from datetime import datetime
+        from pathlib import Path
+
+        # ── Setup output directory ──────────────────────────────────────
+        out_dir = Path(output_dir)
+        out_dir.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        saved_paths = {}
+
+        # ────────────────────────────────────────────────────────────────
+        # 1. Build the JSON payload
+        # ────────────────────────────────────────────────────────────────
+        metrics = state.get('model_metrics', {}) or {}
+
+        # Confusion matrix is a nested list — safe for JSON
+        json_payload = {
+            "run_timestamp": timestamp,
+            "data_path": state.get('data_path'),
+            "target_column": state.get('target_column'),
+            "problem_type": state.get('problem_type'),
+
+            # ── Model selection decisions ──
+            "model_selection": {
+                "use_automl": state.get('use_automl'),
+                "automl_config": state.get('automl_config'),
+                "selected_models": state.get('selected_models'),
+                "model_selection_reasoning": state.get('model_selection_reasoning'),
+            },
+
+            # ── Training results ──
+            "training_results": {
+                "training_method": metrics.get('training_method'),
+                "best_model": metrics.get('best_model'),
+                "best_score": metrics.get('best_score'),
+                "metric_name": metrics.get('metric_name', 'score'),
+                "models_trained": metrics.get('models_trained'),
+                "all_models": metrics.get('all_models', []),
+                "all_scores": metrics.get('all_scores', []),
+                "confusion_matrix": metrics.get('confusion_matrix'),        # list of lists or None
+                "best_params_per_model": metrics.get('best_params_per_model', {}),
+                "optuna_refined_config": metrics.get('optuna_refined_config'),  # None if not used
+            },
+
+            # ── Agent conversation history ──
+            "agent_messages": state.get('agent_messages', []),
+
+            # ── Workflow metadata ──
+            "workflow": {
+                "final_step": state.get('step'),
+                "error": state.get('error'),
+            }
+        }
+
+        json_path = out_dir / f"results_{timestamp}.json"
+        with open(json_path, 'w', encoding='utf-8') as f:
+            json.dump(json_payload, f, indent=2, default=str)   # default=str handles numpy types
+        saved_paths['json'] = str(json_path)
+        logger.info(f"[Save Outputs] JSON saved → {json_path}")
+
+        # ────────────────────────────────────────────────────────────────
+        # 2. Build the Markdown report
+        # ────────────────────────────────────────────────────────────────
+        use_automl   = state.get('use_automl', False)
+        best_score   = metrics.get('best_score', 0) or 0
+        best_model   = metrics.get('best_model', 'N/A')
+        problem_type = state.get('problem_type', 'N/A')
+
+        # Build model comparison table rows
+        all_models = metrics.get('all_models', [])
+        all_scores = metrics.get('all_scores', [])
+        model_rows = ""
+        for name, score in zip(all_models, all_scores):
+            marker = " ✅" if name == best_model else ""
+            model_rows += f"| {name}{marker} | {float(score):.4f} |\n"
+
+        # Build confusion matrix block (classification only)
+        cm_block = ""
+        cm = metrics.get('confusion_matrix')
+        if cm:
+            cm_block = f"""
+    ## Confusion Matrix
+
+    |  | Predicted 0 | Predicted 1 |
+    |---|---|---|
+    | **Actual 0** | {cm[0][0]} | {cm[0][1]} |
+    | **Actual 1** | {cm[1][0]} | {cm[1][1]} |
+
+    - **True Negatives (TN):** {cm[0][0]}
+    - **False Positives (FP):** {cm[0][1]}
+    - **False Negatives (FN):** {cm[1][0]}
+    - **True Positives (TP):** {cm[1][1]}
+    """
+
+        # Build Optuna config block (if used)
+        optuna_block = ""
+        refined_cfg = metrics.get('optuna_refined_config')
+        if refined_cfg:
+            optuna_block = f"""
+    ## Optuna-Refined AutoGluon Config
+
+    | Parameter | Value |
+    |---|---|
+    | Models | {refined_cfg.get('models')} |
+    | Time Limit | {refined_cfg.get('time_limit')}s |
+    | Preset | {refined_cfg.get('preset')} |
+    """
+
+        # Build per-model best params block (Simple+Optuna only)
+        params_block = ""
+        best_params_per_model = metrics.get('best_params_per_model', {})
+        if best_params_per_model:
+            params_block = "## Best Hyperparameters per Model\n\n"
+            for model_name, params in best_params_per_model.items():
+                params_block += f"### {model_name}\n```json\n{json.dumps(params, indent=2)}\n```\n\n"
+
+        # Build agent messages block
+        messages_block = ""
+        agent_msgs = state.get('agent_messages', [])
+        if agent_msgs:
+            messages_block = "## Agent Reasoning Log\n\n"
+            for msg in agent_msgs:
+                agent_name = msg.get('agent', 'unknown').replace('_', ' ').title()
+                messages_block += f"### {agent_name} Agent\n{msg.get('message', '')}\n\n---\n\n"
+
+        md_report = f"""# AutoML Agent — Run Report
+    **Generated:** {timestamp}  
+    **Data Path:** `{state.get('data_path')}`  
+    **Target Column:** `{state.get('target_column')}`  
+    **Problem Type:** `{problem_type}`  
+
+    ---
+
+    ## Model Selection Decision
+
+    | Field | Value |
+    |---|---|
+    | Approach | {'AutoGluon (AutoML)' if use_automl else 'Simple Training + Optuna'} |
+    | Best Model | {best_model} |
+    | Best Score | {best_score:.4f} |
+    | Models Trained | {metrics.get('models_trained', 0)} |
+
+    ### LLM Selection Reasoning
+    {state.get('model_selection_reasoning', '_Not available_')}
+
+    ---
+
+    ## Model Comparison
+
+    | Model | Score |
+    |---|---|
+    {model_rows}
+    {cm_block}
+    {optuna_block}
+    {params_block}
+    ---
+
+    {messages_block}
+    ## Workflow Status
+
+    | Field | Value |
+    |---|---|
+    | Final Step | `{state.get('step')}` |
+    | Error | `{state.get('error') or 'None'}` |
+    """
+
+        md_path = out_dir / f"report_{timestamp}.md"
+        with open(md_path, 'w', encoding='utf-8') as f:
+            f.write(md_report)
+        saved_paths['markdown'] = str(md_path)
+        logger.info(f"[Save Outputs] Markdown saved → {md_path}")
+
+        # ────────────────────────────────────────────────────────────────
+        # 3. Save the best model as pickle
+        # ────────────────────────────────────────────────────────────────
+        trained_model = state.get('trained_model')
+        if trained_model is not None:
+            pkl_path = out_dir / f"best_model_{timestamp}.pkl"
+
+            if use_automl:
+                # AutoGluon predictors have their own save system (they write a directory).
+                # We save a lightweight pickle that stores the predictor's path so it
+                # can be reloaded anywhere with TabularPredictor.load(path).
+                ag_path = getattr(trained_model, 'path', None)
+                pickle_payload = {
+                    "model_type": "AutoGluon",
+                    "autogluon_predictor_path": ag_path,
+                    "best_model_name": best_model,
+                    "best_score": best_score,
+                    "reload_instructions": (
+                        "from autogluon.tabular import TabularPredictor; "
+                        f"predictor = TabularPredictor.load('{ag_path}')"
+                    )
+                }
+                with open(pkl_path, 'wb') as f:
+                    pickle.dump(pickle_payload, f)
+                logger.info(f"[Save Outputs] AutoGluon predictor path pickled → {pkl_path}")
+                logger.info(f"[Save Outputs] To reload: TabularPredictor.load('{ag_path}')")
+            else:
+                # Sklearn / XGBoost models pickle cleanly
+                with open(pkl_path, 'wb') as f:
+                    pickle.dump(trained_model, f)
+                logger.info(f"[Save Outputs] Sklearn model pickled → {pkl_path}")
+
+            saved_paths['pickle'] = str(pkl_path)
+        else:
+            logger.warn("[Save Outputs] No trained model found in state — skipping pickle.")
+
+        # ────────────────────────────────────────────────────────────────
+        # 4. Summary log
+        # ────────────────────────────────────────────────────────────────
+        logger.info("[Save Outputs] ── Saved files ──────────────────────")
+        for file_type, path in saved_paths.items():
+            logger.info(f"[Save Outputs]   {file_type:10s} → {path}")
+        logger.info("[Save Outputs] ─────────────────────────────────────")
+
+        return saved_paths
+    
+    # AFTER
+    def run(self, data_path: str, target_column: str = None, output_dir: str = "outputs", automl_directives: dict = None, problem_type: str = None) -> dict:
+        """
+        Run the complete AutoML workflow.
+
+        Args:
+            data_path:     Path to the data file
+            target_column: Optional target column name (auto-detected if not provided)
+            output_dir:    Directory to save JSON, Markdown, and pickle outputs
+
+        Returns:
+            dict: Final state with results + 'saved_files' key
         """
         initial_state = {
-            'data_path': data_path,
-            'target_column': target_column,
-            'data': None,
-            'data_summary': None,
-            'problem_type': None,
-            'use_automl': None,
-            'automl_config': None,
-            'selected_models': None,
-            'reasoning': None,
-            'data_analysis_reasoning': None,
-            'model_selection_reasoning': None,
-            'trained_model': None,
-            'model_metrics': None,
-            'error': None,
-            'step': 'initialized',
-            'agent_messages': []
-        }
-        
+        'data_path': data_path,
+        'target_column': target_column,
+        'data': None,
+        'data_summary': None,
+        'problem_type': problem_type,           # ← was None hardcoded, now uses argument
+        'use_automl': None,
+        'automl_config': None,
+        'selected_models': None,
+        'reasoning': None,
+        'data_analysis_reasoning': None,
+        'model_selection_reasoning': None,
+        'trained_model': None,
+        'model_metrics': None,
+        'error': None,
+        'step': 'initialized',
+        'agent_messages': [],
+        'automl_directives': automl_directives, # ← NEW
+        'human_approved': None,
+    }
         logger.info("Starting AutoML agent workflow")
         final_state = self.graph.invoke(initial_state)
-        
+
         if final_state.get('error'):
             logger.error(f"Workflow completed with error: {final_state['error']}")
         else:
             logger.info("Workflow completed successfully!")
-        
+
+        # ── NEW: Save all outputs ────────────────────────────────────
+        try:
+            saved_files = self._save_outputs(final_state, output_dir=output_dir)
+            final_state['saved_files'] = saved_files
+        except Exception as e:
+            logger.error(f"[Save Outputs] Failed to save outputs: {str(e)}", e)
+            final_state['saved_files'] = {}
+        # ─────────────────────────────────────────────────────────────
+
         return final_state
+
+
 

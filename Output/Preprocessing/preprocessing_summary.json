@@ -1,0 +1,52 @@
+{
+  "dataset": "1772321330530.csv",
+  "target_column": "Survived",
+  "rows": 1782,
+  "features": 21,
+  "numeric_columns": [],
+  "categorical_columns": [
+    "Pclass",
+    "Sex",
+    "SibSp",
+    "Parch",
+    "Embarked"
+  ],
+  "label_encoded_columns": [
+    "Pclass",
+    "Sex",
+    "SibSp",
+    "Parch",
+    "Embarked"
+  ],
+  "hashed_columns": [
+    "Age",
+    "Fare"
+  ],
+  "dropped_columns": [
+    "PassengerId",
+    "Name",
+    "Ticket",
+    "Cabin"
+  ],
+  "test_size": 0.2,
+  "random_state": 42,
+  "llm": {
+    "enabled": true,
+    "provider": "gemini",
+    "model": "gemini-1.5-flash",
+    "env_var": "GEMINI_API_KEY"
+  },
+  "scaling": {
+    "method": "standard",
+    "means": [],
+    "scales": [],
+    "columns": []
+  },
+  "hashing": {
+    "features": 8,
+    "columns": [
+      "Age",
+      "Fare"
+    ]
+  }
+}

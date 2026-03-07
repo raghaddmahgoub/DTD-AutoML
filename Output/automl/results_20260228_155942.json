@@ -1,0 +1,62 @@
+{
+  "run_timestamp": "20260228_155942",
+  "data_path": "Output\\Preprocessing\\full_preprocessed.csv",
+  "target_column": "Survived",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The 'Feature Strengths' section is empty, meaning there is no explicit information about the linearity or complexity of the signals in the dataset. In the absence of specific insights into signal linearity or simplicity, AutoGluon is the more robust choice. It is designed to handle 'high complexity or non-linear signals' by automatically exploring a wide range of models, performing hyperparameter optimization, and ensembling them. This approach minimizes the risk of underfitting due to unknown non-linearities or complex interactions that might be present but not explicitly identified. Simple Training, recommended for 'linear signals or smaller datasets', would be a less informed choice without knowing the signal characteristics or dataset size.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": []\n}\n```"
+  },
+  "training_results": {
+    "training_method": "Simple+Optuna",
+    "best_model": "GBM",
+    "best_score": 0.9020979020979021,
+    "metric_name": "accuracy",
+    "models_trained": 1,
+    "all_models": [
+      "GBM"
+    ],
+    "all_scores": [
+      0.9020979020979021
+    ],
+    "confusion_matrix": [
+      [
+        203,
+        22
+      ],
+      [
+        17,
+        115
+      ]
+    ],
+    "best_params_per_model": {
+      "GBM": {}
+    },
+    "optuna_refined_config": {
+      "models": [
+        "GBM"
+      ],
+      "time_limit": 270,
+      "preset": "medium_quality"
+    }
+  },
+  "agent_messages": [
+    {
+      "agent": "training",
+      "message": "Training complete. This model demonstrates **excellent** performance with a best score of 0.9021.\n\nBased on the Confusion Matrix, there are **more False Negatives (22)** than False Positives (17).\n\nFor improvement, since AutoGluon only trained one model (GBM), it's recommended to allow it to train and ensemble more diverse models by increasing `time_limit` or `presets` to explore its full potential, or consider feature engineering."
+    }
+  ],
+  "workflow": {
+    "final_step": "model_trained",
+    "error": null
+  }
+}

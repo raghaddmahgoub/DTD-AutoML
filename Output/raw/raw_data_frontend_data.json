@@ -1,7 +1,7 @@
 {
   "metadata": {
     "df_name": "raw_data",
-    "timestamp": "2026-02-24T02:17:31.923225",
+    "timestamp": "2026-03-01T01:28:52.716091",
     "run_type": "raw"
   },
   "report": {
@@ -228,23 +228,22 @@
     },
     "target_analysis": {
       "column": "Survived",
-      "dtype": "object",
+      "dtype": "float64",
       "task_type": "classification",
-      "n_classes": 3,
-      "is_binary": false,
+      "n_classes": 2,
+      "is_binary": true,
       "class_distribution": {
-        "0": 0.6158,
-        "1": 0.3836,
-        "Survived": 0.0006
+        "0.0": 0.6162,
+        "1.0": 0.3838
       },
-      "minority_class_ratio": 0.0006,
-      "majority_class_ratio": 0.6158,
-      "imbalance_ratio": 1098.0,
-      "imbalance_severity": "severe",
-      "target_entropy": 0.967,
-      "min_samples_per_class": 1,
+      "minority_class_ratio": 0.3838,
+      "majority_class_ratio": 0.6162,
+      "imbalance_ratio": 1.61,
+      "imbalance_severity": "none",
+      "target_entropy": 0.9607,
+      "min_samples_per_class": 684,
       "requires_stratification": true,
-      "rare_class_risk": true
+      "rare_class_risk": false
     },
     "data_quality_report": {
       "missing_values": {
@@ -313,11 +312,6 @@
           "Name"
         ],
         "message": "High-cardinality categoricals detected."
-      },
-      {
-        "type": "class_imbalance",
-        "imbalance_ratio": 1098.0,
-        "message": "Target shows class imbalance (majority/minority \u2265 3)."
       }
     ],
     "total_feature_count": 11,
