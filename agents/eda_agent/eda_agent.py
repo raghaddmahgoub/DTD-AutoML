@@ -726,101 +726,190 @@ class EDAAgent:
             
     #     return str(json_path)
 
-    def generate_frontend_json(self, output_dir: str = "Output") -> str:
+#     def generate_frontend_json(self, output_dir: str = "Output") -> str:
 
-        report = self.report
-        summary = report["dataset_summary"]
-        target = report["target_analysis"]
-        quality = report["data_quality_report"]
-        relationships = report["relationship_insights"]
-        columns = report["column_profiles"]
-        warnings = report["eda_warnings"]   
-        relationships  = report.get("relationship_insights") or {}
-        target_relationships = relationships.get("target_relationships") or {}
-        target_rels = target_relationships if isinstance(target_relationships, dict) else {}
-        frontend_json = {
+#         report = self.report
+#         summary = report["dataset_summary"]
+#         target = report["target_analysis"]
+#         quality = report["data_quality_report"]
+#         relationships = report["relationship_insights"]
+#         columns = report["column_profiles"]
+#         warnings = report["eda_warnings"]   
+#         relationships  = report.get("relationship_insights") or {}
+#         target_relationships = relationships.get("target_relationships") or {}
+#         target_rels = target_relationships if isinstance(target_relationships, dict) else {}
+#         frontend_json = {
 
-             "meta": [
-                {"title": "Agent",        "value": f"{self.df_name}_analysis"},
-                {"title": "Stage",        "value": report["run_type"]},
-                {"title": "Dataset Name", "value": self.df_name},
-                {"title": "Timestamp",    "value": pd.Timestamp.now().isoformat()},
-],  
-            "summary": [
-                {"title": "Rows", "value": summary["n_rows"]},
-                {"title": "Columns", "value": summary["n_columns"]},
-                {"title": "Memory (MB)", "value": summary["memory_usage_mb"]},
-                {"title": "Duplicate Rows", "value": summary["duplicate_rows"]},
-                {"title": "Duplicate Ratio", "value": quality["duplicates"]["duplicate_ratio"]},
-                {"title": "Target Column", "value": summary["target_column"]},
-                {"title": "Target Dtype", "value": summary["target_dtype"]},
-                {"title": "Total Feature Count", "value": report["total_feature_count"]}
-            ],  
-            "target_analysis": [
-                {"title": "Task Type", "value": target["task_type"]},
-                {"title": "Is Binary", "value": target["is_binary"]},
-                {"title": "Number of Classes", "value": target["n_classes"]},
-                {"title": "Imbalance Ratio", "value": target["imbalance_ratio"]},
-                {"title": "Imbalance Severity", "value": target["imbalance_severity"]},
-                {"title": "Entropy", "value": target["target_entropy"]},
-                {"title": "Requires Stratification", "value": target["requires_stratification"]},
-                {
-                    "title": "Class Distribution",
-                    "value": [
-                        {"class": str(k), "ratio": v}
-                        for k, v in target["class_distribution"].items()
-                    ]
-                }
-            ],  
-            "data_quality": [
-                {"title": "Total Missing Cells", "value": quality["missing_values"]["total_missing_cells"]},
-                {"title": "Duplicate Count", "value": summary["duplicate_rows"]},
-                {"title": "Duplicate Ratio", "value": quality["duplicates"]["duplicate_ratio"]}
-            ], 
-            "relationships": [
-                {"title": f"{col} (Cramer's V)", "value": val}
-                for col, val in (target_rels.get("cramers_v") or {}).items()
-            ] if target_rels.get("target_type") == "categorical" else [
-                {"title": f"{col} (Pearson r)", "value": val}
-                for col, val in (target_rels.get("feature_correlations") or {}).items()
-            ],
-           "columns": [
-            {
-                "title": col_name,
-                "type": profile["data_type"],
-                "missing_count": profile["missing_count"],
-                "unique_count": profile["unique_count"],
-                "high_cardinality": profile.get("is_high_cardinality", False),  # .get() — key absent on numeric cols
-                "top_values": [
-                    {"value": str(v), "count": int(c)}
-                    for v, c in profile["top_values"].items()  # ← .items() goes HERE, on the dict itself
-                ] if "top_values" in profile else []
+#              "meta": [
+#                 {"title": "Agent",        "value": f"{self.df_name}_analysis"},
+#                 {"title": "Stage",        "value": report["run_type"]},
+#                 {"title": "Dataset Name", "value": self.df_name},
+#                 {"title": "Timestamp",    "value": pd.Timestamp.now().isoformat()},
+# ],  
+#             "summary": [
+#                 {"title": "Rows", "value": summary["n_rows"]},
+#                 {"title": "Columns", "value": summary["n_columns"]},
+#                 {"title": "Memory (MB)", "value": summary["memory_usage_mb"]},
+#                 {"title": "Duplicate Rows", "value": summary["duplicate_rows"]},
+#                 {"title": "Duplicate Ratio", "value": quality["duplicates"]["duplicate_ratio"]},
+#                 {"title": "Target Column", "value": summary["target_column"]},
+#                 {"title": "Target Dtype", "value": summary["target_dtype"]},
+#                 {"title": "Total Feature Count", "value": report["total_feature_count"]}
+#             ],  
+#             "target_analysis": [
+#                 {"title": "Task Type", "value": target["task_type"]},
+#                 {"title": "Is Binary", "value": target["is_binary"]},
+#                 {"title": "Number of Classes", "value": target["n_classes"]},
+#                 {"title": "Imbalance Ratio", "value": target["imbalance_ratio"]},
+#                 {"title": "Imbalance Severity", "value": target["imbalance_severity"]},
+#                 {"title": "Entropy", "value": target["target_entropy"]},
+#                 {"title": "Requires Stratification", "value": target["requires_stratification"]},
+#                 {
+#                     "title": "Class Distribution",
+#                     "value": [
+#                         {"class": str(k), "ratio": v}
+#                         for k, v in target["class_distribution"].items()
+#                     ]
+#                 }
+#             ],  
+#             "data_quality": [
+#                 {"title": "Total Missing Cells", "value": quality["missing_values"]["total_missing_cells"]},
+#                 {"title": "Duplicate Count", "value": summary["duplicate_rows"]},
+#                 {"title": "Duplicate Ratio", "value": quality["duplicates"]["duplicate_ratio"]}
+#             ], 
+#             "relationships": [
+#                 {"title": f"{col} (Cramer's V)", "value": val}
+#                 for col, val in (target_rels.get("cramers_v") or {}).items()
+#             ] if target_rels.get("target_type") == "categorical" else [
+#                 {"title": f"{col} (Pearson r)", "value": val}
+#                 for col, val in (target_rels.get("feature_correlations") or {}).items()
+#             ],
+#            "columns": [
+#             {
+#                 "title": col_name,
+#                 "type": profile["data_type"],
+#                 "missing_count": profile["missing_count"],
+#                 "unique_count": profile["unique_count"],
+#                 "high_cardinality": profile.get("is_high_cardinality", False),  # .get() — key absent on numeric cols
+#                 "top_values": [
+#                     {"value": str(v), "count": int(c)}
+#                     for v, c in profile["top_values"].items()  # ← .items() goes HERE, on the dict itself
+#                 ] if "top_values" in profile else []
+#             }
+#             for col_name, profile in columns.items()      
+#             ],  
+#             "warnings": [
+#                 {
+#                     "title": w["type"].replace("_", " ").title(),
+#                     "columns": w.get("columns", []),
+#                     "message": w["message"]
+#                 }
+#                 for w in warnings
+#             ]
+#         }   
+#         path = Path(output_dir)
+#         path.mkdir(parents=True, exist_ok=True)
+
+#         # Build JSON file path
+#         json_path = path / f"{self.df_name}_frontend_data.json"
+
+#         # Save JSON file
+#         with open(json_path, "w", encoding="utf-8") as f:
+#             json.dump(frontend_json, f, indent=2, default=str)
+
+#         # Return path to saved file
+#         return str(json_path)
+
+
+    def generate_frontend_json(self, stage: str = "raw", output_dir: str = "Output") -> str:
+        """
+        Generate frontend-ready JSON from the existing EDA report.
+        Keeps all column_profiles, target_analysis, data_quality, and warnings.
+        Removes run_type field.
+        """
+        if not self.report:
+            raise ValueError("Run EDA before generating frontend JSON.")
+
+        summary = self.report["dataset_summary"]
+        quality = self.report["data_quality_report"]
+        columns = self.report["column_profiles"]
+        warnings = self.report.get("eda_warnings", [])
+        target = self.report.get("target_analysis", [])
+
+        # --- Columns array ---
+        cols_array = []
+        for col_name, profile in columns.items():
+            col_entry = {
+                "column": col_name,
+                "data_type": profile.get("data_type"),
+                "dtype": str(profile.get("dtype", "")),
+                "missing_count": profile.get("missing_count", 0),
+                "missing_ratio": profile.get("missing_ratio", 0.0),
+                "unique_count": profile.get("unique_count", 0),
+                "is_unique_per_row": profile.get("is_unique_per_row", False),
             }
-            for col_name, profile in columns.items()      
-            ],  
+
+            # Include numeric stats if available
+            if profile.get("data_type") == "numeric":
+                for stat in ["mean", "std", "min", "max", "median", "q1", "q3", "iqr", "kurtosis"]:
+                    if stat in profile:
+                        col_entry[stat] = profile[stat]
+
+            # Include top_values if available (mostly categorical)
+            if "top_values" in profile:
+                top_values = profile["top_values"]
+                if isinstance(top_values, dict):
+                    col_entry["top_values"] = [{"value": str(v), "count": int(c)} for v, c in top_values.items()]
+                elif isinstance(top_values, list):
+                    col_entry["top_values"] = top_values
+
+            # Keep high cardinality flag if present
+            if "is_high_cardinality" in profile:
+                col_entry["high_cardinality"] = profile["is_high_cardinality"]
+
+            cols_array.append(col_entry)
+
+        # --- Build JSON ---
+        frontend_json = {
+            "meta": [
+                {"title": "Agent", "value": f"{self.df_name}_{stage}_analysis"},
+                {"title": "Stage", "value": stage},
+                {"title": "Dataset Name", "value": f"{self.df_name}_{stage}"},
+                {"title": "Timestamp", "value": pd.Timestamp.now().isoformat()},
+            ],
+            "summary": [
+                {"title": "Rows", "value": summary.get("n_rows")},
+                {"title": "Columns", "value": summary.get("n_columns")},
+                {"title": "Memory (MB)", "value": summary.get("memory_usage_mb")},
+                {"title": "Duplicate Rows", "value": summary.get("duplicate_rows")},
+                {"title": "Duplicate Ratio", "value": quality.get("duplicates", {}).get("duplicate_ratio")},
+                {"title": "Target Column", "value": summary.get("target_column")},
+                {"title": "Target Dtype", "value": summary.get("target_dtype")},
+                {"title": "Total Feature Count", "value": self.report.get("total_feature_count")},
+            ],
+            "target_analysis": target,
+            "data_quality": [
+                {"title": "Total Missing Cells", "value": quality.get("missing_values", {}).get("total_missing_cells")},
+                {"title": "Duplicate Count", "value": summary.get("duplicate_rows")},
+                {"title": "Duplicate Ratio", "value": quality.get("duplicates", {}).get("duplicate_ratio")},
+            ],
+            "columns": cols_array,
             "warnings": [
                 {
                     "title": w["type"].replace("_", " ").title(),
                     "columns": w.get("columns", []),
                     "message": w["message"]
-                }
-                for w in warnings
+                } for w in warnings
             ]
-        }   
+        }
+
         path = Path(output_dir)
         path.mkdir(parents=True, exist_ok=True)
-
-        # Build JSON file path
-        json_path = path / f"{self.df_name}_frontend_data.json"
-
-        # Save JSON file
+        json_path = path / f"{self.df_name}_{stage}_frontend_data.json"
         with open(json_path, "w", encoding="utf-8") as f:
             json.dump(frontend_json, f, indent=2, default=str)
 
-        # Return path to saved file
         return str(json_path)
-
-    # --- Chart Data Extractors (Frontend ready) ---
 
     def _get_missing_values_data(self):
         quality = self.report["data_quality_report"]
