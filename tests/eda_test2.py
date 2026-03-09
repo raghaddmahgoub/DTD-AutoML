@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import os
-from eda_agent2 import EDAAgent  # local import — same directory
+from agents.eda_agent.eda_agent import EDAAgent
 
 # ===========================================================================
 # CONFIG  
@@ -31,7 +31,7 @@ TARGET_COLUMN = "Survived"
 PLAN_DIR      = "Plan"
 OUTPUT_DIR    = "Output"
 
-RAW_CSV   = '../../assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
+RAW_CSV   = 'assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
 # CLEAN_CSV = '../../assets/data/Datasets/Classification Datasets/Iris.csv'
 CLEAN_CSV   = '../../assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
 # CLEAN_CSV = '../../assets/data/Datasets/Regression Datasets/Life Expectancy Data.csv'
@@ -112,7 +112,7 @@ import sys
 def main():
     # Usage: python test.py raw OR python test.py clean
     # mode = "raw"
-    mode = "clean"
+    mode = "raw"
 
     if mode == "raw":
         print("🚀 [STAGE 1] Running RAW Data Analysis...")
