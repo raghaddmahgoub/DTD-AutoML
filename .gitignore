@@ -16,6 +16,9 @@ __pycache__/
 logs/
 assets/logs/
 *.log
+# logs
+assets/logs/
+**/*.log
 # assets/data/
 
 # Machine Learning Artifacts
