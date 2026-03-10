@@ -9,7 +9,7 @@ from agents.preprocessing_agent.preprocessing_pipeline import PreprocessingPipel
 # Import modular agents from your folders
 from agents.eda_agent.eda_agent import EDAAgent
 from agents.automl_agent.automl_agent import AutoMLAgent
-from agents.preprocessing_agent.preprocessing_node2 import preprocessing_node
+from agents.preprocessing_agent.preprocessing_node import preprocessing_node
 
 load_dotenv()
 
