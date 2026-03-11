@@ -10,7 +10,7 @@
     },
     {
       "title": "Timestamp",
-      "value": "2026-03-10T05:03:51.065428"
+      "value": "2026-03-11T15:53:37.767376"
     }
   ],
   "summary": [
@@ -67,18 +67,20 @@
     },
     {
       "title": "Target Column",
-      "value": "Survived"
+      "value": null
     },
     {
       "title": "Target Dtype",
-      "value": "int64"
+      "value": null
     }
   ],
   "feature_scale_analysis": [
     {
       "title": "Wide Scale Features",
       "value": [
-        "PassengerId"
+        "PassengerId",
+        "Age",
+        "Fare"
       ]
     },
     {
@@ -98,73 +100,7 @@
       ]
     }
   ],
-  "target_analysis": [
-    {
-      "title": "Column",
-      "value": "Survived"
-    },
-    {
-      "title": "Dtype",
-      "value": "int64"
-    },
-    {
-      "title": "Task Type",
-      "value": "classification"
-    },
-    {
-      "title": "N Classes",
-      "value": 2
-    },
-    {
-      "title": "Is Binary",
-      "value": true
-    },
-    {
-      "title": "Class Distribution",
-      "value": [
-        {
-          "title": "0",
-          "value": 0.6162
-        },
-        {
-          "title": "1",
-          "value": 0.3838
-        }
-      ]
-    },
-    {
-      "title": "Minority Class Ratio",
-      "value": 0.3838
-    },
-    {
-      "title": "Majority Class Ratio",
-      "value": 0.6162
-    },
-    {
-      "title": "Imbalance Ratio",
-      "value": 1.61
-    },
-    {
-      "title": "Imbalance Severity",
-      "value": "none"
-    },
-    {
-      "title": "Target Entropy",
-      "value": 0.9607
-    },
-    {
-      "title": "Min Samples Per Class",
-      "value": 342
-    },
-    {
-      "title": "Requires Stratification",
-      "value": true
-    },
-    {
-      "title": "Rare Class Risk",
-      "value": false
-    }
-  ],
+  "target_analysis": null,
   "data_quality": [
     {
       "title": "Missing Values",
@@ -277,17 +213,7 @@
         }
       ]
     },
-    "target_relationships": {
-      "target_type": "numeric",
-      "feature_correlations": {
-        "PassengerId": -0.005,
-        "Pclass": -0.338,
-        "Age": -0.077,
-        "SibSp": -0.035,
-        "Parch": 0.082,
-        "Fare": 0.257
-      }
-    }
+    "target_relationships": null
   },
   "columns": {
     "PassengerId": {
@@ -571,19 +497,8 @@
     "threshold": 0.7,
     "pairs": []
   },
-  "signal_analysis": {
-    "classification_feature_analysis": {
-      "univariate_class_signal": {
-        "PassengerId": 0.0223,
-        "Pclass": 115.0313,
-        "Age": 4.2712,
-        "SibSp": 1.1106,
-        "Parch": 5.9635,
-        "Fare": 63.0308
-      }
-    }
-  },
-  "total_feature_count": 11,
+  "signal_analysis": {},
+  "total_feature_count": 12,
   "visualizations": {
     "missing_values_chart": [
       {
@@ -702,6 +617,107 @@
           351,
           211,
           660
+        ]
+      },
+      "Survived": {
+        "histogram": {
+          "counts": [
+            549,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            342
+          ],
+          "bins": [
+            0.0,
+            0.05,
+            0.1,
+            0.15000000000000002,
+            0.2,
+            0.25,
+            0.30000000000000004,
+            0.35000000000000003,
+            0.4,
+            0.45,
+            0.5,
+            0.55,
+            0.6000000000000001,
+            0.65,
+            0.7000000000000001,
+            0.75,
+            0.8,
+            0.8500000000000001,
+            0.9,
+            0.9500000000000001,
+            1.0
+          ]
+        },
+        "raw_sample": [
+          1,
+          0,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          1,
+          0,
+          1,
+          1,
+          1,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
         ]
       },
       "Pclass": {

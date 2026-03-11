@@ -691,47 +691,12 @@ class EDAAgent:
     # ==================================================================
     # OUTPUT C — Frontend-ready JSON
     # ==================================================================
-    
-    # def generate_frontend_json(self, output_dir: str = "Output") -> str:
-    #     """
-    #     Builds a comprehensive JSON containing raw stats and chart-ready data.
-    #     """
-    #     if not self.report:
-    #         raise ValueError("Run EDA before generating frontend data.")
-
-    #     # Prepare Chart Data for Frontend
-    #     visualizations = {
-    #         "missing_values_chart": self._get_missing_values_data(),
-    #         "numeric_distributions": self._get_numeric_distribution_data(),
-    #         "categorical_distributions": self._get_categorical_distribution_data(),
-    #         "correlation_matrix": self._get_correlation_matrix_data(),
-    #     }
-
-    #     frontend_payload = {
-    #         "metadata": {
-    #             "df_name": self.df_name,
-    #             "timestamp": pd.Timestamp.now().isoformat(),
-    #             "run_type": self.report["run_type"]
-    #         },
-    #         "report": self.report,
-    #         "visualizations": visualizations
-    #     }
-
-    #     path = Path(output_dir)
-    #     path.mkdir(parents=True, exist_ok=True)
-    #     json_path = path / f"{self.df_name}_frontend_data.json"
-        
-    #     with open(json_path, "w", encoding="utf-8") as f:
-    #         json.dump(frontend_payload, f, indent=2, default=str)
-            
-    #     return str(json_path)
 
     def dict_to_array(self, obj):
         """
         Recursively convert dictionaries into UI-friendly arrays
         of {title, value} objects while preserving nested structure.
         """
-
         if isinstance(obj, dict):
             result = []
 
@@ -747,7 +712,6 @@ class EDAAgent:
                         "title": key.replace("_", " ").title(),
                         "value": v
                     })
-
             return result
 
         elif isinstance(obj, list):
@@ -788,7 +752,9 @@ class EDAAgent:
             }
         }
 
-       path = Path(output_dir)
+       run_type = self.report["run_type"]
+       path = Path(output_dir) / run_type  
+
        path.mkdir(parents=True, exist_ok=True)
 
        json_path = path / f"{self.df_name}_frontend_data.json"
