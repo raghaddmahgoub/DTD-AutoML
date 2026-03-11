@@ -726,11 +726,14 @@ class EDAAgent:
 
        if not self.report:
            raise ValueError("Run EDA before generating frontend JSON.")
+       
+       stage = self.report["run_type"]
 
        frontend_payload = {
             "meta": self.dict_to_array({
+                "Agent": (f"{stage} data analysis").capitalize(),
                 "dataset_name": self.df_name,
-                "run_type": self.report["run_type"],
+                "run_type": stage,
                 "timestamp": pd.Timestamp.now().isoformat()
             }),
 
