@@ -16,6 +16,9 @@ __pycache__/
 logs/
 assets/logs/
 *.log
+# logs
+assets/logs/
+**/*.log
 # assets/data/
 
 # Machine Learning Artifacts
@@ -39,3 +42,4 @@ Output/Preprocessing/*.csv
 Output/Preprocessing/best_pipeline.pkl
 Output/clean/clean_data_frontend_data.jsonOutput/
 assets/logs/
+Output/automl/

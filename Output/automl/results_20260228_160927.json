@@ -1,0 +1,36 @@
+{
+  "run_timestamp": "20260228_160927",
+  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "target_column": "median_house_value",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The 'Feature Strengths' are empty, providing no specific insights into the linearity or complexity of the signals. In the absence of explicit information suggesting simple or linear relationships, it is prudent to opt for a more robust and automated approach like AutoGluon. AutoGluon excels at discovering complex patterns and non-linear relationships through its ensemble learning capabilities, minimizing the risk of underfitting when the signal characteristics are unknown. Given the target 'median_house_value' (even if binned for classification), real-world pricing data often involves intricate feature interactions that AutoGluon is well-equipped to handle.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [\"RandomForest\", \"XGBoost\", \"LogisticRegression\"]\n}\n```"
+  },
+  "training_results": {
+    "training_method": null,
+    "best_model": null,
+    "best_score": null,
+    "metric_name": "score",
+    "models_trained": null,
+    "all_models": [],
+    "all_scores": [],
+    "confusion_matrix": null,
+    "best_params_per_model": {},
+    "optuna_refined_config": null
+  },
+  "agent_messages": [],
+  "workflow": {
+    "final_step": "error",
+    "error": "Failed to train model: Unknown label type: unknown. Maybe you are trying to fit a classifier, which expects discrete classes on a regression target with continuous values."
+  }
+}

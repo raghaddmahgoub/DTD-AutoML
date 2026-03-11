@@ -8,10 +8,12 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 import os
+import sys
 import time
 from dotenv import load_dotenv
 
-from src.utils.data_analyzer import DataAnalyzer
+import dask.dataframe as dd
+
 from src.utils.logger import Logger
 # Load environment variables
 import pickle
@@ -57,7 +59,7 @@ class AutoMLAgent:
             temperature=0.3,
         )
         
-        self.data_analyzer = DataAnalyzer()
+        
         self.graph = self._build_graph()
     
     
@@ -96,11 +98,26 @@ class AutoMLAgent:
         """Load data from file path."""
         try:
             logger.info(f"Loading data from: {state['data_path']}")
-            data = self.data_analyzer.load_data(state['data_path'])
+            data_path = str(state['data_path'])
+            if data_path.endswith('.csv'):
+                self.data = dd.read_csv(
+                                data_path,
+                                blocksize="256MB",
+                                assume_missing=True,
+                                dtype=str,
+                                sample=256000
+                            )
+            elif data_path.endswith('.xlsx') or data_path.endswith('.xls'):
+                pdf = pd.read_excel(data_path)
+                self.data = dd.from_pandas(pdf, npartitions=4)
+            elif data_path.endswith('.json'):
+                self.data = dd.read_json(data_path, blocksize="256MB", lines=True)
+            else:
+                raise ValueError(f"Unsupported file format")
             
-            state['data'] = data
+            state['data'] = self.data
             state['step'] = 'data_loaded'
-            logger.info(f"Data loaded successfully. Shape: {data.shape}")
+            logger.info(f"Data loaded successfully. Shape: {len(self.data.columns)}")
             
         except Exception as e:
             logger.error(f"Error loading data: {str(e)}", e)
@@ -109,114 +126,24 @@ class AutoMLAgent:
         
         return state
     
-    def data_analysis_agent(self, state: AgentState) -> AgentState:
-        """
-        Deep Agent: Data Analysis Subagent
-        Uses LLM reasoning to understand dataset characteristics and generate insights.
-        """
-        try:
-            logger.info("[Data Analysis Agent] Starting deep data analysis with LLM reasoning")
-            
-            # First, get basic data summary
-            data_summary = self.data_analyzer.get_data_summary()
-            state['data_summary'] = data_summary
-            
-            # Prepare context for LLM reasoning
-            data = state['data']
-            target_col = state['target_column']
-            problem_type = state['problem_type']
-            
-            # Create comprehensive prompt for LLM to reason about the data
-            analysis_prompt = f"""
-You are a senior data scientist specializing in exploratory data analysis for machine learning.
 
-**Dataset Overview:**
-- Shape: {data.shape[0]} rows, {data.shape[1]} columns
-- Target column: {target_col}
-- Problem type: {problem_type}
-- Memory usage: {data_summary.get('data_info', {}).get('memory_mb', 0):.2f} MB
-
-**Data Characteristics:**
-- Numeric features: {data_summary.get('feature_info', {}).get('numeric_features', 0)}
-- Categorical features: {data_summary.get('feature_info', {}).get('categorical_features', 0)}
-- Total features: {data_summary.get('feature_info', {}).get('total_features', 0)}
-- Missing values: {'Yes' if data_summary.get('data_quality', {}).get('has_missing', False) else 'No'}
-- Missing percentage: {data_summary.get('data_quality', {}).get('missing_values_pct', 0):.2f}%
-
-**Target Information:**
-- Unique values: {data_summary.get('target_info', {}).get('unique_values', 0)}
-"""
-            
-            if problem_type == 'classification':
-                class_dist = data_summary.get('target_info', {}).get('class_distribution', {})
-                analysis_prompt += f"- Class distribution: {class_dist}\n"
-            else:
-                target_stats = data_summary.get('target_info', {}).get('statistics', {})
-                analysis_prompt += f"- Target statistics: {target_stats}\n"
-            
-            analysis_prompt += """
-**Your Task:**
-Provide a comprehensive analysis of this dataset focusing on:
-1. Data quality assessment (missing values, outliers, data types)
-2. Feature characteristics (distributions, relationships, importance)
-3. Complexity assessment (is this a simple or complex problem?)
-4. Potential challenges for ML models
-5. Recommendations for preprocessing steps needed
-
-Provide your analysis in a clear, structured format:
-"""
-            
-            # Get LLM reasoning about the data
-            messages = [
-                SystemMessage(content="You are an expert data scientist. Provide detailed, actionable analysis of datasets for machine learning projects. Focus on practical insights that inform model selection."),
-                HumanMessage(content=analysis_prompt)
-            ]
-            
-            try:
-                response = self.llm.invoke(messages)
-                analysis_reasoning = response.content
-                
-                # Update agent messages for context
-                if 'agent_messages' not in state:
-                    state['agent_messages'] = []
-                state['agent_messages'].append({
-                    'agent': 'data_analysis',
-                    'message': analysis_reasoning
-                })
-                
-                state['data_analysis_reasoning'] = analysis_reasoning
-                state['reasoning'] = analysis_reasoning
-                state['step'] = 'data_analyzed'
-                
-                logger.info(f"[Data Analysis Agent] Analysis complete. Reasoning length: {len(analysis_reasoning)} chars")
-                logger.info(f"[Data Analysis Agent] Key insights: {analysis_reasoning[:200]}...")
-                
-            except Exception as e:
-                logger.warn(f"[Data Analysis Agent] LLM reasoning failed: {str(e)}, using basic analysis...")
-                state['data_analysis_reasoning'] = f"Basic analysis: Dataset has {data.shape[0]} rows, {data.shape[1]} columns. Problem type: {problem_type}"
-                state['step'] = 'data_analyzed'
-            
-        except Exception as e:
-            logger.error(f"[Data Analysis Agent] Error: {str(e)}", e)
-            state['error'] = f"Failed in data analysis: {str(e)}"
-            state['step'] = 'error'
-        
-        return state
-        
     def identify_target_node(self, state: AgentState) -> AgentState:
         try:
             logger.info("Identifying target column")
             target_col = state.get('target_column')
-
-            if target_col:
-                self.data_analyzer.identify_target_column(target_col)
-            else:
-                target_col = self.data_analyzer.identify_target_column()
+            
+            if not target_col:
+                target_col = state['data'].columns[-1]
+                logger.info(f"Target not provided, falling back to last column: {target_col}")
 
             # ── FIX: only auto-detect problem type if not already set by orchestrator ──
             problem_type = state.get('problem_type')
             if not problem_type:
-                problem_type = self.data_analyzer.determine_problem_type()
+                target_data = state['data'][target_col]
+                if pd.api.types.is_numeric_dtype(target_data) and target_data.nunique() > 20:
+                    problem_type = 'regression'
+                else:
+                    problem_type = 'classification'
                 logger.info(f"Problem type auto-detected: {problem_type}")
             else:
                 logger.info(f"Problem type pre-set by orchestrator: {problem_type}")
@@ -329,7 +256,7 @@ Provide your analysis in a clear, structured format:
         
     #     return state
     
-    def model_selection_agent(self, state: AgentState) -> AgentState:
+    def model_selection_agent(self,data_summary: dict, state: AgentState) -> AgentState:
         """
         Model Selection Subagent that depends on external Analysis Agent directives.
         """
@@ -398,6 +325,20 @@ Provide your analysis in a clear, structured format:
             state['selected_models'] = selected_models
             state['step'] = 'models_selected'
             
+                        # Large-scale safeguard
+            if use_automl and data_summary['data_info']['rows'] > 1_000_000:
+                automl_config['models_to_prioritize'] = \
+                    automl_config.get('models_to_prioritize', ['GBM', 'XGB'])[:2]
+                
+                automl_config['preset_mode'] = 'good_quality_faster_inference'
+                
+                automl_config['time_limit_seconds'] = \
+                    min(automl_config.get('time_limit_seconds', 300), 600)
+
+                state['automl_config'] = automl_config
+                
+            state['step'] = 'models_selected'
+
             return state
 
         except Exception as e:
@@ -433,54 +374,68 @@ Provide your analysis in a clear, structured format:
             # 1. LOAD AND COERCE DATA TYPES
             data = state['data'].copy()
             target_column = state['target_column']
-            
-            # FORCE Target to numeric for Regression
-            if state['problem_type'] == 'regression':
-                data[target_column] = pd.to_numeric(data[target_column], errors='coerce')
-                # Drop rows where target coercion failed (e.g. if there were actual strings)
-                data = data.dropna(subset=[target_column])
-
             problem_type = state['problem_type']
+            
+                        # Ensure Dask compatibility
+            if not isinstance(data, dd.DataFrame):
+                data = dd.from_pandas(data, npartitions=10)
+
             X = data.drop(columns=[target_column])
-            # Automatically convert any other 'object' columns to numeric if possible
-            # This handles features that were also loaded as strings
-            for col in X.select_dtypes(include=['object']).columns:
-                X[col] = pd.to_numeric(X[col], errors='ignore')
+            y = data[target_column]
+
+            # Convert all columns to numeric where possible
+            X = X.map_partitions(lambda df: df.apply(pd.to_numeric, errors="coerce"))
+            y = dd.to_numeric(y, errors="coerce")
+
+            # Convert to pandas before sklearn/AutoGluon
+            if hasattr(X, "compute"):
+                X = X.compute()
+            if hasattr(y, "compute"):
+                y = y.compute()
+
+            # Drop rows where target is missing
+            valid_idx = ~y.isna()
+            X = X.loc[valid_idx]
+            y = y.loc[valid_idx]
+
+            # # FORCE Target to numeric for Regression
+            # if state['problem_type'] == 'regression':
+            #     data[target_column] = pd.to_numeric(data[target_column], errors='coerce')
+            #     # Drop rows where target coercion failed (e.g. if there were actual strings)
+            #     data = data.dropna(subset=[target_column])
+
+            # X = data.drop(columns=[target_column])
+            # # Automatically convert any other 'object' columns to numeric if possible
+            # # This handles features that were also loaded as strings
+            # for col in X.select_dtypes(include=['object']).columns:
+            #     X[col] = pd.to_numeric(X[col], errors='ignore')
                 
             X_encoded = pd.get_dummies(X, drop_first=True)
-            y = data[target_column]
+            # y = data[target_column]
 
             # Split data here to ensure we have test labels for the confusion matrix
             from sklearn.model_selection import train_test_split
             from sklearn.metrics import confusion_matrix
             X_train, X_test, y_train, y_test = train_test_split(X_encoded, y, test_size=0.2, random_state=42)
 
-            # ── AFTER (Optuna-tuned AutoGluon) ──
+            # ── AutoGluon ──
             if use_automl:
                 automl_config = state.get('automl_config', {})
 
-                # ── NEW: Optuna searches for the best AutoGluon config first ──
-                # Split a small validation set from X_train for Optuna scoring
-                from sklearn.model_selection import train_test_split as _tts
-                X_tr_opt, X_val_opt, y_tr_opt, y_val_opt = _tts(
-                    X_train, y_train, test_size=0.2, random_state=42
-                )
-                logger.info("[Training Agent] Running Optuna HPO to refine AutoGluon config...")
-                refined_config = self._tune_autogluon_with_optuna(
-                    X_tr_opt, y_tr_opt,
-                    X_val_opt, y_val_opt,
-                    problem_type,
-                    base_config=automl_config,
-                    n_trials=10          # ← raise to 20-30 if you have more time/RAM
-                )
-                logger.info(f"[Training Agent] Refined config from Optuna: {refined_config}")
-
-                # ── Final full training with the Optuna-optimized config ──
+                # ── Final full training with the config ──
                 trained_model, metrics = self._train_with_autogluon(
-                    X_train, y_train, problem_type, refined_config
+                    X_train, y_train, problem_type, automl_config
                 )
-                metrics['optuna_refined_config'] = refined_config   # store in metrics for reporting
-                y_pred = trained_model.predict(X_test)
+                # y_pred = trained_model.predict(X_test)
+
+                                # Safe prediction handling
+                if hasattr(trained_model, 'feature_names_in_'):
+                    seen_cols = list(trained_model.feature_names_in_)
+                    X_test_pre = X_test.reindex(columns=seen_cols, fill_value=0)
+                    y_pred = trained_model.predict(X_test_pre)
+                else:
+                    y_pred = trained_model.predict(X_test)
+
             else:
                 selected_models = state.get('selected_models', []) or ['RandomForest']
                 # trained_model, metrics = self._train_simple_models(X, y, problem_type, selected_models)
@@ -490,11 +445,29 @@ Provide your analysis in a clear, structured format:
                 # # Re-align columns in case dummies changed
                 # X_test_simple = X_test_simple.reindex(columns=pd.get_dummies(X_train, drop_first=True).columns, fill_value=0)
                 # y_pred = trained_model.predict(X_test_simple)
-                y_pred = trained_model.predict(X_test)
+
+                if hasattr(trained_model, 'feature_names_in_'):
+                    seen_cols = list(trained_model.feature_names_in_)
+                    X_test_aligned = X_test.reindex(columns=seen_cols, fill_value=0)
+                else:
+                    X_test_aligned = X_test
+
+                y_pred = trained_model.predict(X_test_aligned)
+
+                # y_pred = trained_model.predict(X_test)
             
             # --- FIX: ADD CONFUSION MATRIX ---
             if problem_type == 'classification':
-                cm = confusion_matrix(y_test, y_pred)
+                # cm = confusion_matrix(y_test, y_pred)
+                if len(y_test) > 50_000:
+                    sample_idx = y_test.sample(n=50_000, random_state=42).index
+                    cm = confusion_matrix(
+                        y_test.loc[sample_idx],
+                        pd.Series(y_pred, index=y_test.index).loc[sample_idx]
+                    )
+                else:
+                    cm = confusion_matrix(y_test, y_pred)
+
                 metrics['confusion_matrix'] = cm.tolist() # Save as list for JSON/Markdown compatibility
                 logger.info(f"[Training Agent] Confusion Matrix generated: {metrics['confusion_matrix']}")
 
@@ -529,7 +502,12 @@ Provide your analysis in a clear, structured format:
             cm_text = ""
             if 'confusion_matrix' in metrics:
                 cm = metrics['confusion_matrix']
-                cm_text = f"\n**Confusion Matrix:**\nPredicted 0: [{cm[0][0]}, {cm[0][1]}]\nPredicted 1: [{cm[1][0]}, {cm[1][1]}]"
+                # cm_text = f"\n**Confusion Matrix:**\nPredicted 0: [{cm[0][0]}, {cm[0][1]}]\nPredicted 1: [{cm[1][0]}, {cm[1][1]}]"
+                if len(cm) > 10:
+                            cm_preview = [row[:10] for row in cm[:10]]
+                            cm_text = "\n**Confusion Matrix:**\n" + "\n".join([str(row) for row in cm_preview])
+                else:
+                    cm_text = "\n**Confusion Matrix:**\n" + "\n".join([str(row) for row in cm])
 
             interpretation_prompt = f"""
 Analyze the following model training results:
@@ -740,6 +718,17 @@ Provide your analysis and decision:
             
             logger.info(f"Initializing AutoGluon predictor with config: {config}")
             
+            rows, features = X.shape
+            # --- Large-scale handling ---
+            if rows > 1_000_000 or features > 500:
+                # Sample 1–5% of data for AutoML to avoid memory issues
+                frac = min(0.05, 500_000 / rows)
+                X_sample = X.sample(frac=frac, random_state=42)
+                y_sample = y.loc[X_sample.index]
+                logger.info(f"[AutoGluon] Large dataset detected ({rows} rows, {features} features). Sampling {len(X_sample)} rows for training.")
+            else:
+                X_sample, y_sample = X, y
+
             # Prepare data with target column
             train_data = X.copy()
             target_col_name = 'target'
@@ -886,123 +875,7 @@ Provide your analysis and decision:
             # Fallback to simple training
             fallback_models = config.get('models', ['RandomForest'])
             return self._train_simple_models(X, y, problem_type, [fallback_models[0]] if fallback_models else ['RandomForest'])
-    def _tune_autogluon_with_optuna(self,X_train: pd.DataFrame,y_train: pd.Series,X_val: pd.DataFrame,y_val: pd.Series,problem_type: str,base_config: dict, n_trials: int = 10) -> dict:
-        """
-        Use Optuna to search over AutoGluon's top-level config.
-        Refines the LLM's automl_config before the final full training run.
-        Returns the best config dict (same shape as automl_config).
-        """
-        import optuna
-        from autogluon.tabular import TabularPredictor
-        import tempfile
 
-        # Map problem type exactly like _train_with_autogluon does
-        ag_problem_type = problem_type
-        if problem_type == 'classification':
-            ag_problem_type = 'binary' if y_train.nunique() == 2 else 'multiclass'
-
-        # Use the LLM's suggested models as the search pool
-        llm_suggested_models = base_config.get('models', ['GBM', 'XGB', 'CAT'])
-        llm_time_limit       = base_config.get('time_limit', 300)
-        llm_preset           = base_config.get('preset', 'best_quality')
-
-        # Build candidate model subsets from the LLM's list (pairs + full set)
-        model_pool = llm_suggested_models
-        model_subsets = []
-        # All individual models
-        for m in model_pool:
-            model_subsets.append([m])
-        # All pairs
-        for i in range(len(model_pool)):
-            for j in range(i + 1, len(model_pool)):
-                model_subsets.append([model_pool[i], model_pool[j]])
-        # Full set
-        if len(model_pool) > 2:
-            model_subsets.append(model_pool)
-
-        logger.info(f"[Optuna+AutoGluon] Starting {n_trials} trials over config space")
-        logger.info(f"[Optuna+AutoGluon] LLM base config: {base_config}")
-        logger.info(f"[Optuna+AutoGluon] Model subsets to explore: {model_subsets}")
-
-        train_df = X_train.copy()
-        train_df['target'] = y_train.values
-        val_df = X_val.copy()
-        val_df['target'] = y_val.values
-
-        def objective(trial: optuna.Trial) -> float:
-            # Search over the LLM-suggested time range (±50% of LLM suggestion)
-            time_limit = trial.suggest_int(
-                'time_limit',
-                max(30, int(llm_time_limit * 0.5)),
-                int(llm_time_limit * 1.5),
-                step=30
-            )
-            # Search over preset quality levels
-            preset = trial.suggest_categorical(
-                'preset',
-                ['medium_quality', 'high_quality', 'best_quality']
-            )
-            # Pick a model subset from the LLM's suggested pool
-            subset_idx = trial.suggest_int('subset_idx', 0, len(model_subsets) - 1)
-            chosen_models = model_subsets[subset_idx]
-
-            path = os.path.join(
-                tempfile.gettempdir(),
-                f"ag_optuna_t{trial.number}_{os.getpid()}"
-            )
-
-            try:
-                predictor = TabularPredictor(
-                    label='target',
-                    problem_type=ag_problem_type,
-                    path=path,
-                    verbosity=0
-                )
-                predictor.fit(
-                    train_df,
-                    presets=preset,
-                    time_limit=time_limit,
-                    hyperparameters={m: {} for m in chosen_models},
-                    # Match your existing memory-safe settings
-                    ag_args_ensemble={
-                        'fold_fitting_strategy': 'sequential_local',
-                        'use_ray': False
-                    },
-                    dynamic_stacking=False,
-                    save_space=True,
-                )
-                score_dict = predictor.evaluate(val_df, silent=True)
-                # AutoGluon returns {metric_name: value}; grab the first one
-                score = float(list(score_dict.values())[0])
-                logger.info(
-                    f"[Optuna+AutoGluon] Trial {trial.number}: "
-                    f"preset={preset}, time={time_limit}s, "
-                    f"models={chosen_models} → score={score:.4f}"
-                )
-                return score
-
-            except Exception as e:
-                logger.warn(f"[Optuna+AutoGluon] Trial {trial.number} failed: {str(e)}")
-                return -float('inf')   # penalize failed trials
-
-        optuna.logging.set_verbosity(optuna.logging.WARNING)
-        study = optuna.create_study(
-            direction='maximize',
-            sampler=optuna.samplers.TPESampler(seed=42)
-        )
-        study.optimize(objective, n_trials=n_trials, show_progress_bar=False)
-
-        best = study.best_params
-        best_config = {
-            'models':      model_subsets[best['subset_idx']],
-            'time_limit':  best['time_limit'],
-            'preset':      best['preset'],
-        }
-
-        logger.info(f"[Optuna+AutoGluon] Best config found: {best_config}")
-        logger.info(f"[Optuna+AutoGluon] Best score: {study.best_value:.4f}")
-
-        return best_config
     def _tune_with_optuna(self, X_train, X_test, y_train, y_test, problem_type: str, model_name: str, n_trials: int = 30):
         """
         Run Optuna HPO for a single model. Returns best model and its score.
@@ -1125,6 +998,13 @@ Provide your analysis and decision:
         except ImportError:
             xgb_available = False
             logger.warn("XGBoost not available, will use GradientBoosting as alternative")
+
+
+        if X.shape[0] > 1_000_000 or X.shape[1] > 500:
+            frac = min(0.05, 500_000 / X.shape[0])  # max 500k rows
+            X = X.sample(frac=frac, random_state=42)
+            y = y.loc[X.index]
+            logger.info(f"[Simple Models] Large dataset detected. Sampling {len(X)} rows for training.")
 
         # Ensure we have a valid list to iterate over
         if not model_names or not isinstance(model_names, list):
@@ -1537,6 +1417,9 @@ Provide your analysis and decision:
         Returns:
             dict: Final state with results + 'saved_files' key
         """
+        self.dataset_path = data_path
+        self.target_column = target_column
+        self.output_dir = output_dir
         initial_state = {
         'data_path': data_path,
         'target_column': target_column,

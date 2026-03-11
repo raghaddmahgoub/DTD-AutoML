@@ -1,48 +1,55 @@
 [
   {
     "column": "PassengerId",
-    "dtype": "object",
+    "dtype": "int64",
     "missing_pct": 0.0,
-    "n_unique": 892,
+    "n_unique": 891,
     "sample_values": [
-      "1",
-      "2",
-      "3",
-      "4",
-      "5"
+      1,
+      2,
+      3,
+      4,
+      5
     ],
-    "is_target": false
+    "is_target": false,
+    "mean": 446.0,
+    "std": 257.3538,
+    "skew": 0.0
   },
   {
     "column": "Survived",
-    "dtype": "object",
+    "dtype": "int64",
     "missing_pct": 0.0,
-    "n_unique": 3,
+    "n_unique": 2,
     "sample_values": [
-      "0",
-      "1",
-      "Survived"
+      0,
+      1
     ],
-    "is_target": true
+    "is_target": true,
+    "mean": 0.3838,
+    "std": 0.4866,
+    "skew": 0.4785
   },
   {
     "column": "Pclass",
-    "dtype": "object",
+    "dtype": "int64",
     "missing_pct": 0.0,
-    "n_unique": 4,
+    "n_unique": 3,
     "sample_values": [
-      "3",
-      "1",
-      "2",
-      "Pclass"
+      3,
+      1,
+      2
     ],
-    "is_target": false
+    "is_target": false,
+    "mean": 2.3086,
+    "std": 0.8361,
+    "skew": -0.6305
   },
   {
     "column": "Name",
     "dtype": "object",
     "missing_pct": 0.0,
-    "n_unique": 892,
+    "n_unique": 891,
     "sample_values": [
       "Braund, Mr. Owen Harris",
       "Cumings, Mrs. John Bradley (Florence Briggs Thayer)",
@@ -56,61 +63,69 @@
     "column": "Sex",
     "dtype": "object",
     "missing_pct": 0.0,
-    "n_unique": 3,
+    "n_unique": 2,
     "sample_values": [
       "male",
-      "female",
-      "Sex"
+      "female"
     ],
     "is_target": false
   },
   {
     "column": "Age",
-    "dtype": "object",
-    "missing_pct": 19.85,
-    "n_unique": 89,
+    "dtype": "float64",
+    "missing_pct": 19.87,
+    "n_unique": 88,
     "sample_values": [
-      "22",
-      "38",
-      "26",
-      "35",
-      "54"
+      22.0,
+      38.0,
+      26.0,
+      35.0,
+      54.0
     ],
-    "is_target": false
+    "is_target": false,
+    "mean": 29.6991,
+    "std": 14.5265,
+    "skew": 0.3891
   },
   {
     "column": "SibSp",
-    "dtype": "object",
+    "dtype": "int64",
     "missing_pct": 0.0,
-    "n_unique": 8,
+    "n_unique": 7,
     "sample_values": [
-      "1",
-      "0",
-      "3",
-      "4",
-      "2"
+      1,
+      0,
+      3,
+      4,
+      2
     ],
-    "is_target": false
+    "is_target": false,
+    "mean": 0.523,
+    "std": 1.1027,
+    "skew": 3.6954
   },
   {
     "column": "Parch",
-    "dtype": "object",
+    "dtype": "int64",
     "missing_pct": 0.0,
-    "n_unique": 8,
+    "n_unique": 7,
     "sample_values": [
-      "0",
-      "1",
-      "2",
-      "5",
-      "3"
+      0,
+      1,
+      2,
+      5,
+      3
     ],
-    "is_target": false
+    "is_target": false,
+    "mean": 0.3816,
+    "std": 0.8061,
+    "skew": 2.7491
   },
   {
     "column": "Ticket",
     "dtype": "object",
     "missing_pct": 0.0,
-    "n_unique": 682,
+    "n_unique": 681,
     "sample_values": [
       "A/5 21171",
       "PC 17599",
@@ -122,23 +137,26 @@
   },
   {
     "column": "Fare",
-    "dtype": "object",
+    "dtype": "float64",
     "missing_pct": 0.0,
-    "n_unique": 249,
+    "n_unique": 248,
     "sample_values": [
-      "7.25",
-      "71.2833",
-      "7.925",
-      "53.1",
-      "8.05"
+      7.25,
+      71.2833,
+      7.925,
+      53.1,
+      8.05
     ],
-    "is_target": false
+    "is_target": false,
+    "mean": 32.2042,
+    "std": 49.6934,
+    "skew": 4.7873
   },
   {
     "column": "Cabin",
     "dtype": "object",
-    "missing_pct": 77.06,
-    "n_unique": 148,
+    "missing_pct": 77.1,
+    "n_unique": 147,
     "sample_values": [
       "C85",
       "C123",
@@ -152,12 +170,11 @@
     "column": "Embarked",
     "dtype": "object",
     "missing_pct": 0.22,
-    "n_unique": 4,
+    "n_unique": 3,
     "sample_values": [
       "S",
       "C",
-      "Q",
-      "Embarked"
+      "Q"
     ],
     "is_target": false
   }

@@ -1,0 +1,386 @@
+{
+  "rows": 891,
+  "columns": 11,
+  "duplicate_rows": 0,
+  "target": {
+    "name": "Survived",
+    "n_classes": 2,
+    "class_counts": {
+      "0": 549,
+      "1": 342
+    },
+    "imbalance_ratio": 1.605263157894737
+  },
+  "metric_priority": "f1",
+  "columns_profile": {
+    "PassengerId": {
+      "dtype": "int64",
+      "missing_ratio": 0.0,
+      "unique_count": 891,
+      "unique_ratio": 1.0,
+      "numeric_parse_ratio": 1.0,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "top_values": {
+        "891": 1,
+        "1": 1,
+        "2": 1,
+        "3": 1,
+        "4": 1,
+        "5": 1,
+        "6": 1,
+        "7": 1,
+        "8": 1,
+        "9": 1
+      },
+      "numeric_stats": {
+        "mean": 446.0,
+        "std": 257.3538420152301,
+        "q1": 223.5,
+        "q3": 668.5
+      }
+    },
+    "Pclass": {
+      "dtype": "int64",
+      "missing_ratio": 0.0,
+      "unique_count": 3,
+      "unique_ratio": 0.003367003367003367,
+      "numeric_parse_ratio": 1.0,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "3",
+        "1",
+        "3",
+        "1",
+        "3",
+        "3",
+        "1",
+        "3"
+      ],
+      "top_values": {
+        "3": 491,
+        "1": 216,
+        "2": 184
+      },
+      "numeric_stats": {
+        "mean": 2.308641975308642,
+        "std": 0.836071240977049,
+        "q1": 2.0,
+        "q3": 3.0
+      }
+    },
+    "Name": {
+      "dtype": "object",
+      "missing_ratio": 0.0,
+      "unique_count": 891,
+      "unique_ratio": 1.0,
+      "numeric_parse_ratio": 0.0,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "Braund, Mr. Owen Harris",
+        "Cumings, Mrs. John Bradley (Florence Briggs Thayer)",
+        "Heikkinen, Miss. Laina",
+        "Futrelle, Mrs. Jacques Heath (Lily May Peel)",
+        "Allen, Mr. William Henry",
+        "Moran, Mr. James",
+        "McCarthy, Mr. Timothy J",
+        "Palsson, Master. Gosta Leonard"
+      ],
+      "top_values": {
+        "Dooley, Mr. Patrick": 1,
+        "Braund, Mr. Owen Harris": 1,
+        "Cumings, Mrs. John Bradley (Florence Briggs Thayer)": 1,
+        "Heikkinen, Miss. Laina": 1,
+        "Futrelle, Mrs. Jacques Heath (Lily May Peel)": 1,
+        "Allen, Mr. William Henry": 1,
+        "Moran, Mr. James": 1,
+        "McCarthy, Mr. Timothy J": 1,
+        "Palsson, Master. Gosta Leonard": 1,
+        "Johnson, Mrs. Oscar W (Elisabeth Vilhelmina Berg)": 1
+      },
+      "numeric_stats": {
+        "mean": null,
+        "std": null,
+        "q1": null,
+        "q3": null
+      }
+    },
+    "Sex": {
+      "dtype": "object",
+      "missing_ratio": 0.0,
+      "unique_count": 2,
+      "unique_ratio": 0.002244668911335578,
+      "numeric_parse_ratio": 0.0,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "male",
+        "female",
+        "female",
+        "female",
+        "male",
+        "male",
+        "male",
+        "male"
+      ],
+      "top_values": {
+        "male": 577,
+        "female": 314
+      },
+      "numeric_stats": {
+        "mean": null,
+        "std": null,
+        "q1": null,
+        "q3": null
+      }
+    },
+    "Age": {
+      "dtype": "float64",
+      "missing_ratio": 0.19865319865319866,
+      "unique_count": 88,
+      "unique_ratio": 0.09876543209876543,
+      "numeric_parse_ratio": 1.0,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "22.0",
+        "38.0",
+        "26.0",
+        "35.0",
+        "35.0",
+        "54.0",
+        "2.0",
+        "27.0"
+      ],
+      "top_values": {
+        "nan": 177,
+        "24.0": 30,
+        "22.0": 27,
+        "18.0": 26,
+        "28.0": 25,
+        "30.0": 25,
+        "19.0": 25,
+        "21.0": 24,
+        "25.0": 23,
+        "36.0": 22
+      },
+      "numeric_stats": {
+        "mean": 29.69911764705882,
+        "std": 14.526497332334042,
+        "q1": 20.125,
+        "q3": 38.0
+      }
+    },
+    "SibSp": {
+      "dtype": "int64",
+      "missing_ratio": 0.0,
+      "unique_count": 7,
+      "unique_ratio": 0.007856341189674524,
+      "numeric_parse_ratio": 1.0,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "1",
+        "1",
+        "0",
+        "1",
+        "0",
+        "0",
+        "0",
+        "3"
+      ],
+      "top_values": {
+        "0": 608,
+        "1": 209,
+        "2": 28,
+        "4": 18,
+        "3": 16,
+        "8": 7,
+        "5": 5
+      },
+      "numeric_stats": {
+        "mean": 0.5230078563411896,
+        "std": 1.1027434322934317,
+        "q1": 0.0,
+        "q3": 1.0
+      }
+    },
+    "Parch": {
+      "dtype": "int64",
+      "missing_ratio": 0.0,
+      "unique_count": 7,
+      "unique_ratio": 0.007856341189674524,
+      "numeric_parse_ratio": 1.0,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "0",
+        "1"
+      ],
+      "top_values": {
+        "0": 678,
+        "1": 118,
+        "2": 80,
+        "5": 5,
+        "3": 5,
+        "4": 4,
+        "6": 1
+      },
+      "numeric_stats": {
+        "mean": 0.38159371492704824,
+        "std": 0.8060572211299483,
+        "q1": 0.0,
+        "q3": 0.0
+      }
+    },
+    "Ticket": {
+      "dtype": "object",
+      "missing_ratio": 0.0,
+      "unique_count": 681,
+      "unique_ratio": 0.7643097643097643,
+      "numeric_parse_ratio": 0.7418630751964085,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "A/5 21171",
+        "PC 17599",
+        "STON/O2. 3101282",
+        "113803",
+        "373450",
+        "330877",
+        "17463",
+        "349909"
+      ],
+      "top_values": {
+        "347082": 7,
+        "1601": 7,
+        "CA. 2343": 7,
+        "3101295": 6,
+        "CA 2144": 6,
+        "347088": 6,
+        "382652": 5,
+        "S.O.C. 14879": 5,
+        "113760": 4,
+        "19950": 4
+      },
+      "numeric_stats": {
+        "mean": 260318.54916792738,
+        "std": 471609.2686883497,
+        "q1": 19996.0,
+        "q3": 347743.0
+      }
+    },
+    "Fare": {
+      "dtype": "float64",
+      "missing_ratio": 0.0,
+      "unique_count": 248,
+      "unique_ratio": 0.2783389450056117,
+      "numeric_parse_ratio": 1.0,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "7.25",
+        "71.2833",
+        "7.925",
+        "53.1",
+        "8.05",
+        "8.4583",
+        "51.8625",
+        "21.075"
+      ],
+      "top_values": {
+        "8.05": 43,
+        "13.0": 42,
+        "7.8958": 38,
+        "7.75": 34,
+        "26.0": 31,
+        "10.5": 24,
+        "7.925": 18,
+        "7.775": 16,
+        "7.2292": 15,
+        "26.55": 15
+      },
+      "numeric_stats": {
+        "mean": 32.204207968574636,
+        "std": 49.6934285971809,
+        "q1": 7.9104,
+        "q3": 31.0
+      }
+    },
+    "Cabin": {
+      "dtype": "object",
+      "missing_ratio": 0.7710437710437711,
+      "unique_count": 147,
+      "unique_ratio": 0.16498316498316498,
+      "numeric_parse_ratio": 0.0,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "C85",
+        "C123",
+        "E46",
+        "G6",
+        "C103",
+        "D56",
+        "A6",
+        "C23 C25 C27"
+      ],
+      "top_values": {
+        "nan": 687,
+        "G6": 4,
+        "C23 C25 C27": 4,
+        "B96 B98": 4,
+        "F2": 3,
+        "D": 3,
+        "E101": 3,
+        "C22 C26": 3,
+        "F33": 3,
+        "C83": 2
+      },
+      "numeric_stats": {
+        "mean": null,
+        "std": null,
+        "q1": null,
+        "q3": null
+      }
+    },
+    "Embarked": {
+      "dtype": "object",
+      "missing_ratio": 0.002244668911335578,
+      "unique_count": 3,
+      "unique_ratio": 0.003367003367003367,
+      "numeric_parse_ratio": 0.0,
+      "datetime_parse_ratio": 0.0,
+      "sample_values": [
+        "S",
+        "C",
+        "S",
+        "S",
+        "S",
+        "Q",
+        "S",
+        "S"
+      ],
+      "top_values": {
+        "S": 644,
+        "C": 168,
+        "Q": 77,
+        "nan": 2
+      },
+      "numeric_stats": {
+        "mean": null,
+        "std": null,
+        "q1": null,
+        "q3": null
+      }
+    }
+  }
+}

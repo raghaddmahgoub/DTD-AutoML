@@ -1,0 +1,124 @@
+{
+  "duplicates": {
+    "action": "drop_exact",
+    "reason": "safe_default"
+  },
+  "columns": {
+    "PassengerId": {
+      "drop": true,
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none",
+      "reason": "default_policy"
+    },
+    "Pclass": {
+      "drop": false,
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none",
+      "reason": "default_policy"
+    },
+    "Name": {
+      "drop": true,
+      "dtype": "categorical",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "hash",
+      "reason": "default_policy"
+    },
+    "Sex": {
+      "drop": false,
+      "dtype": "categorical",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "label",
+      "reason": "default_policy"
+    },
+    "Age": {
+      "drop": false,
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none",
+      "reason": "default_policy"
+    },
+    "SibSp": {
+      "drop": false,
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none",
+      "reason": "default_policy"
+    },
+    "Parch": {
+      "drop": false,
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none",
+      "reason": "default_policy"
+    },
+    "Ticket": {
+      "drop": false,
+      "dtype": "categorical",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "hash",
+      "reason": "default_policy"
+    },
+    "Fare": {
+      "drop": false,
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none",
+      "reason": "default_policy"
+    },
+    "Cabin": {
+      "drop": true,
+      "dtype": "categorical",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "hash",
+      "reason": "default_policy"
+    },
+    "Embarked": {
+      "drop": false,
+      "dtype": "categorical",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "label",
+      "reason": "default_policy"
+    }
+  },
+  "feature_selection": {
+    "method": "variance",
+    "threshold": 0.0
+  },
+  "feature_creation": {
+    "method": "datetime_parts"
+  },
+  "dimensionality_reduction": {
+    "method": "none",
+    "n_components": "auto"
+  },
+  "scaling": {
+    "method": "standard"
+  },
+  "normalization": {
+    "method": "none"
+  },
+  "imbalance": {
+    "method": "none",
+    "reason": "default_by_ratio"
+  },
+  "safeguards": {
+    "safe_mode": true,
+    "notes": [],
+    "max_row_drop_fraction": 0.02,
+    "rows": 891,
+    "target_imbalance_ratio": 1.605263157894737
+  }
+}

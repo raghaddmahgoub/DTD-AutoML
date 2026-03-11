@@ -1,52 +1,105 @@
 {
-  "dataset": "1772321330530.csv",
+  "dataset": "Titanic-Dataset.csv",
   "target_column": "Survived",
-  "rows": 1782,
-  "features": 21,
-  "numeric_columns": [],
-  "categorical_columns": [
-    "Pclass",
-    "Sex",
-    "SibSp",
-    "Parch",
-    "Embarked"
-  ],
-  "label_encoded_columns": [
-    "Pclass",
-    "Sex",
-    "SibSp",
-    "Parch",
-    "Embarked"
-  ],
-  "hashed_columns": [
-    "Age",
-    "Fare"
-  ],
+  "rows": 891,
+  "features": 15,
   "dropped_columns": [
     "PassengerId",
     "Name",
-    "Ticket",
     "Cabin"
   ],
+  "duplicates_removed": 0,
   "test_size": 0.2,
   "random_state": 42,
   "llm": {
     "enabled": true,
+    "policy_used": false,
     "provider": "gemini",
-    "model": "gemini-1.5-flash",
-    "env_var": "GEMINI_API_KEY"
+    "model": "gemini-2.5-flash",
+    "env_var": "GEMINI_API_KEY",
+    "final_decision_enabled": true
+  },
+  "steps_status": {
+    "missing_values": "handled",
+    "outliers": "handled",
+    "duplicates": "handled",
+    "type_conversion": "handled",
+    "categorical_encoding": "handled",
+    "feature_selection": "handled",
+    "feature_creation": "handled",
+    "dimensionality_reduction": "skipped",
+    "normalization": "skipped",
+    "scaling": "handled",
+    "imbalance": "handled_after_split"
+  },
+  "imbalance": {
+    "method": "none",
+    "before_counts": {
+      "0": 439,
+      "1": 273
+    },
+    "imbalance_ratio": 1.6080586080586081,
+    "status": "skipped_not_needed"
   },
   "scaling": {
     "method": "standard",
-    "means": [],
-    "scales": [],
-    "columns": []
-  },
-  "hashing": {
-    "features": 8,
     "columns": [
+      "Pclass",
+      "Sex",
       "Age",
-      "Fare"
+      "SibSp",
+      "Parch",
+      "Ticket__hash_0",
+      "Ticket__hash_1",
+      "Ticket__hash_2",
+      "Ticket__hash_3",
+      "Ticket__hash_4",
+      "Ticket__hash_5",
+      "Ticket__hash_6",
+      "Ticket__hash_7",
+      "Fare",
+      "Embarked"
+    ],
+    "means": [
+      2.308641975308642,
+      0.6475869809203143,
+      29.36158249158249,
+      0.5230078563411896,
+      0.38159371492704824,
+      -0.025813692480359147,
+      -0.013468013468013467,
+      -0.025813692480359147,
+      -0.017957351290684626,
+      -0.017957351290684626,
+      0.04264870931537598,
+      0.010101010101010102,
+      -0.006734006734006734,
+      32.204207968574636,
+      1.5364758698092031
+    ],
+    "scales": [
+      0.8356019334795166,
+      0.47772176322921145,
+      13.012388272793666,
+      1.1021244350892878,
+      0.8056047612452208,
+      0.379624548813264,
+      0.38173563083636564,
+      0.33569246834413213,
+      0.3540889613775263,
+      0.32430999424531326,
+      0.3766163803118627,
+      0.33318025257516454,
+      0.33157718529589714,
+      49.6655344447741,
+      0.7910587133873435
     ]
+  },
+  "safeguards": {
+    "safe_mode": true,
+    "notes": [],
+    "max_row_drop_fraction": 0.02,
+    "rows": 891,
+    "target_imbalance_ratio": 1.605263157894737
   }
 }

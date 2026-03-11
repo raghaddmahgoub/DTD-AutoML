@@ -1,110 +1,67 @@
 {
   "PassengerId": {
     "action": "drop",
-    "reason": "high_cardinality_categorical",
-    "llm_used": false
+    "reason": "default_policy"
   },
   "Pclass": {
-    "type": "categorical",
-    "imputation": "missing",
-    "encoding": "label",
-    "mapping": {
-      "1": 0,
-      "2": 1,
-      "3": 2,
-      "Pclass": 3
-    },
-    "reason": "low_cardinality_categorical",
-    "llm_used": false
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy"
   },
   "Name": {
     "action": "drop",
-    "reason": "high_cardinality_categorical",
-    "llm_used": false
+    "reason": "default_policy"
   },
   "Sex": {
     "type": "categorical",
-    "imputation": "missing",
+    "missing": "mode",
     "encoding": "label",
-    "mapping": {
-      "Sex": 0,
-      "female": 1,
-      "male": 2
-    },
-    "reason": "low_cardinality_categorical",
-    "llm_used": false
+    "reason": "default_policy"
   },
   "Age": {
-    "type": "categorical",
-    "imputation": "missing",
-    "encoding": "hash",
-    "hash_features": 8,
-    "reason": "label_too_many_categories",
-    "llm_used": false
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy"
   },
   "SibSp": {
-    "type": "categorical",
-    "imputation": "missing",
-    "encoding": "label",
-    "mapping": {
-      "0": 0,
-      "1": 1,
-      "2": 2,
-      "3": 3,
-      "4": 4,
-      "5": 5,
-      "8": 6,
-      "SibSp": 7
-    },
-    "reason": "low_cardinality_categorical",
-    "llm_used": false
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy"
   },
   "Parch": {
-    "type": "categorical",
-    "imputation": "missing",
-    "encoding": "label",
-    "mapping": {
-      "0": 0,
-      "1": 1,
-      "2": 2,
-      "3": 3,
-      "4": 4,
-      "5": 5,
-      "6": 6,
-      "Parch": 7
-    },
-    "reason": "low_cardinality_categorical",
-    "llm_used": false
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy"
   },
   "Ticket": {
-    "action": "drop",
-    "reason": "high_cardinality_categorical",
-    "llm_used": false
+    "type": "categorical",
+    "missing": "mode",
+    "encoding": "hash",
+    "reason": "default_policy"
   },
   "Fare": {
-    "type": "categorical",
-    "imputation": "missing",
-    "encoding": "hash",
-    "hash_features": 8,
-    "reason": "label_too_many_categories",
-    "llm_used": false
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy"
   },
   "Cabin": {
     "action": "drop",
-    "reason": "missing_ratio>0.77"
+    "reason": "default_policy"
   },
   "Embarked": {
     "type": "categorical",
-    "imputation": "missing",
+    "missing": "mode",
     "encoding": "label",
-    "mapping": {
-      "C": 0,
-      "Embarked": 1,
-      "Q": 2,
-      "S": 3,
-      "missing": 4
-    },
-    "reason": "low_cardinality_categorical",
-    "llm_used": false
+    "reason": "default_policy"
   }
 }

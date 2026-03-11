@@ -1,0 +1,60 @@
+{
+  "run_timestamp": "20260309_022912",
+  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "target_column": "Survived",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The 'Feature Strengths' analysis is empty, providing no explicit information about the linearity or complexity of the signals within the dataset. In the absence of clear indicators for simple linear relationships, and given the classification task, it is prudent to select a robust, automated machine learning framework like AutoGluon. AutoGluon is designed to automatically discover complex patterns, handle various data types, perform feature engineering, and ensemble multiple models, thereby minimizing the risk of underfitting due to an overly simplistic model choice when signal characteristics are unknown or potentially non-linear.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [\"RandomForest\", \"XGBoost\", \"LogisticRegression\"]\n}\n```"
+  },
+  "training_results": {
+    "training_method": "AutoGluon",
+    "best_model": "LightGBM_BAG_L2",
+    "best_score": 0.9228070175438596,
+    "metric_name": "score",
+    "models_trained": 4,
+    "all_models": [
+      "LightGBM_BAG_L2",
+      "WeightedEnsemble_L3",
+      "LightGBM_BAG_L1",
+      "WeightedEnsemble_L2"
+    ],
+    "all_scores": [
+      0.9228070175438596,
+      0.9228070175438596,
+      0.9094736842105263,
+      0.9094736842105263
+    ],
+    "confusion_matrix": [
+      [
+        212,
+        13
+      ],
+      [
+        12,
+        120
+      ]
+    ],
+    "best_params_per_model": {},
+    "optuna_refined_config": null
+  },
+  "agent_messages": [
+    {
+      "agent": "training",
+      "message": "Training complete. 1.  **Performance assessment:** The model demonstrates excellent performance with a best score of 0.9228, indicating high accuracy.\n2.  **Confusion Matrix:** There are slightly more False Negatives (13) than False Positives (12).\n3.  **Recommendations for improvement:** To potentially enhance performance further, consider providing more diverse training data, exploring additional feature engineering, or allowing AutoGluon to train for a longer duration with more model configurations, as only 4 models were explored."
+    }
+  ],
+  "workflow": {
+    "final_step": "model_trained",
+    "error": null
+  }
+}

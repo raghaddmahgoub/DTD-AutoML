@@ -223,20 +223,11 @@ if __name__ == "__main__":
     #     "task_type":     "regression"
     # }
     inputs = {
-        "data_path":     "assets/data/Datasets/Regression Datasets/California Housing Prices.csv",
-        "target_column": "median_house_value",
-        "task_type":     "regression"
-    } #automl try to make it cls instead of regression
-    # inputs = {
-    #     "data_path":     "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
-    #     "target_column": "Survived",
-    #     "task_type":     "classification"
-    # }
-    # inputs = {
-    #     "data_path":     "assets/data/Datasets/Classification Datasets/Iris.csv",
-    #     "target_column": "Species",
-    #     "task_type":     "classification"
-    # }
+        "data_path":     "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
+        "target_column": "Survived",
+        "task_type":     "classification"  # or "regression" based on your dataset
+    }
+      
 
     result = pipeline.workflow.invoke(inputs)
 

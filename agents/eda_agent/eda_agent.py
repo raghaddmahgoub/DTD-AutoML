@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 import numpy as np
+import seaborn as sns
 from typing import Optional, Dict, Any, List
 from pathlib import Path
 from scipy import stats as scipy_stats
@@ -41,7 +42,7 @@ class EDAAgent:
         df_name: str = "dataset",
         top_k: int = 5,
     ):
-        self.df = df[~df.apply(lambda row: all(str(row[c]) == c for c in df.columns), axis=1)].reset_index(drop=True)
+        self.df = df
         self.target = target_column
         self.df_name = df_name
         self.top_k = top_k
@@ -344,7 +345,7 @@ class EDAAgent:
         # Drop constant columns — correlation undefined when std == 0
         numeric_cols = [col for col in numeric_cols if self.df[col].std() > 0]
 
-        # --- Numeric ↔ Numeric ---
+        # --- Numeric ↔️ Numeric ---
         if len(numeric_cols) >= 2:
             corr_matrix = self.df[numeric_cols].corr()
             strong_pairs: List[Dict[str, Any]] = []
@@ -366,7 +367,7 @@ class EDAAgent:
         else:
             insights["numeric_correlations"] = None
 
-        # --- Feature ↔ Target ---
+        # --- Feature ↔️ Target ---
         if not (self.target and self.target in self.df.columns):
             insights["target_relationships"] = None
             return insights
@@ -769,42 +770,66 @@ class EDAAgent:
         quality = self.report["data_quality_report"]
         missing = quality["missing_values"]["columns_with_missing"]
         return [
-            {"column": col, "count": info["missing_count"], "ratio": info["missing_ratio"]}
+            {
+                "column": col,
+                "count":  info["missing_count"],
+                "ratio":  info["missing_ratio"],
+            }
             for col, info in missing.items()
         ]
 
-    def _get_numeric_distribution_data(self):
+    def _get_numeric_distribution_data(self) -> List[Dict[str, Any]]:
+        """
+        Array of {column, histogram: {counts, bins}, raw_sample}.
+        Previously a dict keyed by column name — now a stable array.
+        """
         profiles = self.report["column_profiles"]
-        numeric_data = {}
+        result: List[Dict[str, Any]] = []
         for col, stats in profiles.items():
-            if stats["data_type"] == "numeric" and col != self.target:
-                series = self.df[col].dropna()
-                # Sample for frontend performance
-                sample = series.sample(min(len(series), 50), random_state=42).tolist()
-                # Generate histogram bins on backend to save frontend CPU
-                counts, bin_edges = np.histogram(series, bins=20)
-                numeric_data[col] = {
-                    "histogram": {"counts": counts.tolist(), "bins": bin_edges.tolist()},
-                    "raw_sample": sample 
-                }
-        return numeric_data
+            if stats["data_type"] != "numeric" or col == self.target:
+                continue
+            series = self.df[col].dropna()
+            sample = series.sample(min(len(series), 50), random_state=42).tolist()
+            counts, bin_edges = np.histogram(series, bins=20)
+            result.append({
+                "column":     col,
+                "histogram":  {
+                    "counts": counts.tolist(),
+                    "bins":   bin_edges.tolist(),
+                },
+                "raw_sample": sample,
+            })
+        return result
 
-    def _get_categorical_distribution_data(self):
+    def _get_categorical_distribution_data(self) -> List[Dict[str, Any]]:
+        """
+        Array of {column, top_values: [{label, count}]}.
+        Previously a dict of dicts with dynamic label keys.
+        """
         profiles = self.report["column_profiles"]
-        return {
-            col: stats["top_values"]
-            for col, stats in profiles.items()
-            if stats["data_type"] == "categorical" and col != self.target
-        }
+        result: List[Dict[str, Any]] = []
+        for col, stats in profiles.items():
+            if stats["data_type"] != "categorical" or col == self.target:
+                continue
+            top_values = stats.get("top_values", {})
+            result.append({
+                "column": col,
+                "top_values": [
+                    {"label": str(label), "count": count}
+                    for label, count in top_values.items()
+                ],
+            })
+        return result
 
-    def _get_correlation_matrix_data(self):
+    def _get_correlation_matrix_data(self) -> Optional[Dict[str, Any]]:
+        """Unchanged — already frontend-friendly."""
         numeric_cols = self.df.select_dtypes(include=["number"]).columns.tolist()
-        if len(numeric_cols) < 2: return None
-        
+        if len(numeric_cols) < 2:
+            return None
         corr = self.df[numeric_cols].corr().round(3)
         return {
             "columns": numeric_cols,
-            "values": corr.values.tolist()
+            "values":  corr.values.tolist(),
         }
     # ==================================================================
     # Unified export  (single call — routes automatically)
@@ -857,118 +882,91 @@ class EDAAgent:
 
 
 class TargetInferenceAgent:
-    
-    ID_KEYWORDS = {"id", "uuid", "vin", "index", "code"}
-    POSITIVE_KEYWORDS = {
-        "target", "label", "price", "score",
-        "rating", "outcome", "status", "result"
-    }
-    NEGATIVE_KEYWORDS = {"class", "level", "rank", "group"}
+    """
+    Infers the most likely target column using structural, semantic,
+    and distributional heuristics.
+    """
+
+    ID_KEYWORDS = {"id", "uuid", "vin", "index"}
+    TARGET_KEYWORDS = {"target", "label", "class", "price", "score", "rating", "outcome"}
 
     def __init__(self, df: pd.DataFrame):
-        self.df = self._sanitize(df.copy())
-
-    def _sanitize(self, df: pd.DataFrame) -> pd.DataFrame:
-        # Drop duplicate rows
-        df = df.drop_duplicates()
-        # Remove rows identical to header
-        df = df[
-            ~df.apply(
-                lambda row: all(str(row[col]) == col for col in df.columns),
-                axis=1
-            )
-        ]
-        # Attempt numeric coercion
-        for col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="ignore")
-
-        return df
+        self.df = df
 
     def run(self) -> Dict[str, Any]:
         scores: Dict[str, float] = {}
+    
         n_rows = len(self.df)
-
+    
         for col in self.df.columns:
             series = self.df[col]
-            name = col.lower()
             score = 0.0
+            name = col.lower()
+    
             # --- Hard exclusions ---
             if any(k in name for k in self.ID_KEYWORDS):
                 continue
+            
             nunique = series.nunique(dropna=True)
             missing_ratio = series.isna().mean()
-
-            # --- Missingness ---
+    
+            # --- Missingness (targets are usually observed) ---
             if missing_ratio < 0.05:
                 score += 1.0
-            elif missing_ratio > 0.4:
-                score -= 2.0
-
-            # --- Cardinality ---
+            elif missing_ratio > 0.3:
+                score -= 1.0
+    
+            # --- Cardinality signal ---
             if nunique == 2:
-                score += 7.0   # Strong binary signal
+                score += 3.0  # VERY strong signal (Survived)
             elif 2 < nunique <= 10:
-                score += 3.0
+                score += 1.5
             elif nunique < n_rows:
-                score += 0.5
-            else:
-                score -= 2.0  # Unique per row → likely ID
-
-            # --- Distribution ---
+                score += 0.3
+    
+            # --- Distribution signal ---
             if nunique > 1:
                 value_counts = series.value_counts(normalize=True, dropna=True)
                 majority_ratio = value_counts.iloc[0]
-
+    
                 if 0.5 <= majority_ratio <= 0.9:
-                    score += 1.5
-                elif majority_ratio > 0.97:
-                    score -= 2.0  # Near constant
-
-                # Entropy bonus (balanced classes)
-                entropy = -np.sum(value_counts * np.log2(value_counts + 1e-9))
-                if entropy > 0.8:
-                    score += 1.5
-
+                    score += 1.0  # good classification target
+                elif majority_ratio > 0.95:
+                    score -= 1.0  # near-constant
+    
             # --- Type signal ---
             if pd.api.types.is_numeric_dtype(series):
-                if nunique > 15:
-                    score += 3.0  # Strong regression signal
-                else:
-                    score += 0.5
-            else:
-                if nunique <= 20:
-                    score += 0.5
-
-            # --- Semantic signal ---
-            if any(k in name for k in self.POSITIVE_KEYWORDS):
-                score += 4.0
-
-            if any(k in name for k in self.NEGATIVE_KEYWORDS):
-                score -= 2.0
-
-            scores[col] = round(score, 3)
-
+                score += 0.5  # reduced (was too dominant)
+            elif nunique <= 20:
+                score += 0.3
+    
+            # --- Semantic signals ---
+            POSITIVE_KEYWORDS = {"target", "label", "price", "score", "rating", "outcome"}
+            NEGATIVE_KEYWORDS = {"class", "level", "rank", "group"}
+    
+            if any(k in name for k in POSITIVE_KEYWORDS):
+                score += 2.5
+    
+            if any(k in name for k in NEGATIVE_KEYWORDS):
+                score -= 1.5  # penalize Pclass-style features
+    
+            scores[col] = score
+    
         if not scores:
             return {
                 "inferred_target": None,
                 "confidence": 0.0,
                 "alternatives": [],
-                "scores": {}
             }
-
+    
         ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
         best_col, best_score = ranked[0]
-        second_score = ranked[1][1] if len(ranked) > 1 else 0.0
-
-        margin = best_score - second_score
-        # Margin-based confidence (much more meaningful)
-        confidence = min(0.98, round(0.5 + (margin / 10.0), 3))
-        confidence = max(confidence, 0.0)
-
+    
+        total = sum(abs(s) for _, s in ranked[:3]) or 1.0
+        confidence = round(min(0.95, best_score / total), 3)
+    
         return {
             "inferred_target": best_col,
             "confidence": confidence,
             "alternatives": [c for c, _ in ranked[1:3]],
-            "scores": dict(ranked)
         }

@@ -1,0 +1,55 @@
+{
+  "run_timestamp": "20260228_162337",
+  "data_path": "/Users/mohamed/Documents/GitHub/GP/assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
+  "target_column": "Survived",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": null,
+    "automl_config": null,
+    "selected_models": null,
+    "model_selection_reasoning": null
+  },
+  "training_results": {
+    "training_method": "Simple+Optuna",
+    "best_model": "RandomForest",
+    "best_score": 0.8566433566433567,
+    "metric_name": "accuracy",
+    "models_trained": 1,
+    "all_models": [
+      "RandomForest"
+    ],
+    "all_scores": [
+      0.8566433566433567
+    ],
+    "confusion_matrix": [
+      [
+        210,
+        15
+      ],
+      [
+        46,
+        86
+      ]
+    ],
+    "best_params_per_model": {
+      "RandomForest": {
+        "n_estimators": 210,
+        "max_depth": 8,
+        "min_samples_split": 12,
+        "min_samples_leaf": 2,
+        "max_features": null
+      }
+    },
+    "optuna_refined_config": null
+  },
+  "agent_messages": [
+    {
+      "agent": "training",
+      "message": "Training complete. 1.  **Performance Assessment:** The model shows good performance with a best score of 0.8566, indicating strong predictive capability.\n2.  **False Positives vs. False Negatives:** Based on the Confusion Matrix, there are significantly more False Negatives (46) than False Positives (15).\n3.  **Recommendations for Improvement:** Consider hyperparameter tuning for the RandomForest model, exploring other ensemble methods, or implementing cross-validation to ensure model robustness and potentially reduce False Negatives."
+    }
+  ],
+  "workflow": {
+    "final_step": "model_trained",
+    "error": "Failed in model selection: 'NoneType' object has no attribute 'get'"
+  }
+}

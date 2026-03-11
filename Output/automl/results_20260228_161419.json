@@ -1,0 +1,36 @@
+{
+  "run_timestamp": "20260228_161419",
+  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "target_column": "median_house_value",
+  "problem_type": "regression",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The provided signal analysis (Feature Strengths, Recommended Encodings, Multicollinearity Risk) is empty, meaning there are no explicit signals indicating linearity, simplicity, or specific feature types. In the absence of such information, and for a regression task, AutoGluon is the more robust choice. It is designed to automatically explore a wide range of models, including those capable of capturing high complexity and non-linear signals, which are common in real-world regression problems. This approach minimizes the risk of underfitting when the underlying signal characteristics are unknown.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [\"RandomForest\", \"XGBoost\", \"LogisticRegression\"]\n}\n```"
+  },
+  "training_results": {
+    "training_method": null,
+    "best_model": null,
+    "best_score": null,
+    "metric_name": "score",
+    "models_trained": null,
+    "all_models": [],
+    "all_scores": [],
+    "confusion_matrix": null,
+    "best_params_per_model": {},
+    "optuna_refined_config": null
+  },
+  "agent_messages": [],
+  "workflow": {
+    "final_step": "error",
+    "error": "Failed to train model: could not convert string to float: 'median_house_value'"
+  }
+}
