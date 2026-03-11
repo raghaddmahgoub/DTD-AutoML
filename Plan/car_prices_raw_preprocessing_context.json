@@ -1,0 +1,240 @@
+[
+  {
+    "column": "year",
+    "dtype": "int64",
+    "missing_pct": 0.0,
+    "n_unique": 34,
+    "sample_values": [
+      2015,
+      2014,
+      2013,
+      2012,
+      2011
+    ],
+    "is_target": false,
+    "mean": 2010.0389,
+    "std": 3.9669,
+    "skew": -1.1832
+  },
+  {
+    "column": "make",
+    "dtype": "object",
+    "missing_pct": 1.84,
+    "n_unique": 96,
+    "sample_values": [
+      "Kia",
+      "BMW",
+      "Volvo",
+      "Nissan",
+      "Chevrolet"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "model",
+    "dtype": "object",
+    "missing_pct": 1.86,
+    "n_unique": 973,
+    "sample_values": [
+      "Sorento",
+      "3 Series",
+      "S60",
+      "6 Series Gran Coupe",
+      "Altima"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "trim",
+    "dtype": "object",
+    "missing_pct": 1.91,
+    "n_unique": 1963,
+    "sample_values": [
+      "LX",
+      "328i SULEV",
+      "T5",
+      "650i",
+      "2.5 S"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "body",
+    "dtype": "object",
+    "missing_pct": 2.36,
+    "n_unique": 87,
+    "sample_values": [
+      "SUV",
+      "Sedan",
+      "Convertible",
+      "Coupe",
+      "Wagon"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "transmission",
+    "dtype": "object",
+    "missing_pct": 11.69,
+    "n_unique": 4,
+    "sample_values": [
+      "automatic",
+      "manual",
+      "Sedan",
+      "sedan"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "vin",
+    "dtype": "object",
+    "missing_pct": 0.0,
+    "n_unique": 550297,
+    "sample_values": [
+      "5xyktca69fg566472",
+      "5xyktca69fg561319",
+      "wba3c1c51ek116351",
+      "yv1612tb4f1310987",
+      "wba6b2c57ed129731"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "state",
+    "dtype": "object",
+    "missing_pct": 0.0,
+    "n_unique": 64,
+    "sample_values": [
+      "ca",
+      "tx",
+      "pa",
+      "mn",
+      "az"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "condition",
+    "dtype": "float64",
+    "missing_pct": 2.12,
+    "n_unique": 41,
+    "sample_values": [
+      5.0,
+      45.0,
+      41.0,
+      43.0,
+      1.0
+    ],
+    "is_target": false,
+    "mean": 30.6724,
+    "std": 13.4028,
+    "skew": -0.833
+  },
+  {
+    "column": "odometer",
+    "dtype": "float64",
+    "missing_pct": 0.02,
+    "n_unique": 172278,
+    "sample_values": [
+      16639.0,
+      9393.0,
+      1331.0,
+      14282.0,
+      2641.0
+    ],
+    "is_target": false,
+    "mean": 68320.0178,
+    "std": 53398.5428,
+    "skew": 1.8432
+  },
+  {
+    "column": "color",
+    "dtype": "object",
+    "missing_pct": 0.13,
+    "n_unique": 46,
+    "sample_values": [
+      "white",
+      "gray",
+      "black",
+      "red",
+      "silver"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "interior",
+    "dtype": "object",
+    "missing_pct": 0.13,
+    "n_unique": 17,
+    "sample_values": [
+      "black",
+      "beige",
+      "tan",
+      "\u2014",
+      "gray"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "seller",
+    "dtype": "object",
+    "missing_pct": 0.0,
+    "n_unique": 14263,
+    "sample_values": [
+      "kia motors america  inc",
+      "financial services remarketing (lease)",
+      "volvo na rep/world omni",
+      "enterprise vehicle exchange / tra / rental / tulsa",
+      "the hertz corporation"
+    ],
+    "is_target": false
+  },
+  {
+    "column": "mmr",
+    "dtype": "float64",
+    "missing_pct": 0.01,
+    "n_unique": 1101,
+    "sample_values": [
+      20500.0,
+      20800.0,
+      31900.0,
+      27500.0,
+      66000.0
+    ],
+    "is_target": false,
+    "mean": 13769.3775,
+    "std": 9679.9672,
+    "skew": 1.9976
+  },
+  {
+    "column": "sellingprice",
+    "dtype": "float64",
+    "missing_pct": 0.0,
+    "n_unique": 1887,
+    "sample_values": [
+      21500.0,
+      30000.0,
+      27750.0,
+      67000.0,
+      10900.0
+    ],
+    "is_target": true,
+    "mean": 13611.3588,
+    "std": 9749.5016,
+    "skew": 1.9534
+  },
+  {
+    "column": "saledate",
+    "dtype": "object",
+    "missing_pct": 0.0,
+    "n_unique": 3766,
+    "sample_values": [
+      "Tue Dec 16 2014 12:30:00 GMT-0800 (PST)",
+      "Thu Jan 15 2015 04:30:00 GMT-0800 (PST)",
+      "Thu Jan 29 2015 04:30:00 GMT-0800 (PST)",
+      "Thu Dec 18 2014 12:30:00 GMT-0800 (PST)",
+      "Tue Dec 30 2014 12:00:00 GMT-0800 (PST)"
+    ],
+    "is_target": false
+  }
+]
