@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any, List
 from pathlib import Path
 from scipy import stats as scipy_stats
 from sklearn.feature_selection import f_classif
-import numpy as np
+import heapq
 from src.utils.logger import Logger
 
 logger = Logger()
@@ -886,90 +886,102 @@ class EDAAgent:
 
 class TargetInferenceAgent:
     """
-    Infers the most likely target column using structural, semantic,
-    and distributional heuristics.
+    Infers the most likely target column using structural,
+    semantic, and distributional heuristics.
     """
 
     ID_KEYWORDS = {"id", "uuid", "vin", "index"}
-    TARGET_KEYWORDS = {"target", "label", "class", "price", "score", "rating", "outcome"}
+    POSITIVE_KEYWORDS = {"target", "label", "price", "score", "rating", "outcome"}
+    NEGATIVE_KEYWORDS = {"class", "level", "rank", "group"}
 
     def __init__(self, df: pd.DataFrame):
         self.df = df
+        self.n_rows = len(df)
+
+    def _score_column(self, col: str, series: pd.Series) -> float:
+        name = col.lower()
+
+        # --- Hard exclusion ---
+        if any(k in name for k in self.ID_KEYWORDS):
+            return float("-inf")
+
+        score = 0.0
+
+        nunique = series.nunique(dropna=True)
+        missing_ratio = series.isna().mean()
+
+        # --- Missingness ---
+        if missing_ratio < 0.05:
+            score += 1.0
+        elif missing_ratio > 0.3:
+            score -= 1.0
+
+        # --- Cardinality ---
+        if nunique == 2:
+            score += 3.0
+        elif 2 < nunique <= 10:
+            score += 1.5
+        elif nunique < self.n_rows:
+            score += 0.3
+
+        # --- Distribution signal ---
+        if nunique > 1:
+            vc = series.value_counts(normalize=True, dropna=True)
+            majority_ratio = vc.iloc[0]
+
+            if 0.5 <= majority_ratio <= 0.9:
+                score += 1.0
+            elif majority_ratio > 0.95:
+                score -= 1.0
+
+        # --- Type signal ---
+        if pd.api.types.is_numeric_dtype(series):
+            score += 0.5
+        elif nunique <= 20:
+            score += 0.3
+
+        # --- Semantic signals ---
+        if any(k in name for k in self.POSITIVE_KEYWORDS):
+            score += 2.5
+
+        if any(k in name for k in self.NEGATIVE_KEYWORDS):
+            score -= 1.5
+
+        return score
 
     def run(self) -> Dict[str, Any]:
-        scores: Dict[str, float] = {}
-    
-        n_rows = len(self.df)
-    
+
+        scores = {}
+
         for col in self.df.columns:
-            series = self.df[col]
-            score = 0.0
-            name = col.lower()
-    
-            # --- Hard exclusions ---
-            if any(k in name for k in self.ID_KEYWORDS):
-                continue
-            
-            nunique = series.nunique(dropna=True)
-            missing_ratio = series.isna().mean()
-    
-            # --- Missingness (targets are usually observed) ---
-            if missing_ratio < 0.05:
-                score += 1.0
-            elif missing_ratio > 0.3:
-                score -= 1.0
-    
-            # --- Cardinality signal ---
-            if nunique == 2:
-                score += 3.0  # VERY strong signal (Survived)
-            elif 2 < nunique <= 10:
-                score += 1.5
-            elif nunique < n_rows:
-                score += 0.3
-    
-            # --- Distribution signal ---
-            if nunique > 1:
-                value_counts = series.value_counts(normalize=True, dropna=True)
-                majority_ratio = value_counts.iloc[0]
-    
-                if 0.5 <= majority_ratio <= 0.9:
-                    score += 1.0  # good classification target
-                elif majority_ratio > 0.95:
-                    score -= 1.0  # near-constant
-    
-            # --- Type signal ---
-            if pd.api.types.is_numeric_dtype(series):
-                score += 0.5  # reduced (was too dominant)
-            elif nunique <= 20:
-                score += 0.3
-    
-            # --- Semantic signals ---
-            POSITIVE_KEYWORDS = {"target", "label", "price", "score", "rating", "outcome"}
-            NEGATIVE_KEYWORDS = {"class", "level", "rank", "group"}
-    
-            if any(k in name for k in POSITIVE_KEYWORDS):
-                score += 2.5
-    
-            if any(k in name for k in NEGATIVE_KEYWORDS):
-                score -= 1.5  # penalize Pclass-style features
-    
-            scores[col] = score
-    
+            score = self._score_column(col, self.df[col])
+            if score != float("-inf"):
+                scores[col] = score
+
         if not scores:
             return {
                 "inferred_target": None,
                 "confidence": 0.0,
-                "alternatives": [],
+                "alternatives": []
             }
-    
-        ranked = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-        best_col, best_score = ranked[0]
-    
-        total = sum(abs(s) for _, s in ranked[:3]) or 1.0
+
+        # --- Get top 3 efficiently ---
+        top_candidates = heapq.nlargest(3, scores.items(), key=lambda x: x[1])
+
+        best_col, best_score = top_candidates[0]
+
+        # --- Confidence ---
+        total = sum(abs(s) for _, s in top_candidates) or 1.0
         confidence = round(min(0.95, best_score / total), 3)
-    
+
+        # --- Alternatives for user confirmation ---
+        alternatives = [
+            {"column": col, "score": round(score, 3)}
+            for col, score in top_candidates[1:]
+        ]
+
         return {
             "inferred_target": best_col,
             "confidence": confidence,
-            "alternatives": [c for c, _ in ranked[1:3]],
+            "alternatives": alternatives
         }
