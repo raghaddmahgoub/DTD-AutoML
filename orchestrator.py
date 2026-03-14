@@ -15,6 +15,15 @@ from agents.preprocessing_agent.preprocessing_node import preprocessing_node
 load_dotenv()
 
 
+ORCHESTRATOR_CONFIG = {
+    "data_path": "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
+    "target_column": "Survived",
+    "task_type": "classification",
+    "preprocessing_output_root": os.path.join("Output", "Preprocessing"),
+    "use_preprocessing_llm": False,
+}
+
+
 class AgentState(TypedDict):
     """Shared pipeline memory."""
     data_path: str
@@ -40,6 +49,35 @@ class DTDPipeline:
     def _get_dataset_name(self, path: str) -> str:
         return os.path.splitext(os.path.basename(path))[0]
 
+    def _get_preprocessing_output_folder(self, data_path: str) -> str:
+        dataset_name = self._get_dataset_name(data_path)
+        return os.path.join(ORCHESTRATOR_CONFIG["preprocessing_output_root"], dataset_name)
+
+    def _build_clean_dataset_from_splits(
+        self,
+        X_train_path: str,
+        X_test_path: str,
+        y_train_path: str,
+        y_test_path: str,
+        target_column: str,
+        output_folder: str,
+    ) -> str:
+        X_train = pd.read_csv(X_train_path)
+        X_test = pd.read_csv(X_test_path)
+        y_train = pd.read_csv(y_train_path).squeeze("columns")
+        y_test = pd.read_csv(y_test_path).squeeze("columns")
+
+        train_df = X_train.copy()
+        train_df[target_column] = y_train.reset_index(drop=True)
+
+        test_df = X_test.copy()
+        test_df[target_column] = y_test.reset_index(drop=True)
+
+        clean_df = pd.concat([train_df, test_df], ignore_index=True)
+        clean_data_path = os.path.join(output_folder, "full_preprocessed.csv")
+        clean_df.to_csv(clean_data_path, index=False)
+        return clean_data_path
+
     def _build_graph(self):
         builder = StateGraph(AgentState)
 
@@ -64,8 +102,9 @@ class DTDPipeline:
         """First Analysis: Identify issues for the Preprocessor."""
         print("🔍 [Stage 1] Running Raw Data Analysis...")
 
-        df    = pd.read_csv(state['data_path'])
-        agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(state['data_path']))
+        df = pd.read_csv(state['data_path'])
+        agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(
+            state['data_path']))
         agent.run(run_type="raw")
         results = agent.export(output_dir="Output")
 
@@ -84,10 +123,14 @@ class DTDPipeline:
         """Preprocessing using PreprocessingNode."""
         print("🛠️ [Stage 2] Running Preprocessing Node...")
 
+        output_folder = self._get_preprocessing_output_folder(
+            state["data_path"])
+
         preprocessing_state = {
             "dataset_path":  state["data_path"],
             "target_column": state["target_column"],
-            "output_folder": "Output/Preprocessing"
+            "output_folder": output_folder,
+            "use_llm": ORCHESTRATOR_CONFIG["use_preprocessing_llm"],
         }
 
         result_state = preprocessing_node(preprocessing_state)
@@ -101,11 +144,18 @@ class DTDPipeline:
             }
             return state
 
-        state["clean_data_path"] = result_state["full_dataset_path"]
         state["X_train_path"] = result_state["X_train_path"]
         state["X_test_path"] = result_state["X_test_path"]
         state["y_train_path"] = result_state["y_train_path"]
         state["y_test_path"] = result_state["y_test_path"]
+        state["clean_data_path"] = self._build_clean_dataset_from_splits(
+            X_train_path=state["X_train_path"],
+            X_test_path=state["X_test_path"],
+            y_train_path=state["y_train_path"],
+            y_test_path=state["y_test_path"],
+            target_column=state["target_column"],
+            output_folder=result_state["output_folder"],
+        )
 
         state["agent_output"] = {
             "stage":          "preprocessing",
@@ -113,21 +163,25 @@ class DTDPipeline:
             "X_test":         result_state["X_test_path"],
             "y_train":        result_state["y_train_path"],
             "y_test":         result_state["y_test_path"],
-            "full_dataset":   result_state["full_dataset_path"],
+            "full_dataset":   state["clean_data_path"],
             "summary":        result_state["summary_path"],
-            "column_actions": result_state["column_actions_path"]
+            "column_actions": result_state["column_actions_path"],
+            "policy":         result_state.get("policy_path"),
+            "evidence":       result_state.get("evidence_path"),
         }
 
         print(f"✅ Preprocessing complete.")
         print(f"📂 Output folder: {result_state['output_folder']}")
+        print(f"📄 Rebuilt full dataset: {state['clean_data_path']}")
         return state
 
     def stage_clean_analysis(self, state: AgentState):
         """Second Analysis: Generate Directives for AutoML."""
         print("📊 [Stage 3] Running Post-Prep Analysis...")
 
-        df    = pd.read_csv(state['clean_data_path'], low_memory=False)
-        agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(state['clean_data_path']))
+        df = pd.read_csv(state['clean_data_path'], low_memory=False)
+        agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(
+            state['clean_data_path']))
         agent.run(run_type="clean")
         results = agent.export(output_dir="Output")
 
@@ -157,8 +211,8 @@ class DTDPipeline:
 
         # 2. Extract target and task info
         target_info = directives['report']['target_analysis']
-        target_col  = target_info['column']
-        task_type   = state.get('task_type') or directives.get('task_type')
+        target_col = target_info['column']
+        task_type = state.get('task_type') or directives.get('task_type')
 
         print(f"🎯 Target identified: {target_col}")
         print(f"📊 Problem Type: {task_type}")
@@ -170,15 +224,15 @@ class DTDPipeline:
             # 4. Use run() so _save_outputs() is triggered automatically
             print(f"⏳ Training models for {target_col}...")
             final_subagent_state = automl_agent_instance.run(
-                data_path         = state['clean_data_path'],
-                target_column     = target_col,
-                output_dir        = "Output/automl",
-                automl_directives = directives,
-                problem_type      = task_type,
-                X_train_path      = state.get("X_train_path"),
-                X_test_path       = state.get("X_test_path"),
-                y_train_path      = state.get("y_train_path"),
-                y_test_path       = state.get("y_test_path"),
+                data_path=state['clean_data_path'],
+                target_column=target_col,
+                output_dir="Output/automl",
+                automl_directives=directives,
+                problem_type=task_type,
+                X_train_path=state.get("X_train_path"),
+                X_test_path=state.get("X_test_path"),
+                y_train_path=state.get("y_train_path"),
+                y_test_path=state.get("y_test_path"),
             )
 
             # 5. Capture results back into orchestrator state
@@ -191,18 +245,21 @@ class DTDPipeline:
                 }
 
             else:
-                metrics               = final_subagent_state.get('model_metrics')
+                metrics = final_subagent_state.get('model_metrics')
                 state['final_metrics'] = metrics
-                state['saved_files']   = final_subagent_state.get('saved_files', {})
-                state["agent_output"]  = {
+                state['saved_files'] = final_subagent_state.get(
+                    'saved_files', {})
+                state["agent_output"] = {
                     "stage":       "automl_training",
                     "best_model":  metrics.get("best_model"),
                     "best_score":  metrics.get("best_score"),
                     "all_metrics": metrics
                 }
 
-                print(f"✅ Training complete. Best Model: {state['final_metrics'].get('best_model')}")
-                print(f"📈 Final Score: {state['final_metrics'].get('best_score'):.4f}")
+                print(
+                    f"✅ Training complete. Best Model: {state['final_metrics'].get('best_model')}")
+                print(
+                    f"📈 Final Score: {state['final_metrics'].get('best_score'):.4f}")
                 print(f"💾 Saved outputs:")
                 for ftype, fpath in state.get('saved_files', {}).items():
                     print(f"   {ftype:10s} → {fpath}")
@@ -234,17 +291,11 @@ class DTDPipeline:
 if __name__ == "__main__":
     pipeline = DTDPipeline()
 
-    # inputs = {
-    #     "data_path":     "assets/data/Datasets/Regression Datasets/car_prices.csv",
-    #     "target_column": "sellingprice",
-    #     "task_type":     "regression"
-    # }
     inputs = {
-        "data_path":     "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
-        "target_column": "Survived",
-        "task_type":     "classification"  # or "regression" based on your dataset
+        "data_path":     ORCHESTRATOR_CONFIG["data_path"],
+        "target_column": ORCHESTRATOR_CONFIG["target_column"],
+        "task_type":     ORCHESTRATOR_CONFIG["task_type"],
     }
-      
 
     result = pipeline.workflow.invoke(inputs)
 

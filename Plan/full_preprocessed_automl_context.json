@@ -1,0 +1,497 @@
+{
+  "report": {
+    "run_type": "clean",
+    "dataset_summary": {
+      "n_rows": 891,
+      "n_columns": 13,
+      "column_types": {
+        "numerical": [
+          "PassengerId",
+          "Pclass",
+          "Sex_female",
+          "Sex_male",
+          "Age",
+          "SibSp",
+          "Parch",
+          "Ticket",
+          "Fare",
+          "Embarked_C",
+          "Embarked_Q",
+          "Embarked_S",
+          "Survived"
+        ],
+        "categorical": [],
+        "datetime": [],
+        "boolean": []
+      },
+      "memory_usage_mb": 0.09,
+      "duplicate_rows": 0,
+      "target_column": "Survived",
+      "target_dtype": "int64"
+    },
+    "feature_scale_analysis": {
+      "wide_scale_features": [],
+      "heavy_tailed_features": [
+        "SibSp",
+        "Parch",
+        "Fare",
+        "Embarked_Q"
+      ],
+      "approximately_standard_scale_features": [
+        "PassengerId",
+        "Pclass",
+        "Sex_female",
+        "Sex_male",
+        "Age",
+        "SibSp",
+        "Parch",
+        "Ticket",
+        "Fare",
+        "Embarked_C",
+        "Embarked_Q",
+        "Embarked_S"
+      ]
+    },
+    "column_profiles": {
+      "PassengerId": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 891,
+        "is_unique_per_row": true,
+        "mean": 0.0,
+        "std": 1.0006,
+        "min": -1.730107956920867,
+        "max": 1.730107956920867,
+        "median": 0.0,
+        "q1": -0.8650539784604335,
+        "q3": 0.8650539784604335,
+        "iqr": 1.7301,
+        "skewness": 0.0,
+        "kurtosis": -1.2,
+        "zero_count": 1,
+        "outlier_count_iqr": 0,
+        "outlier_ratio_iqr": 0.0,
+        "is_normal": false
+      },
+      "Pclass": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 3,
+        "is_unique_per_row": false,
+        "mean": -0.0,
+        "std": 1.0006,
+        "min": -1.5661069258891576,
+        "max": 0.8273772438659699,
+        "median": 0.8273772438659699,
+        "q1": -0.3693648410115938,
+        "q3": 0.8273772438659699,
+        "iqr": 1.1967,
+        "skewness": -0.6305,
+        "kurtosis": -1.28,
+        "zero_count": 0,
+        "outlier_count_iqr": 0,
+        "outlier_ratio_iqr": 0.0,
+        "is_normal": false
+      },
+      "Sex_female": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 2,
+        "is_unique_per_row": false,
+        "mean": 0.0,
+        "std": 1.0006,
+        "min": -0.7376951317802901,
+        "max": 1.3555735383351193,
+        "median": -0.7376951317802901,
+        "q1": -0.7376951317802901,
+        "q3": 1.3555735383351193,
+        "iqr": 2.0933,
+        "skewness": 0.6189,
+        "kurtosis": -1.6206,
+        "zero_count": 0,
+        "outlier_count_iqr": 0,
+        "outlier_ratio_iqr": 0.0,
+        "is_normal": false
+      },
+      "Sex_male": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 2,
+        "is_unique_per_row": false,
+        "mean": -0.0,
+        "std": 1.0006,
+        "min": -1.3555735383351195,
+        "max": 0.7376951317802901,
+        "median": 0.7376951317802901,
+        "q1": -1.3555735383351195,
+        "q3": 0.7376951317802901,
+        "iqr": 2.0933,
+        "skewness": -0.6189,
+        "kurtosis": -1.6206,
+        "zero_count": 0,
+        "outlier_count_iqr": 0,
+        "outlier_ratio_iqr": 0.0,
+        "is_normal": false
+      },
+      "Age": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 88,
+        "is_unique_per_row": false,
+        "mean": 0.0,
+        "std": 1.0006,
+        "min": -2.224156079948338,
+        "max": 3.8915544515600136,
+        "median": -0.1046374011471275,
+        "q1": -0.5657364610748746,
+        "q3": 0.4333115021019107,
+        "iqr": 0.999,
+        "skewness": 0.5102,
+        "kurtosis": 0.9939,
+        "zero_count": 0,
+        "outlier_count_iqr": 66,
+        "outlier_ratio_iqr": 0.0741,
+        "is_normal": false
+      },
+      "SibSp": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 7,
+        "is_unique_per_row": false,
+        "mean": 0.0,
+        "std": 1.0006,
+        "min": -0.4745451962498395,
+        "max": 6.784163299176891,
+        "median": -0.4745451962498395,
+        "q1": -0.4745451962498395,
+        "q3": 0.4327933656785018,
+        "iqr": 0.9073,
+        "skewness": 3.6954,
+        "kurtosis": 17.8804,
+        "zero_count": 0,
+        "outlier_count_iqr": 46,
+        "outlier_ratio_iqr": 0.0516,
+        "is_normal": false
+      },
+      "Parch": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 7,
+        "is_unique_per_row": false,
+        "mean": 0.0,
+        "std": 1.0006,
+        "min": -0.4736736092984604,
+        "max": 6.974147318082627,
+        "median": -0.4736736092984604,
+        "q1": -0.4736736092984604,
+        "q3": -0.4736736092984604,
+        "iqr": 0.0,
+        "skewness": 2.7491,
+        "kurtosis": 9.7781,
+        "zero_count": 0,
+        "outlier_count_iqr": 213,
+        "outlier_ratio_iqr": 0.2391,
+        "is_normal": false
+      },
+      "Ticket": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 681,
+        "is_unique_per_row": false,
+        "mean": 0.0,
+        "std": 1.0006,
+        "min": -1.6864209223899624,
+        "max": 1.7010806389905098,
+        "median": -0.007615001529346,
+        "q1": -0.8968341613917199,
+        "q3": 0.9015306381058543,
+        "iqr": 1.7984,
+        "skewness": 0.0002,
+        "kurtosis": -1.2782,
+        "zero_count": 0,
+        "outlier_count_iqr": 0,
+        "outlier_ratio_iqr": 0.0,
+        "is_normal": false
+      },
+      "Fare": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 248,
+        "is_unique_per_row": false,
+        "mean": 0.0,
+        "std": 1.0006,
+        "min": -0.6484216535389205,
+        "max": 9.667166525013505,
+        "median": -0.3573908580066095,
+        "q1": -0.4891482240181727,
+        "q3": -0.0242463507548411,
+        "iqr": 0.4649,
+        "skewness": 4.7873,
+        "kurtosis": 33.3981,
+        "zero_count": 0,
+        "outlier_count_iqr": 116,
+        "outlier_ratio_iqr": 0.1302,
+        "is_normal": false
+      },
+      "Embarked_C": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 2,
+        "is_unique_per_row": false,
+        "mean": -0.0,
+        "std": 1.0006,
+        "min": -0.4820426798824101,
+        "max": 2.0745051044939435,
+        "median": -0.4820426798824101,
+        "q1": -0.4820426798824101,
+        "q3": -0.4820426798824101,
+        "iqr": 0.0,
+        "skewness": 1.5951,
+        "kurtosis": 0.5457,
+        "zero_count": 0,
+        "outlier_count_iqr": 168,
+        "outlier_ratio_iqr": 0.1886,
+        "is_normal": false
+      },
+      "Embarked_Q": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 2,
+        "is_unique_per_row": false,
+        "mean": -0.0,
+        "std": 1.0006,
+        "min": -0.3075623426146228,
+        "max": 3.2513733362117265,
+        "median": -0.3075623426146228,
+        "q1": -0.3075623426146228,
+        "q3": -0.3075623426146228,
+        "iqr": 0.0,
+        "skewness": 2.9488,
+        "kurtosis": 6.7103,
+        "zero_count": 0,
+        "outlier_count_iqr": 77,
+        "outlier_ratio_iqr": 0.0864,
+        "is_normal": false
+      },
+      "Embarked_S": {
+        "data_type": "numeric",
+        "dtype": "float64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 2,
+        "is_unique_per_row": false,
+        "mean": -0.0,
+        "std": 1.0006,
+        "min": -1.6238025415294657,
+        "max": 0.6158384251930635,
+        "median": 0.6158384251930635,
+        "q1": -1.6238025415294657,
+        "q3": 0.6158384251930635,
+        "iqr": 2.2396,
+        "skewness": -1.0097,
+        "kurtosis": -0.9828,
+        "zero_count": 0,
+        "outlier_count_iqr": 0,
+        "outlier_ratio_iqr": 0.0,
+        "is_normal": false
+      },
+      "Survived": {
+        "data_type": "numeric",
+        "dtype": "int64",
+        "missing_count": 0,
+        "missing_ratio": 0.0,
+        "unique_count": 2,
+        "is_unique_per_row": false,
+        "mean": 0.3838,
+        "std": 0.4866,
+        "min": 0.0,
+        "max": 1.0,
+        "median": 0.0,
+        "q1": 0.0,
+        "q3": 1.0,
+        "iqr": 1.0,
+        "skewness": 0.4785,
+        "kurtosis": -1.775,
+        "zero_count": 549,
+        "outlier_count_iqr": 0,
+        "outlier_ratio_iqr": 0.0,
+        "is_normal": false
+      }
+    },
+    "target_analysis": {
+      "column": "Survived",
+      "dtype": "int64",
+      "task_type": "classification",
+      "n_classes": 2,
+      "is_binary": true,
+      "class_distribution": {
+        "0": 0.6162,
+        "1": 0.3838
+      },
+      "minority_class_ratio": 0.3838,
+      "majority_class_ratio": 0.6162,
+      "imbalance_ratio": 1.61,
+      "imbalance_severity": "none",
+      "target_entropy": 0.9607,
+      "min_samples_per_class": 342,
+      "requires_stratification": true,
+      "rare_class_risk": false
+    },
+    "data_quality_report": {
+      "missing_values": {
+        "total_missing_cells": 0,
+        "columns_with_missing": {},
+        "n_columns_with_missing": 0
+      },
+      "duplicates": {
+        "duplicate_row_count": 0,
+        "duplicate_ratio": 0.0
+      },
+      "low_variance_columns": {
+        "constant_columns": [],
+        "near_constant_columns": {}
+      },
+      "unique_per_row_columns": [
+        "PassengerId"
+      ],
+      "type_issues": {
+        "mixed_type_columns": []
+      }
+    },
+    "relationship_insights": {
+      "numeric_correlations": {
+        "threshold": 0.5,
+        "strong_pairs": [
+          {
+            "feature_1": "Pclass",
+            "feature_2": "Fare",
+            "correlation": -0.549
+          },
+          {
+            "feature_1": "Sex_female",
+            "feature_2": "Sex_male",
+            "correlation": -1.0
+          },
+          {
+            "feature_1": "Embarked_C",
+            "feature_2": "Embarked_S",
+            "correlation": -0.783
+          }
+        ]
+      },
+      "target_relationships": {
+        "target_type": "numeric",
+        "feature_correlations": {
+          "PassengerId": -0.005,
+          "Pclass": -0.338,
+          "Sex_female": 0.543,
+          "Sex_male": -0.543,
+          "Age": -0.065,
+          "SibSp": -0.035,
+          "Parch": 0.082,
+          "Ticket": -0.165,
+          "Fare": 0.257,
+          "Embarked_C": 0.168,
+          "Embarked_Q": 0.004,
+          "Embarked_S": -0.15
+        }
+      }
+    },
+    "eda_warnings": [
+      {
+        "type": "unique_per_row_columns",
+        "columns": [
+          "PassengerId"
+        ],
+        "message": "Likely identifier columns (unique per row)."
+      },
+      {
+        "type": "high_outlier_ratio",
+        "columns": [
+          "Age",
+          "SibSp",
+          "Parch",
+          "Fare",
+          "Embarked_C",
+          "Embarked_Q"
+        ],
+        "message": "Numeric columns with > 5 % outliers (IQR)."
+      },
+      {
+        "type": "non_normal_columns",
+        "columns": [
+          "PassengerId",
+          "Pclass",
+          "Sex_female",
+          "Sex_male",
+          "Age",
+          "SibSp",
+          "Parch",
+          "Ticket",
+          "Fare",
+          "Embarked_C",
+          "Embarked_Q",
+          "Embarked_S",
+          "Survived"
+        ],
+        "message": "Non-normal numeric columns (Shapiro-Wilk)."
+      }
+    ],
+    "total_feature_count": 12,
+    "multicollinearity": {
+      "threshold": 0.7,
+      "pairs": [
+        {
+          "feature_1": "Sex_female",
+          "feature_2": "Sex_male",
+          "correlation": -1.0
+        },
+        {
+          "feature_1": "Embarked_C",
+          "feature_2": "Embarked_S",
+          "correlation": -0.783
+        }
+      ]
+    },
+    "signal_analysis": {
+      "classification_feature_analysis": {
+        "univariate_class_signal": {
+          "PassengerId": 0.0223,
+          "Pclass": 115.0313,
+          "Sex_female": 372.4057,
+          "Sex_male": 372.4057,
+          "Age": 3.7615,
+          "SibSp": 1.1106,
+          "Parch": 5.9635,
+          "Ticket": 24.7408,
+          "Fare": 63.0308,
+          "Embarked_C": 25.896,
+          "Embarked_Q": 0.0118,
+          "Embarked_S": 20.3745
+        }
+      }
+    }
+  }
+}

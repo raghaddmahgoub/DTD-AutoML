@@ -1,205 +1,206 @@
-import json
-import os
-import urllib.error
-import urllib.request
-from pathlib import Path
-from typing import Any, Dict, List, Optional, TypedDict
+"""
+Preprocessing Node — Gemini LLM Policy Driven
+=============================================
+Edit RUN_CONFIG below, then run:  python preprocessing_node.py
+"""
 
-import numpy as np
-import pandas as pd
-from sklearn.feature_extraction import FeatureHasher
+# ---------------------------------------------------------------------------
+# RUN CONFIG — edit these values before running
+# ---------------------------------------------------------------------------
+from sklearn.preprocessing import (
+    MinMaxScaler,
+    Normalizer,
+    PowerTransformer,
+    QuantileTransformer,
+    RobustScaler,
+    StandardScaler,
+)
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+from sklearn.feature_extraction import FeatureHasher
+from sklearn.decomposition import PCA
+import pandas as pd
+import numpy as np
+from typing import Any, Dict, List, Optional, TypedDict
+from pathlib import Path
+import warnings
+import urllib.request
+import urllib.error
+import re
+import os
+import logging
+import json
+from dotenv import load_dotenv
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+load_dotenv(PROJECT_ROOT / ".env")
 
-# ============================================================================
-# CONFIGURATION BLOCK - Edit these paths for your project
-# ============================================================================
-PREPROCESSING_CONFIG = {
-    # Input/Output Paths
-    "default_input_path": "Datasets/",  # Default folder for input datasets
-    "default_output_path": "output/",  # Default folder for outputs
-    
-    # Preprocessing Parameters
-    "test_size": 0.2,  # Train/test split ratio (0.0 - 1.0)
-    "random_state": 42,  # Random seed for reproducibility
-    "use_llm": True,  # Enable LLM for ambiguous decisions (requires GEMINI_API_KEY)
-    "hash_features": 8,  # Number of features for hash encoding
-    "max_label_categories": 30,  # Max categories before switching to hash
-    
-    # API Configuration
-    "gemini_api_key_env": "GEMINI_API_KEY",  # Environment variable name for Gemini API key
+RUN_CONFIG = {
+    # path to your CSV
+    "dataset_path":  "assets\data\Datasets\Regression Datasets\Medical Insurance Cost.csv",
+    "target_column": "charges",                       # column to predict
+    "use_llm":       True,                           # False = skip Gemini call
 }
-# ============================================================================
-#
-# USAGE EXAMPLES:
-#
-# 1. Command Line:
-#    python preprocessing_node.py Datasets/data.csv target_column output_folder
-#
-# 2. Python Script:
-#    from preprocessing_node import preprocessing_node
-#    result = preprocessing_node({
-#        "dataset_path": "Datasets/data.csv",
-#        "target_column": "target"
-#    })
-#
-# 3. LangGraph Node:
-#    from preprocessing_node import preprocessing_node, PreprocessingState
-#    from langgraph.graph import StateGraph
-#    workflow = StateGraph(PreprocessingState)
-#    workflow.add_node("preprocess", preprocessing_node)
-#
-# 4. Custom Config:
-#    from preprocessing_node import PreprocessingNode
-#    custom_config = {"default_output_path": "custom_output/", "test_size": 0.3}
-#    node = PreprocessingNode(config=custom_config)
-#    result = node.run({"dataset_path": "data.csv", "target_column": "target"})
-#
-# ============================================================================
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# Logging — terminal output only
+# ---------------------------------------------------------------------------
+logger = logging.getLogger("preprocessing_node")
+if not logger.handlers:
+    logger.setLevel(logging.DEBUG)
+    _fmt = logging.Formatter(
+        "%(asctime)s  %(levelname)-8s  %(message)s", datefmt="%H:%M:%S")
+    _sh = logging.StreamHandler()
+    _sh.setLevel(logging.INFO)
+    _sh.setFormatter(_fmt)
+    logger.addHandler(_sh)
+
+
+PREPROCESSING_CONFIG = {
+    "test_size": 0.2,
+    "random_state": 42,
+    "use_llm": True,
+    "llm_final_decision": True,
+    "safe_mode": True,
+    "max_label_categories": 30,
+    "max_onehot_categories": 3,
+    "high_cardinality_unique_count": 100,
+    "high_cardinality_unique_ratio": 0.98,
+    "hash_features": 8,
+    "max_row_drop_fraction": 0.02,
+    "max_outlier_clip_quantile": 0.01,
+    "target_metric_priority": "f1",
+    "gemini_model": "gemini-2.5-flash",
+    "gemini_api_key_env": "GEMINI_API_KEY",
+}
 
 
 class PreprocessingState(TypedDict):
-    """State object for LangGraph node."""
-
     dataset_path: str
     target_column: str
     output_folder: str
     test_size: float
     random_state: int
     use_llm: bool
-    hash_features: int
-    max_label_categories: int
     X_train_path: Optional[str]
     X_test_path: Optional[str]
     y_train_path: Optional[str]
     y_test_path: Optional[str]
     summary_path: Optional[str]
     column_actions_path: Optional[str]
+    policy_path: Optional[str]
+    evidence_path: Optional[str]
     status: str
     error: Optional[str]
 
 
 class PreprocessingNode:
-    """
-    Preprocessing node for LangGraph orchestrator.
-
-    Usage:
-        node = PreprocessingNode()
-        state = {
-            "dataset_path": "data.csv",
-            "target_column": "target",
-            "output_folder": "output",
-        }
-        result = node.run(state)
-    """
-
     def __init__(self, config: Optional[Dict[str, Any]] = None):
-        """Initialize preprocessing node with optional custom config."""
-        self.config = config or PREPROCESSING_CONFIG.copy()
-        api_key_env = self.config.get("gemini_api_key_env", "GEMINI_API_KEY")
-        self.api_key = os.getenv(api_key_env)
+        self.config = PREPROCESSING_CONFIG.copy()
+        if config:
+            self.config.update(config)
+        # Read API credentials from environment only.
+        self.gemini_api_key = os.getenv(
+            self.config.get("gemini_api_key_env", "GEMINI_API_KEY")
+        ) or os.getenv("GOOGLE_API_KEY")
+        logger.debug("PreprocessingNode initialised | gemini_credentials=%s", bool(
+            self.gemini_api_key))
 
     def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Main execution method for LangGraph node.
-
-        Args:
-            state: Dictionary with keys:
-                - dataset_path (required): Path to CSV dataset
-                - target_column (required): Name of target column
-                - output_folder (optional): Output directory, default "output"
-                - test_size (optional): Test split ratio, default 0.2
-                - random_state (optional): Random seed, default 42
-                - use_llm (optional): Enable LLM, default True if API key exists
-                - hash_features (optional): Hash feature count, default 8
-                - max_label_categories (optional): Max label encoding size, default 30
-
-        Returns:
-            Updated state dictionary with output paths and status
-        """
         try:
-            # Extract parameters with config defaults
             dataset_path = Path(state["dataset_path"])
             target_col = state["target_column"]
+            dataset_stem = Path(state["dataset_path"]).stem
             output_folder = Path(
-                state.get("output_folder", self.config.get(
-                    "default_output_path", "output"))
-            )
-            test_size = state.get(
-                "test_size", self.config.get("test_size", 0.2))
-            random_state = state.get(
-                "random_state", self.config.get("random_state", 42))
-            use_llm = state.get("use_llm", self.config.get(
-                "use_llm", bool(self.api_key)))
-            hash_features = state.get(
-                "hash_features", self.config.get("hash_features", 8))
-            max_label_categories = state.get(
-                "max_label_categories", self.config.get(
-                    "max_label_categories", 30)
-            )
+                state.get("output_folder", Path("Output") / "Preprocessing" / dataset_stem))
+            test_size = float(state.get("test_size", self.config["test_size"]))
+            random_state = int(
+                state.get("random_state", self.config["random_state"]))
+            use_llm = bool(state.get("use_llm", self.config["use_llm"]))
 
-            # Create output folder
             output_folder.mkdir(parents=True, exist_ok=True)
+            logger.info("[START] dataset=%s  target=%s  output=%s",
+                        dataset_path.name, target_col, output_folder)
 
-            # Load dataset
             df = pd.read_csv(dataset_path)
-            df = df.dropna(subset=[target_col]).reset_index(drop=True)
+            logger.info("Loaded dataset: %d rows x %d cols",
+                        len(df), len(df.columns))
             self._validate_target_column(df, target_col)
+            logger.info("CHECK: target column exists -> %s", target_col)
 
-            # Preprocess
-            X, y, metadata = self._preprocess(
-                df=df,
-                target_col=target_col,
-                use_llm=use_llm,
-                hash_features=hash_features,
-                max_label_categories=max_label_categories,
-            )
-            if len(X) != len(y):
-                raise ValueError(f"Sync Error: X has {len(X)} rows, y has {len(y)} rows.")
-            full_df = X.copy()
-            full_df[target_col] = y.reset_index(drop=True)
-            full_path = output_folder / "full_preprocessed.csv"
-            full_df.to_csv(full_path, index=False)
+            logger.info("Building evidence profile...")
+            evidence = self._build_evidence(df, target_col)
+            logger.debug("Evidence: %d cols profiled | imbalance_ratio=%.2f | duplicates=%d",
+                         evidence["columns"], evidence["target"]["imbalance_ratio"], evidence["duplicate_rows"])
+            logger.info("CHECK: evidence profile completed")
 
-            # Split
-            # X_train, X_test, y_train, y_test = train_test_split(
-            #     X,
-            #     y,
-            #     test_size=test_size,
-            #     random_state=random_state,
-            #     stratify=y if y.nunique() <= 20 else None,
-            # )
-            # =========================
-            # SAFE STRATIFIED SPLIT
-            # =========================
+            logger.info("Generating default policy...")
+            default_policy = self._default_policy(df, target_col, evidence)
 
-            stratify_target = None
-
-            if y.nunique() <= 20:
-                class_counts = y.value_counts()
-
-                if class_counts.min() < 2:
-                    print("⚠️ Rare classes detected (<2 samples). Dropping them...")
-                    valid_classes = class_counts[class_counts >= 2].index
-                    mask = y.isin(valid_classes)
-
-                    X = X[mask]
-                    y = y[mask]
-
-                    stratify_target = y
+            llm_policy = None
+            if use_llm and self._has_llm_credentials():
+                logger.info("Calling LLM (gemini / %s) for policy decision...",
+                            self.config.get("gemini_model"))
+                llm_policy = self._llm_decide_policy(evidence, target_col)
+                if llm_policy:
+                    logger.info("LLM policy received and will be applied")
                 else:
-                    stratify_target = y
+                    logger.warning(
+                        "LLM returned no valid policy — falling back to defaults")
+            else:
+                logger.info("LLM skipped (use_llm=%s, credentials=%s) — using defaults",
+                            use_llm, self._has_llm_credentials())
 
+            logger.info("Merging and validating policy...")
+            policy = self._merge_and_validate_policy(
+                default_policy=default_policy,
+                llm_policy=llm_policy,
+                evidence=evidence,
+                total_rows=len(df),
+            )
+            safeguard_notes = policy.get("safeguards", {}).get("notes", [])
+            if safeguard_notes:
+                for note in safeguard_notes:
+                    logger.warning("SAFEGUARD: %s", note)
+            logger.info(
+                "CHECK: policy validated with %d safeguard note(s)", len(safeguard_notes))
+
+            logger.info("Running preprocessing pipeline...")
+            X, y, metadata = self._preprocess_with_policy(
+                df, target_col, policy)
+            metadata["llm_policy_used"] = bool(llm_policy)
+            logger.info("Preprocessing done: %d rows x %d features | dropped=%s",
+                        len(X), X.shape[1], metadata["dropped_columns"])
+            logger.debug("Steps status: %s", metadata["steps_status"])
+            logger.info("CHECK: preprocessing completed successfully")
+
+            logger.info(
+                "Splitting train/test (test_size=%.0f%%)...", test_size * 100)
             X_train, X_test, y_train, y_test = train_test_split(
                 X,
                 y,
                 test_size=test_size,
                 random_state=random_state,
-                stratify=stratify_target,
+                stratify=y if y.nunique() <= 20 else None,
             )
+            logger.info("Split done: train=%d rows | test=%d rows",
+                        len(X_train), len(X_test))
+            logger.info("CHECK: train/test split completed")
 
-            # Save outputs
+            logger.info("Applying imbalance method: %s",
+                        policy["imbalance"]["method"])
+            X_train, y_train, imbalance_meta = self._apply_imbalance_method(
+                X_train,
+                y_train,
+                method=str(policy["imbalance"]["method"]),
+                random_state=random_state,
+            )
+            logger.info("Imbalance handling: %s", imbalance_meta.get("status"))
+            metadata["imbalance"] = imbalance_meta
+            logger.info("CHECK: imbalance handling completed")
+
+            logger.info("Saving outputs to %s", output_folder)
             paths = self._save_outputs(
                 output_folder=output_folder,
                 X_train=X_train,
@@ -207,306 +208,765 @@ class PreprocessingNode:
                 y_train=y_train,
                 y_test=y_test,
                 metadata=metadata,
+                policy=policy,
+                evidence=evidence,
                 dataset_name=dataset_path.name,
                 target_col=target_col,
                 test_size=test_size,
                 random_state=random_state,
                 use_llm=use_llm,
-                hash_features=hash_features,
             )
+            logger.info("[DONE] policy_used=%s | features=%d | output=%s",
+                        bool(llm_policy), X_train.shape[1], output_folder)
 
-            # Update state
             state.update(
                 {
                     "X_train_path": str(paths["X_train"]),
                     "X_test_path": str(paths["X_test"]),
                     "y_train_path": str(paths["y_train"]),
                     "y_test_path": str(paths["y_test"]),
-                    "full_dataset_path": str(full_path),
                     "summary_path": str(paths["summary"]),
                     "column_actions_path": str(paths["column_actions"]),
+                    "policy_path": str(paths["policy"]),
+                    "evidence_path": str(paths["evidence"]),
                     "status": "success",
                     "error": None,
                     "output_folder": str(output_folder),
                 }
             )
-
             return state
 
         except Exception as e:
-            state.update(
-                {
-                    "status": "failed",
-                    "error": str(e),
-                }
-            )
+            logger.error("FAILED: %s", str(e), exc_info=True)
+            state.update({"status": "failed", "error": str(e)})
             return state
 
     def _validate_target_column(self, df: pd.DataFrame, target_col: str) -> None:
         if target_col not in df.columns:
-            available = ", ".join(df.columns)
             raise ValueError(
-                f"Target column '{target_col}' not found. Available: {available}"
+                f"Target column '{target_col}' not found. Available: {', '.join(df.columns)}"
             )
 
-    def _is_id_like(self, series: pd.Series) -> bool:
-        if series.dtype == "object":
-            return False
-        unique_ratio = series.nunique(dropna=True) / max(len(series), 1)
-        return unique_ratio > 0.98
-
-    def _is_high_cardinality(self, series: pd.Series) -> bool:
-        unique_count = series.nunique(dropna=True)
-        unique_ratio = unique_count / max(len(series), 1)
-        return unique_count > 50 and unique_ratio > 0.2
+    def _has_llm_credentials(self) -> bool:
+        return bool(self.gemini_api_key)
 
     def _call_gemini(self, prompt: str) -> Optional[str]:
-        if not self.api_key:
+        if not self.gemini_api_key:
+            logger.warning("Gemini: no API key available")
             return None
+        model = str(self.config.get("gemini_model", "gemini-2.5-flash"))
+        logger.debug("Gemini: calling model=%s", model)
         url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
-            "gemini-1.5-flash:generateContent?key=" + self.api_key
+            f"{model}:generateContent?key=" + self.gemini_api_key
         )
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"temperature": 0.0},
         }
-        data = json.dumps(payload).encode("utf-8")
         request = urllib.request.Request(
-            url, data=data, headers={"Content-Type": "application/json"}
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
         )
-        # FIXME:  Read file correctly 
         try:
-            with urllib.request.urlopen(request, timeout=20) as response:
+            with urllib.request.urlopen(request, timeout=30) as response:
                 body = response.read().decode("utf-8")
-        except (urllib.error.URLError, TimeoutError):
+        except urllib.error.HTTPError as e:
+            logger.error("Gemini HTTP error: %s — %s",
+                         e.code, e.read().decode()[:200])
             return None
+        except (urllib.error.URLError, TimeoutError) as e:
+            logger.error("Gemini connection error: %s", str(e))
+            return None
+
         try:
             parsed = json.loads(body)
-            return (
+            text = (
                 parsed.get("candidates", [{}])[0]
                 .get("content", {})
                 .get("parts", [{}])[0]
                 .get("text")
             )
-        except (json.JSONDecodeError, IndexError, KeyError, TypeError):
+            logger.debug("Gemini: response received (%d chars)",
+                         len(text) if text else 0)
+            return text
+        except (json.JSONDecodeError, IndexError, KeyError, TypeError) as e:
+            logger.error("Gemini response parse error: %s", str(e))
             return None
+
+    def _call_llm(self, prompt: str) -> Optional[str]:
+        return self._call_gemini(prompt)
 
     def _parse_llm_json(self, text: str) -> Optional[Dict[str, Any]]:
         if not text:
+            logger.debug("LLM JSON parse: empty text")
             return None
         start = text.find("{")
         end = text.rfind("}")
         if start == -1 or end == -1 or end <= start:
+            logger.warning(
+                "LLM JSON parse: no JSON object found in response (first 200 chars: %s)", text[:200])
             return None
         try:
-            return json.loads(text[start: end + 1])
-        except json.JSONDecodeError:
+            parsed = json.loads(text[start: end + 1])
+            logger.debug("LLM JSON parse: success, keys=%s",
+                         list(parsed.keys()))
+            return parsed
+        except json.JSONDecodeError as e:
+            logger.error("LLM JSON parse failed: %s | raw snippet: %s", str(
+                e), text[start:start+200])
             return None
 
-    def _llm_decide_categorical_action(
-        self,
-        series: pd.Series,
-        max_label_categories: int,
-        hash_features: int,
-    ) -> Optional[Dict[str, Any]]:
-        unique_count = int(series.nunique(dropna=True))
-        unique_ratio = unique_count / max(len(series), 1)
-        missing_ratio = float(series.isna().mean())
-        sample_values = (
-            series.dropna().astype(str).head(5).tolist()
-            if not series.dropna().empty
-            else []
-        )
-        prompt = (
-            "You are a data preprocessing assistant. Choose an action for a categorical column. "
-            "Allowed actions: drop, hash, label. Avoid creating huge features. "
-            "If unique_count is high, prefer drop or hash. "
-            f"Column stats: unique_count={unique_count}, unique_ratio={unique_ratio:.2f}, "
-            f"missing_ratio={missing_ratio:.2f}, max_label_categories={max_label_categories}, "
-            f"hash_features={hash_features}. Sample values: {sample_values}. "
-            "Respond with JSON only: {\"action\":\"drop|hash|label\",\"reason\":\"...\"}."
-        )
-        response = self._call_gemini(prompt)
-        decision = self._parse_llm_json(response) if response else None
-        if not decision or "action" not in decision:
-            return None
-        action = str(decision.get("action", "")).lower().strip()
-        if action not in {"drop", "hash", "label"}:
-            return None
-        return {
-            "action": action,
-            "reason": str(decision.get("reason", "llm_decision")),
-            "raw": decision,
-        }
+    def _build_evidence(self, df: pd.DataFrame, target_col: str) -> Dict[str, Any]:
+        y = df[target_col]
+        class_counts = y.value_counts(dropna=False).to_dict()
+        min_count = min(class_counts.values()) if class_counts else 0
+        max_count = max(class_counts.values()) if class_counts else 0
+        imbalance_ratio = float(
+            max_count / max(min_count, 1)) if class_counts else 1.0
 
-    def _preprocess(
-        self,
-        df: pd.DataFrame,
-        target_col: str,
-        use_llm: bool,
-        hash_features: int,
-        max_label_categories: int,
-    ) -> tuple[pd.DataFrame, pd.Series, Dict[str, Any]]:
-        """Perform preprocessing and return X, y, and metadata."""
-        column_actions = {}
-        dropped_columns = []
-        numeric_cols = []
-        categorical_cols = []
-        hashed_cols = []
-        label_cols = []
-        frames = []
-
+        columns: Dict[str, Dict[str, Any]] = {}
         for col in df.columns:
             if col == target_col:
                 continue
+            s = df[col]
+            non_null = s.dropna()
+            if pd.api.types.is_numeric_dtype(s):
+                numeric_ratio = 1.0
+                numeric_conv = pd.to_numeric(s, errors="coerce")
+            elif non_null.empty:
+                numeric_ratio = 0.0
+                numeric_conv = pd.to_numeric(s, errors="coerce")
+            else:
+                numeric_conv = pd.to_numeric(non_null, errors="coerce")
+                numeric_ratio = float(numeric_conv.notna().mean())
 
-            series = df[col]
-            missing_ratio = series.isna().mean()
-            unique_ratio = series.nunique(dropna=True) / max(len(series), 1)
+            datetime_ratio = 0.0
+            if pd.api.types.is_object_dtype(s) or pd.api.types.is_string_dtype(s):
+                sample_text = " ".join(non_null.astype(
+                    str).head(8).tolist()).lower()
+                # Avoid expensive datetime parsing for clear non-date text columns.
+                if re.search(r"\d{1,4}[-/]\d{1,2}[-/]\d{1,4}|jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec", sample_text):
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", UserWarning)
+                        dt_conv = pd.to_datetime(
+                            non_null, errors="coerce") if not non_null.empty else pd.Series(dtype="datetime64[ns]")
+                    datetime_ratio = float(
+                        dt_conv.notna().mean()) if not non_null.empty else 0.0
 
-            # Drop high missing
-            if missing_ratio > 0.6:
-                dropped_columns.append(col)
-                column_actions[col] = {
-                    "action": "drop",
-                    "reason": f"missing_ratio>{missing_ratio:.2f}",
-                }
-                continue
-
-            # Drop ID-like
-            if self._is_id_like(series):
-                dropped_columns.append(col)
-                column_actions[col] = {
-                    "action": "drop",
-                    "reason": "id_like_numeric",
-                }
-                continue
-
-            # Handle categorical
-            if series.dtype == "object":
-                if unique_ratio > 0.95:
-                    dropped_columns.append(col)
-                    column_actions[col] = {
-                        "action": "drop",
-                        "reason": f"high_cardinality_ratio>{unique_ratio:.2f}",
-                    }
-                    continue
-
-                action = "label"
-                reason = "low_cardinality_categorical"
-                llm_info = None
-
-                if self._is_high_cardinality(series):
-                    action = "drop"
-                    reason = "high_cardinality_categorical"
-                    if use_llm and self.api_key:
-                        llm_info = self._llm_decide_categorical_action(
-                            series,
-                            max_label_categories=max_label_categories,
-                            hash_features=hash_features,
-                        )
-                        if llm_info:
-                            action = llm_info["action"]
-                            reason = llm_info["reason"]
-
-                unique_count = int(series.nunique(dropna=True))
-                if action == "label" and unique_count > max_label_categories:
-                    action = "hash"
-                    reason = "label_too_many_categories"
-
-                if action == "drop":
-                    dropped_columns.append(col)
-                    column_actions[col] = {
-                        "action": "drop",
-                        "reason": reason,
-                        "llm_used": bool(llm_info),
-                    }
-                    continue
-
-                if action == "hash":
-                    cleaned = series.fillna("missing").astype(str)
-                    hasher = FeatureHasher(
-                        n_features=hash_features, input_type="string"
-                    )
-                    # FeatureHasher expects iterable of iterables
-                    hashed = hasher.transform([[val] for val in cleaned]).toarray()
-                    hash_frame = pd.DataFrame(
-                        hashed,
-                        columns=[f"{col}__hash_{i}" for i in range(
-                            hash_features)],
-                    )
-                    frames.append(hash_frame)
-                    hashed_cols.append(col)
-                    column_actions[col] = {
-                        "type": "categorical",
-                        "imputation": "missing",
-                        "encoding": "hash",
-                        "hash_features": hash_features,
-                        "reason": reason,
-                        "llm_used": bool(llm_info),
-                    }
-                    continue
-
-                # Label encode
-                cleaned = series.fillna("missing").astype(str)
-                categories = sorted(cleaned.unique().tolist())
-                mapping = {cat: idx for idx, cat in enumerate(categories)}
-                encoded = cleaned.map(mapping).astype(int)
-                frames.append(pd.DataFrame({col: encoded}))
-                categorical_cols.append(col)
-                label_cols.append(col)
-                column_actions[col] = {
-                    "type": "categorical",
-                    "imputation": "missing",
-                    "encoding": "label",
-                    "mapping": mapping,
-                    "reason": reason,
-                    "llm_used": bool(llm_info),
-                }
-                continue
-
-            # Handle numeric
-            numeric_series = pd.to_numeric(series, errors="coerce")
-            median = (
-                float(numeric_series.median())
-                if not numeric_series.dropna().empty
-                else 0.0
-            )
-            numeric_series = numeric_series.fillna(median)
-            frames.append(pd.DataFrame({col: numeric_series}))
-            numeric_cols.append(col)
-            column_actions[col] = {
-                "type": "numeric",
-                "imputation": "median",
-                "imputation_value": median,
-                "encoding": None,
+            top_values = s.astype(str).value_counts(dropna=False).head(10)
+            columns[col] = {
+                "dtype": str(s.dtype),
+                "missing_ratio": float(s.isna().mean()),
+                "unique_count": int(s.nunique(dropna=True)),
+                "unique_ratio": float(s.nunique(dropna=True) / max(len(s), 1)),
+                "numeric_parse_ratio": numeric_ratio,
+                "datetime_parse_ratio": datetime_ratio,
+                "sample_values": s.dropna().astype(str).head(8).tolist(),
+                "top_values": {str(k): int(v) for k, v in top_values.items()},
+                "numeric_stats": {
+                    "mean": float(numeric_conv.mean()) if numeric_conv.notna().any() else None,
+                    "std": float(numeric_conv.std()) if numeric_conv.notna().any() else None,
+                    "q1": float(numeric_conv.quantile(0.25)) if numeric_conv.notna().any() else None,
+                    "q3": float(numeric_conv.quantile(0.75)) if numeric_conv.notna().any() else None,
+                },
             }
 
-        X = pd.concat(frames, axis=1) if frames else pd.DataFrame()
-        y = df[target_col]
+        evidence_result = {
+            "rows": int(len(df)),
+            "columns": int(len(df.columns) - 1),
+            "duplicate_rows": int(df.duplicated().sum()),
+            "target": {
+                "name": target_col,
+                "n_classes": int(y.nunique(dropna=False)),
+                "class_counts": {str(k): int(v) for k, v in class_counts.items()},
+                "imbalance_ratio": imbalance_ratio,
+            },
+            "metric_priority": self.config["target_metric_priority"],
+            "columns_profile": columns,
+        }
+        logger.debug("Evidence built: %d rows | %d feature cols | %d duplicates | "
+                     "target classes=%s | imbalance=%.2f",
+                     evidence_result["rows"], evidence_result["columns"],
+                     evidence_result["duplicate_rows"],
+                     list(class_counts.keys()), imbalance_ratio)
+        return evidence_result
 
-        # Standardize numeric features
+    def _default_policy(self, df: pd.DataFrame, target_col: str, evidence: Dict[str, Any]) -> Dict[str, Any]:
+        columns_policy: Dict[str, Dict[str, Any]] = {}
+        for col in df.columns:
+            if col == target_col:
+                continue
+            profile = evidence["columns_profile"][col]
+            is_numeric_dtype = pd.api.types.is_numeric_dtype(df[col])
+            dtype_guess = "numeric" if is_numeric_dtype or profile[
+                "numeric_parse_ratio"] > 0.85 else "categorical"
+            if profile["datetime_parse_ratio"] > 0.85 and not is_numeric_dtype:
+                dtype_guess = "datetime"
+            # High-cardinality dropping should only target non-numeric ID-like columns.
+            high_card = (
+                dtype_guess in {"categorical", "text"}
+                and (
+                    profile["unique_ratio"] > float(
+                        self.config["high_cardinality_unique_ratio"])
+                    or (
+                        profile["unique_count"] > int(
+                            self.config["high_cardinality_unique_count"])
+                        and profile["unique_ratio"] > 0.9
+                    )
+                )
+            )
+            drop = profile["missing_ratio"] > 0.6 or (
+                dtype_guess in {"categorical",
+                                "text"} and profile["unique_ratio"] > 0.99
+            ) or high_card
+            encoding = "none" if dtype_guess == "numeric" else "label"
+            if dtype_guess == "categorical":
+                if profile["unique_count"] <= int(self.config["max_onehot_categories"]):
+                    encoding = "onehot"
+                else:
+                    encoding = "label"
+            columns_policy[col] = {
+                "drop": bool(drop),
+                "dtype": dtype_guess,
+                "missing": "median" if dtype_guess == "numeric" else "mode",
+                "outlier": "keep",
+                "encoding": encoding,
+                "reason": "high_cardinality_drop" if high_card else "default_policy",
+            }
+
+        imbalance_method = "none"
+        if evidence["target"]["imbalance_ratio"] >= 3.0:
+            imbalance_method = "class_weight"
+
+        return {
+            "duplicates": {"action": "drop_exact", "reason": "safe_default"},
+            "columns": columns_policy,
+            # Keep columns interpretable and avoid post-encoding drops.
+            "feature_selection": {"method": "none", "threshold": 0.0},
+            "feature_creation": {"method": "datetime_parts"},
+            "dimensionality_reduction": {"method": "none", "n_components": "auto"},
+            "scaling": {"method": "standard"},
+            "normalization": {"method": "none"},
+            "imbalance": {"method": imbalance_method, "reason": "default_by_ratio"},
+        }
+
+    def _llm_decide_policy(self, evidence: Dict[str, Any], target_col: str) -> Optional[Dict[str, Any]]:
+        prompt = (
+            "You are the final preprocessing policy authority. "
+            "Return only JSON with keys: duplicates, columns, feature_selection, feature_creation, "
+            "dimensionality_reduction, scaling, normalization, imbalance. "
+            "Allowed methods only: duplicates.action=drop_exact|keep; "
+            "columns.dtype=numeric|categorical|datetime|text; "
+            "columns.missing=median|mean|mode|constant|indicator; "
+            "columns.outlier=keep|clip|log_transform; "
+            "columns.encoding=none|label|onehot|frequency; "
+            "feature_selection.method=none|variance; "
+            "feature_creation.method=none|datetime_parts; "
+            "dimensionality_reduction.method=none; "
+            "scaling.method=none|standard|minmax|robust|quantile|power; "
+            "normalization.method=none|l1|l2|max; "
+            "imbalance.method=none|class_weight|oversample|undersample. "
+            "IMPORTANT RULES: onehot is allowed only when unique_count <= 3; "
+            "if unique_count > 3 use label or frequency; "
+            "very high-cardinality non-numeric ID-like columns should be dropped before encoding; "
+            "do not use pca. "
+            "Do not remove more than 20 percent of features. "
+            f"Target column is '{target_col}'. "
+            f"Evidence: {json.dumps(evidence)}"
+        )
+        raw = self._call_llm(prompt)
+        if not raw:
+            return None
+        parsed = self._parse_llm_json(raw)
+        if not parsed:
+            return None
+        return parsed
+
+    def _merge_and_validate_policy(
+        self,
+        default_policy: Dict[str, Any],
+        llm_policy: Optional[Dict[str, Any]],
+        evidence: Dict[str, Any],
+        total_rows: int,
+    ) -> Dict[str, Any]:
+        policy = default_policy
+        if llm_policy and self.config["llm_final_decision"]:
+            policy = {**default_policy, **llm_policy}
+            if "columns" in llm_policy:
+                merged_cols = default_policy["columns"].copy()
+                if isinstance(llm_policy["columns"], dict):
+                    merged_cols.update(llm_policy["columns"])
+                policy["columns"] = merged_cols
+
+        allowed_scaling = {"none", "standard",
+                           "minmax", "robust", "quantile", "power"}
+        allowed_norm = {"none", "l1", "l2", "max"}
+        allowed_imb = {"none", "class_weight", "oversample", "undersample"}
+        allowed_enc = {"none", "label", "onehot", "frequency"}
+        allowed_dtype = {"numeric", "categorical", "datetime", "text"}
+        allowed_missing = {"median", "mean",
+                           "mode", "constant", "indicator"}
+        allowed_outlier = {"keep", "clip", "log_transform"}
+
+        if policy.get("scaling", {}).get("method") not in allowed_scaling:
+            policy["scaling"] = {"method": "standard"}
+        if policy.get("normalization", {}).get("method") not in allowed_norm:
+            policy["normalization"] = {"method": "none"}
+        if policy.get("imbalance", {}).get("method") not in allowed_imb:
+            policy["imbalance"] = {"method": "none",
+                                   "reason": "invalid_replaced"}
+        # Force interpretable output column names.
+        if policy.get("dimensionality_reduction", {}).get("method") == "pca":
+            policy["dimensionality_reduction"] = {
+                "method": "none", "reason": "pca_disabled_for_interpretability"}
+
+        safe_notes: List[str] = []
+        col_policy = policy.get("columns", {})
+        dropped_count = 0
+        for col, decisions in col_policy.items():
+            if col not in default_policy.get("columns", {}):
+                continue
+            if decisions.get("dtype") not in allowed_dtype:
+                decisions["dtype"] = default_policy["columns"][col]["dtype"]
+            if decisions.get("encoding") not in allowed_enc:
+                decisions["encoding"] = default_policy["columns"][col]["encoding"]
+            if decisions.get("missing") not in allowed_missing:
+                decisions["missing"] = default_policy["columns"][col]["missing"]
+            if decisions.get("outlier") not in allowed_outlier:
+                decisions["outlier"] = "keep"
+
+            # Never allow one-hot when category count is above threshold.
+            unique_count = evidence.get("columns_profile", {}).get(
+                col, {}).get("unique_count", 0)
+            if decisions.get("encoding") == "onehot" and unique_count > int(self.config["max_onehot_categories"]):
+                decisions["encoding"] = "label"
+                safe_notes.append(
+                    f"{col}: onehot replaced with label (unique_count={unique_count} > {self.config['max_onehot_categories']})")
+
+            # Convert any lingering "keep" missing strategy into explicit imputations.
+            if decisions.get("missing") == "keep":
+                decisions["missing"] = "median" if decisions.get(
+                    "dtype") == "numeric" else "mode"
+                safe_notes.append(
+                    f"{col}: missing strategy 'keep' replaced with {decisions['missing']}")
+
+            # Force drop only on very high-cardinality non-numeric ID-like columns.
+            col_profile = evidence.get("columns_profile", {}).get(col, {})
+            col_dtype = decisions.get("dtype")
+            if (
+                col_dtype in {"categorical", "text"}
+                and (
+                    col_profile.get("unique_ratio", 0.0) > float(
+                        self.config["high_cardinality_unique_ratio"])
+                    or (
+                        col_profile.get("unique_count", 0) > int(
+                            self.config["high_cardinality_unique_count"])
+                        and col_profile.get("unique_ratio", 0.0) > 0.9
+                    )
+                )
+            ):
+                decisions["drop"] = True
+                decisions["reason"] = "high_cardinality_drop"
+                safe_notes.append(
+                    f"{col}: dropped for very high-cardinality non-numeric values before encoding")
+
+            if bool(decisions.get("drop")):
+                dropped_count += 1
+
+            if self.config["safe_mode"] and decisions.get("outlier") not in {"keep", "clip", "log_transform"}:
+                decisions["outlier"] = "keep"
+                safe_notes.append(f"{col}: unsafe outlier action replaced")
+
+        total_features = max(len(col_policy), 1)
+        protected_drop_reasons = {"high_cardinality_drop",
+                                  "constant_column_drop", "id_like_column_drop"}
+        optional_drop_cols = [
+            col
+            for col, decisions in col_policy.items()
+            if bool(decisions.get("drop"))
+            and decisions.get("reason") not in protected_drop_reasons
+        ]
+        if len(optional_drop_cols) / total_features > 0.35:
+            safe_notes.append(
+                "Too many columns dropped by policy; capping drops to protect dataset")
+            kept = 0
+            for col in sorted(optional_drop_cols):
+                if col_policy[col].get("drop"):
+                    if kept / total_features < 0.35:
+                        kept += 1
+                    else:
+                        col_policy[col]["drop"] = False
+
+        if policy.get("duplicates", {}).get("action") not in {"drop_exact", "keep"}:
+            policy["duplicates"] = {
+                "action": "drop_exact", "reason": "invalid_replaced"}
+
+        policy["safeguards"] = {
+            "safe_mode": bool(self.config["safe_mode"]),
+            "notes": safe_notes,
+            "max_row_drop_fraction": self.config["max_row_drop_fraction"],
+            "rows": total_rows,
+            "target_imbalance_ratio": evidence["target"]["imbalance_ratio"],
+        }
+        return policy
+
+    def _preprocess_with_policy(
+        self,
+        df: pd.DataFrame,
+        target_col: str,
+        policy: Dict[str, Any],
+    ) -> tuple[pd.DataFrame, pd.Series, Dict[str, Any]]:
+        steps_status = {
+            "missing_values": "handled",
+            "outliers": "handled",
+            "duplicates": "handled",
+            "type_conversion": "handled",
+            "categorical_encoding": "handled",
+            "feature_selection": "handled",
+            "feature_creation": "handled",
+            "dimensionality_reduction": "handled",
+            "normalization": "handled",
+            "scaling": "handled",
+            "imbalance": "handled_after_split",
+        }
+
+        df_work = df.copy()
+        duplicate_rows_removed = 0
+        if policy["duplicates"]["action"] == "drop_exact":
+            duplicate_rows_removed = int(df_work.duplicated().sum())
+            df_work = df_work.drop_duplicates().copy()
+
+        y = df_work[target_col].copy()
+        feature_frames: List[pd.DataFrame] = []
+        numeric_cols: List[str] = []
+        categorical_cols: List[str] = []
+        dropped_cols: List[str] = []
+        column_actions: Dict[str, Any] = {}
+
+        for col in [c for c in df_work.columns if c != target_col]:
+            s = df_work[col]
+            p = policy["columns"].get(col, {})
+            if bool(p.get("drop", False)):
+                dropped_cols.append(col)
+                column_actions[col] = {"action": "drop",
+                                       "reason": p.get("reason", "policy_drop")}
+                logger.debug("  col %-30s -> DROP (%s)", col,
+                             p.get("reason", "policy_drop"))
+                continue
+
+            dtype_choice = p.get("dtype", "categorical")
+            missing_method = p.get("missing", "mode")
+            outlier_method = p.get("outlier", "keep")
+            encoding_method = p.get("encoding", "none")
+
+            # Type conversion
+            if dtype_choice == "numeric":
+                converted = pd.to_numeric(s, errors="coerce")
+            elif dtype_choice == "datetime":
+                converted = pd.to_datetime(s, errors="coerce")
+            else:
+                converted = s.astype("string")
+
+            # Missing values
+            if dtype_choice == "numeric":
+                if missing_method == "median":
+                    fill_val = float(converted.median()
+                                     ) if converted.notna().any() else 0.0
+                    converted = converted.fillna(fill_val)
+                elif missing_method == "mean":
+                    fill_val = float(
+                        converted.mean()) if converted.notna().any() else 0.0
+                    converted = converted.fillna(fill_val)
+                elif missing_method == "constant":
+                    converted = converted.fillna(0.0)
+                elif missing_method == "indicator":
+                    indicator = converted.isna().astype(int)
+                    feature_frames.append(pd.DataFrame(
+                        {f"{col}__missing": indicator}, index=df_work.index))
+                    fill_val = float(converted.median()
+                                     ) if converted.notna().any() else 0.0
+                    converted = converted.fillna(fill_val)
+                else:
+                    converted = converted.fillna(
+                        float(converted.median()) if converted.notna().any() else 0.0)
+            elif dtype_choice == "datetime":
+                converted = converted.fillna(pd.Timestamp("1970-01-01"))
+            else:
+                if missing_method in {"mode", "keep"}:
+                    mode_val = converted.mode(dropna=True)
+                    fill_val = str(
+                        mode_val.iloc[0]) if not mode_val.empty else "missing"
+                    converted = converted.fillna(fill_val)
+                elif missing_method == "constant":
+                    converted = converted.fillna("missing")
+                elif missing_method == "indicator":
+                    indicator = converted.isna().astype(int)
+                    feature_frames.append(pd.DataFrame(
+                        {f"{col}__missing": indicator}, index=df_work.index))
+                    converted = converted.fillna("missing")
+                else:
+                    converted = converted.fillna("missing")
+
+            # Outliers (numeric only)
+            if dtype_choice == "numeric":
+                if outlier_method == "clip":
+                    q = float(self.config["max_outlier_clip_quantile"])
+                    lo, hi = converted.quantile(q), converted.quantile(1.0 - q)
+                    converted = converted.clip(lower=lo, upper=hi)
+                elif outlier_method == "log_transform":
+                    converted = np.sign(converted) * \
+                        np.log1p(np.abs(converted))
+
+            # Feature creation
+            if dtype_choice == "datetime":
+                if policy.get("feature_creation", {}).get("method") == "datetime_parts":
+                    feature_frames.append(
+                        pd.DataFrame(
+                            {
+                                f"{col}__year": converted.dt.year.astype(int),
+                                f"{col}__month": converted.dt.month.astype(int),
+                                f"{col}__day": converted.dt.day.astype(int),
+                            },
+                            index=df_work.index,
+                        )
+                    )
+                    column_actions[col] = {
+                        "type": "datetime",
+                        "action": "datetime_parts",
+                        "missing": missing_method,
+                        "reason": p.get("reason", "policy"),
+                    }
+                    continue
+                feature_frames.append(pd.DataFrame(
+                    {col: converted.astype("int64")}, index=df_work.index))
+                numeric_cols.append(col)
+                column_actions[col] = {
+                    "type": "datetime", "action": "timestamp", "reason": p.get("reason", "policy")}
+                continue
+
+            if dtype_choice == "numeric":
+                feature_frames.append(pd.DataFrame(
+                    {col: converted}, index=df_work.index))
+                numeric_cols.append(col)
+                column_actions[col] = {
+                    "type": "numeric",
+                    "missing": missing_method,
+                    "outlier": outlier_method,
+                    "encoding": "none",
+                    "reason": p.get("reason", "policy"),
+                }
+                continue
+
+            # Categorical / text encoding
+            cleaned = converted.astype(str)
+            if encoding_method == "hash":
+                hasher = FeatureHasher(
+                    n_features=int(self.config["hash_features"]), input_type="string"
+                )
+                hashed = hasher.transform([[val] for val in cleaned]).toarray()
+                hash_cols = [f"{col}__hash_{i}" for i in range(
+                    self.config["hash_features"])]
+                feature_frames.append(pd.DataFrame(
+                    hashed, columns=hash_cols, index=df_work.index))
+            elif encoding_method == "onehot":
+                feature_frames.append(pd.get_dummies(
+                    cleaned, prefix=col, dtype=int))
+            elif encoding_method == "frequency":
+                freq = cleaned.value_counts(normalize=True)
+                feature_frames.append(pd.DataFrame(
+                    {f"{col}__freq": cleaned.map(freq)}, index=df_work.index))
+            elif encoding_method == "label":
+                categories = sorted(cleaned.unique().tolist())
+                mapping = {cat: idx for idx, cat in enumerate(categories)}
+                feature_frames.append(pd.DataFrame(
+                    {col: cleaned.map(mapping).astype(int)}, index=df_work.index))
+            else:
+                feature_frames.append(pd.DataFrame(
+                    {col: cleaned}, index=df_work.index))
+                categorical_cols.append(col)
+
+            column_actions[col] = {
+                "type": "categorical",
+                "missing": missing_method,
+                "encoding": encoding_method,
+                "reason": p.get("reason", "policy"),
+            }
+            logger.debug("  col %-30s -> CATEGORICAL | missing=%-8s encoding=%s",
+                         col, missing_method, encoding_method)
+
+        if not feature_frames:
+            logger.error(
+                "No features left after applying preprocessing policy — check column drop rules")
+            raise ValueError("No features left after preprocessing policy")
+
+        X = pd.concat(feature_frames, axis=1)
+        logger.debug("Feature matrix assembled: %d rows x %d cols",
+                     X.shape[0], X.shape[1])
+
+        # Feature selection
+        fs_method = policy.get("feature_selection", {}).get("method", "none")
+        if fs_method == "variance":
+            constant_cols = [
+                c for c in X.columns if X[c].nunique(dropna=False) <= 1]
+            if constant_cols:
+                logger.info("Feature selection: dropping %d constant column(s): %s", len(
+                    constant_cols), constant_cols)
+                X = X.drop(columns=constant_cols)
+                logger.info("CHECK: post-encoding variance drop applied")
+        elif fs_method == "none":
+            steps_status["feature_selection"] = "skipped"
+            logger.info("CHECK: post-encoding feature drops are disabled")
+
+        # Scaling
         scaler = None
-        if numeric_cols:
-            scaler = StandardScaler()
-            X[numeric_cols] = scaler.fit_transform(X[numeric_cols])
+        scaling_method = policy.get("scaling", {}).get("method", "standard")
+        numeric_X_cols = [
+            c for c in X.columns if pd.api.types.is_numeric_dtype(X[c])]
+        logger.debug("Scaling: method=%s on %d numeric columns",
+                     scaling_method, len(numeric_X_cols))
+        if numeric_X_cols and scaling_method != "none":
+            if scaling_method == "standard":
+                scaler = StandardScaler()
+            elif scaling_method == "minmax":
+                scaler = MinMaxScaler()
+            elif scaling_method == "robust":
+                scaler = RobustScaler()
+            elif scaling_method == "quantile":
+                scaler = QuantileTransformer(
+                    output_distribution="normal", random_state=42)
+            elif scaling_method == "power":
+                scaler = PowerTransformer()
+            if scaler is not None:
+                X[numeric_X_cols] = scaler.fit_transform(X[numeric_X_cols])
+        else:
+            steps_status["scaling"] = "skipped"
+
+        # Normalization
+        norm_method = policy.get("normalization", {}).get("method", "none")
+        logger.debug("Normalization: method=%s", norm_method)
+        if norm_method in {"l1", "l2", "max"} and not X.empty:
+            norm = Normalizer(norm=norm_method)
+            X = pd.DataFrame(norm.fit_transform(
+                X), columns=X.columns, index=X.index)
+        else:
+            steps_status["normalization"] = "skipped"
+
+        # Dimensionality reduction
+        dr_method = policy.get("dimensionality_reduction",
+                               {}).get("method", "none")
+        logger.debug("Dimensionality reduction: method=%s", dr_method)
+        if dr_method == "pca":
+            if X.shape[1] > 2:
+                n_components = min(
+                    max(2, int(np.sqrt(X.shape[1]))), X.shape[1])
+                pca = PCA(n_components=n_components, random_state=42)
+                reduced = pca.fit_transform(X)
+                X = pd.DataFrame(
+                    reduced,
+                    columns=[f"pca_{i+1}" for i in range(reduced.shape[1])],
+                    index=X.index,
+                )
+            else:
+                steps_status["dimensionality_reduction"] = "skipped_not_enough_features"
+        else:
+            steps_status["dimensionality_reduction"] = "skipped"
 
         metadata = {
             "column_actions": column_actions,
-            "dropped_columns": dropped_columns,
+            "dropped_columns": dropped_cols,
             "numeric_columns": numeric_cols,
             "categorical_columns": categorical_cols,
-            "label_encoded_columns": label_cols,
-            "hashed_columns": hashed_cols,
+            "duplicates_removed": duplicate_rows_removed,
+            "steps_status": steps_status,
             "scaler": {
-                "means": scaler.mean_.tolist() if scaler else [],
-                "scales": scaler.scale_.tolist() if scaler else [],
-                "columns": numeric_cols,
+                "method": scaling_method,
+                "columns": numeric_X_cols,
+                "means": scaler.mean_.tolist() if hasattr(scaler, "mean_") else [],
+                "scales": scaler.scale_.tolist() if hasattr(scaler, "scale_") else [],
             },
         }
 
-        return X, y, metadata
+        return X, y.loc[X.index], metadata
+
+    def _apply_imbalance_method(
+        self,
+        X_train: pd.DataFrame,
+        y_train: pd.Series,
+        method: str,
+        random_state: int,
+    ) -> tuple[pd.DataFrame, pd.Series, Dict[str, Any]]:
+        counts = y_train.value_counts()
+        if counts.empty:
+            return X_train, y_train, {"method": "none", "status": "skipped_empty_target"}
+
+        min_count = int(counts.min())
+        max_count = int(counts.max())
+        ratio = float(max_count / max(min_count, 1))
+        logger.debug("Imbalance check: method=%s | ratio=%.2f | min_class=%d | max_class=%d",
+                     method, ratio, min_count, max_count)
+        meta = {
+            "method": method,
+            "before_counts": {str(k): int(v) for k, v in counts.items()},
+            "imbalance_ratio": ratio,
+            "status": "handled",
+        }
+
+        if method == "none" or ratio < 1.5:
+            meta["status"] = "skipped_not_needed"
+            return X_train, y_train, meta
+
+        if method == "class_weight":
+            class_weights = {str(c): float(max_count / max(int(v), 1))
+                             for c, v in counts.items()}
+            meta["class_weights"] = class_weights
+            meta["status"] = "handled_class_weight_metadata_only"
+            return X_train, y_train, meta
+
+        if method not in {"oversample", "undersample"}:
+            meta["status"] = "skipped_unknown_method"
+            return X_train, y_train, meta
+
+        combined = X_train.copy()
+        combined["__target__"] = y_train.values
+        groups = [g for _, g in combined.groupby("__target__")]
+
+        if method == "oversample":
+            target_n = max_count
+            rebalanced = []
+            for g in groups:
+                if len(g) < target_n:
+                    sampled = g.sample(n=target_n - len(g),
+                                       replace=True, random_state=random_state)
+                    g = pd.concat([g, sampled], axis=0)
+                rebalanced.append(g)
+            out = pd.concat(rebalanced, axis=0).sample(
+                frac=1.0, random_state=random_state)
+        else:
+            # Conservative undersampling: do not keep less than 60% of original training rows.
+            target_n = min_count
+            projected_rows = target_n * len(groups)
+            min_rows_allowed = int(0.6 * len(combined))
+            if projected_rows < min_rows_allowed:
+                meta["status"] = "skipped_undersample_too_aggressive"
+                return X_train, y_train, meta
+            rebalanced = []
+            for g in groups:
+                if len(g) > target_n:
+                    g = g.sample(n=target_n, replace=False,
+                                 random_state=random_state)
+                rebalanced.append(g)
+            out = pd.concat(rebalanced, axis=0).sample(
+                frac=1.0, random_state=random_state)
+
+        X_out = out.drop(columns=["__target__"])
+        y_out = out["__target__"]
+        meta["after_counts"] = {str(k): int(v)
+                                for k, v in y_out.value_counts().items()}
+        logger.info("Imbalance %s: before=%s  after=%s",
+                    method, meta["before_counts"], meta["after_counts"])
+        return X_out, y_out, meta
 
     def _save_outputs(
         self,
@@ -516,20 +976,22 @@ class PreprocessingNode:
         y_train: pd.Series,
         y_test: pd.Series,
         metadata: Dict[str, Any],
+        policy: Dict[str, Any],
+        evidence: Dict[str, Any],
         dataset_name: str,
         target_col: str,
         test_size: float,
         random_state: int,
         use_llm: bool,
-        hash_features: int,
     ) -> Dict[str, Path]:
-        """Save all outputs and return file paths."""
         X_train_path = output_folder / "X_train.csv"
         X_test_path = output_folder / "X_test.csv"
         y_train_path = output_folder / "y_train.csv"
         y_test_path = output_folder / "y_test.csv"
         summary_path = output_folder / "preprocessing_summary.json"
         column_actions_path = output_folder / "column_actions.json"
+        policy_path = output_folder / "llm_policy.json"
+        evidence_path = output_folder / "evidence_snapshot.json"
 
         X_train.to_csv(X_train_path, index=False)
         X_test.to_csv(X_test_path, index=False)
@@ -541,36 +1003,31 @@ class PreprocessingNode:
             "target_column": target_col,
             "rows": len(X_train) + len(X_test),
             "features": int(X_train.shape[1]),
-            "numeric_columns": metadata["numeric_columns"],
-            "categorical_columns": metadata["categorical_columns"],
-            "label_encoded_columns": metadata["label_encoded_columns"],
-            "hashed_columns": metadata["hashed_columns"],
             "dropped_columns": metadata["dropped_columns"],
+            "duplicates_removed": metadata["duplicates_removed"],
             "test_size": test_size,
             "random_state": random_state,
             "llm": {
                 "enabled": use_llm,
+                "policy_used": bool(metadata.get("llm_policy_used", False)),
                 "provider": "gemini",
-                "model": "gemini-1.5-flash",
-                "env_var": "GEMINI_API_KEY",
+                "model": self.config.get("gemini_model", "gemini-2.5-flash"),
+                "final_decision_enabled": bool(self.config.get("llm_final_decision", True)),
             },
-            "scaling": {
-                "method": "standard",
-                "means": metadata["scaler"]["means"],
-                "scales": metadata["scaler"]["scales"],
-                "columns": metadata["scaler"]["columns"],
-            },
-            "hashing": {
-                "features": hash_features,
-                "columns": metadata["hashed_columns"],
-            },
+            "steps_status": metadata["steps_status"],
+            "imbalance": metadata.get("imbalance", {}),
+            "scaling": metadata["scaler"],
+            "safeguards": policy.get("safeguards", {}),
         }
 
         with open(summary_path, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2)
-
         with open(column_actions_path, "w", encoding="utf-8") as f:
             json.dump(metadata["column_actions"], f, indent=2)
+        with open(policy_path, "w", encoding="utf-8") as f:
+            json.dump(policy, f, indent=2)
+        with open(evidence_path, "w", encoding="utf-8") as f:
+            json.dump(evidence, f, indent=2)
 
         return {
             "X_train": X_train_path,
@@ -579,54 +1036,24 @@ class PreprocessingNode:
             "y_test": y_test_path,
             "summary": summary_path,
             "column_actions": column_actions_path,
+            "policy": policy_path,
+            "evidence": evidence_path,
         }
 
 
-# LangGraph node function
 def preprocessing_node(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    LangGraph node wrapper function.
-
-    Example usage in LangGraph:
-        from langgraph.graph import StateGraph
-        from preprocessing_node import preprocessing_node, PreprocessingState
-
-        workflow = StateGraph(PreprocessingState)
-        workflow.add_node("preprocess", preprocessing_node)
-        workflow.set_entry_point("preprocess")
-        workflow.set_finish_point("preprocess")
-        app = workflow.compile()
-
-        result = app.invoke({
-            "dataset_path": "data.csv",
-            "target_column": "target",
-        })
-    """
     node = PreprocessingNode()
     return node.run(state)
 
 
 if __name__ == "__main__":
-    # Example standalone usage
-    import sys
-
-    if len(sys.argv) < 3:
-        print("Usage: python preprocessing_node.py <dataset_path> <target_column>")
-        sys.exit(1)
-
     state = {
-        "dataset_path": sys.argv[1],
-        "target_column": sys.argv[2],
-        "output_folder": sys.argv[3] if len(sys.argv) > 3 else "output",
+        "dataset_path":  RUN_CONFIG["dataset_path"],
+        "target_column": RUN_CONFIG["target_column"],
+        "use_llm":       RUN_CONFIG["use_llm"],
     }
 
     result = preprocessing_node(state)
 
-    if result["status"] == "success":
-        print(f"✓ Preprocessing successful")
-        print(f"  Output folder: {result['output_folder']}")
-        print(f"  X_train: {result['X_train_path']}")
-        print(f"  Summary: {result['summary_path']}")
-    else:
-        print(f"✗ Preprocessing failed: {result['error']}")
-        sys.exit(1)
+    if result["status"] != "success":
+        raise SystemExit(f"Preprocessing failed: {result['error']}")
