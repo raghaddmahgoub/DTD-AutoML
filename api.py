@@ -10,10 +10,12 @@ from pymongo import MongoClient
 
 from orchestrator import DTDPipeline
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
+MONGO_DB = os.getenv("MONGO_DB")
 
 app = FastAPI()
 pipeline_instance = DTDPipeline()
@@ -24,13 +26,9 @@ UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
 
 # --- Mongo connection ---
-MONGO_URI = os.getenv("MONGO_URI")
-MONGO_DB = os.getenv("MONGO_DB")
-
 client = MongoClient(MONGO_URI)
-db = client[MONGO_DB]  # now points to your "test" DB in the "AUTH" project
-
-reports_collection = db["reports"]  # collection inside test
+db = client[MONGO_DB]
+reports_collection = db["reports"]
 print("Connected to MongoDB database:", MONGO_DB)
 from fastapi.responses import FileResponse
 
@@ -75,8 +73,19 @@ async def run_pipeline(
     }
 
     async def event_generator():
+        start_recorded = False  # flag to record start_time only once
+
         for output in pipeline_instance.workflow.stream(inputs):
             for node_name, state_update in output.items():
+                # Record start_time only once at first node
+                if not start_recorded:
+                    start_time = datetime.utcnow()
+                    reports_collection.update_one(
+                        {"_id": ObjectId(report_id)},
+                        {"$set": {"start_time": start_time}}
+                    )
+                    start_recorded = True
+
                 payload = {
                     "agent": node_name,
                     "output": state_update.get("agent_output"),
@@ -95,10 +104,26 @@ async def run_pipeline(
                 yield f"data: {json.dumps(payload)}\n\n"
                 await asyncio.sleep(0.05)
 
+        # Pipeline finished, compute runtime and store end_time
+        end_time = datetime.utcnow()
+        report = reports_collection.find_one({"_id": ObjectId(report_id)})
+        start_time = report.get("start_time", end_time)
+
+# Convert if it is int (timestamp)
+        if isinstance(start_time, int) or isinstance(start_time, float):
+            start_time = datetime.utcfromtimestamp(start_time) # fallback if missing
+        runtime = (end_time - start_time).total_seconds()
+
+        reports_collection.update_one(
+            {"_id": ObjectId(report_id)},
+            {"$set": {"runtime_seconds": runtime, "end_time": end_time}}
+        )
+
         yield f"data: {json.dumps({'status': 'completed', 'reportId': report_id, 'datasetId': dataset_id})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 if __name__ == "__main__":
     import uvicorn
+    print("Starting API server...")
     uvicorn.run(app, host="127.0.0.1", port=8000)
