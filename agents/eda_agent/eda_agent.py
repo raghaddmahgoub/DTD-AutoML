@@ -723,50 +723,57 @@ class EDAAgent:
 
 
     def generate_frontend_json(self, output_dir="Output"):
-
-       if not self.report:
-           raise ValueError("Run EDA before generating frontend JSON.")
-       
-       stage = self.report["run_type"]
-
-       frontend_payload = {
+        if not self.report:
+            raise ValueError("Run EDA before generating frontend JSON.")
+    
+        stage = self.report["run_type"]
+    
+        # columns: dict of col_name -> col_profile, each with top_values as {label: count}
+        # normalize to [{title, ..., top_values: [{label, count}]}]
+        raw_columns = self.report["column_profiles"]
+        columns_arr = []
+        for col_name, col_data in raw_columns.items():
+            col = dict(col_data)
+            if "top_values" in col and isinstance(col["top_values"], dict):
+                col["top_values"] = [
+                    {"label": k, "count": v} for k, v in col["top_values"].items()
+                ]
+            col["column"] = col_name
+            columns_arr.append(col)
+    
+        frontend_payload = {
             "meta": self.dict_to_array({
-                "Agent": (f"{stage} data analysis").capitalize(),
+                "Agent": f"{stage} data analysis".capitalize(),
                 "dataset_name": self.df_name,
                 "run_type": stage,
                 "timestamp": pd.Timestamp.now().isoformat()
             }),
-
-            "summary": self.dict_to_array(self.report["dataset_summary"]),
+            "summary":                self.dict_to_array(self.report["dataset_summary"]),
             "feature_scale_analysis": self.dict_to_array(self.report["feature_scale_analysis"]),
-            "target_analysis": self.dict_to_array(self.report["target_analysis"]),
-            "data_quality": self.dict_to_array(self.report["data_quality_report"]),
-            "relationships": self.report["relationship_insights"],
-            "columns": self.report["column_profiles"],
-            "warnings": self.report["eda_warnings"],
-            "multicollinearity": self.report["multicollinearity"],
-            "signal_analysis": self.report["signal_analysis"],
-            "total_feature_count": self.report["total_feature_count"],
-
+            "target_analysis":        self.dict_to_array(self.report["target_analysis"]),
+            "data_quality":           self.dict_to_array(self.report["data_quality_report"]),
+            "relationships":          self.dict_to_array(self.report["relationship_insights"]),
+            "columns":                columns_arr,
+            "warnings":               self.report["eda_warnings"],
+            "multicollinearity":      self.report["multicollinearity"],
+            "signal_analysis":        self.report["signal_analysis"],
+            "total_feature_count":    self.report["total_feature_count"],
             "visualizations": {
-                "missing_values_chart": self._get_missing_values_data(),
-                "numeric_distributions": self._get_numeric_distribution_data(),
+                "missing_values_chart":      self._get_missing_values_data(),
+                "numeric_distributions":     self._get_numeric_distribution_data(),
                 "categorical_distributions": self._get_categorical_distribution_data(),
-                "correlation_matrix": self._get_correlation_matrix_data(),
+                "correlation_matrix":        self._get_correlation_matrix_data(),
             }
         }
+    
+        run_type = self.report["run_type"]
+        path = Path(output_dir) / run_type
+        path.mkdir(parents=True, exist_ok=True)
+        json_path = path / f"{self.df_name}_frontend_data.json"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(frontend_payload, f, indent=2, default=str)
+        return str(json_path)
 
-       run_type = self.report["run_type"]
-       path = Path(output_dir) / run_type  
-
-       path.mkdir(parents=True, exist_ok=True)
-
-       json_path = path / f"{self.df_name}_frontend_data.json"
-
-       with open(json_path, "w", encoding="utf-8") as f:
-           json.dump(frontend_payload, f, indent=2, default=str)
-
-       return str(json_path)
 
     
     def _get_missing_values_data(self):
