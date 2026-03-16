@@ -117,10 +117,15 @@ class AutoMLAgent:
                 self.data = dd.read_json(data_path, blocksize="256MB", lines=True)
             else:
                 raise ValueError(f"Unsupported file format")
-            
+
+            directives = state.get('automl_directives') or {}
+            report = directives.get('report') or {}
+            dataset_summary = report.get("dataset_summary", {})
+            rows = dataset_summary.get("n_rows", 0)
+
             state['data'] = self.data
             state['step'] = 'data_loaded'
-            logger.info(f"Data loaded successfully. Shape: {len(self.data.columns)}")
+            logger.info(f"Data loaded successfully. Shape: {(rows,len(self.data.columns))}")
             
         except Exception as e:
             logger.error(f"Error loading data: {str(e)}", e)
@@ -281,6 +286,14 @@ class AutoMLAgent:
             rows = dataset_summary.get("n_rows", 0)
             features = dataset_summary.get("n_columns", 0)
   
+            duplicate_ratio = report['data_quality_report']['duplicates']['duplicate_ratio']
+
+            if duplicate_ratio > 0.7:
+                logger.info(
+                    f"Dataset contains {duplicate_ratio:.2%} duplicates. "
+                    "Model performance may be unreliable."
+                )
+
             complexity_strategy = self._detect_dataset_complexity(
                 rows,
                 features,
@@ -869,9 +882,9 @@ Provide your analysis and decision:
             )
             
             # Extract configuration
-            models = config.get('models', ['GBM', 'XGBoost', 'LightGBM'])
-            time_limit = config.get('time_limit', 300)
-            preset = config.get('preset', 'best_quality')
+            models = config.get('models_to_prioritize', config.get('models', ['GBM']))
+            time_limit = config.get('time_limit_seconds', config.get('time_limit', 300))
+            preset = config.get('preset_mode', config.get('preset', 'best_quality'))
             
             logger.info(f"Training AutoGluon with models: {models}, time_limit: {time_limit}s, preset: {preset}...")
             
@@ -879,6 +892,7 @@ Provide your analysis and decision:
             # AutoGluon uses specific model type names: 'RF', 'XT', 'KNN', 'GBM', 'CAT', 'XGB', 'NN_TORCH', 'LR', 'FASTAI', etc.
             model_type_mapping = {
                 'GBM': 'GBM',
+                'XGB': 'XGB',
                 'XGBoost': 'XGB',  # AutoGluon uses 'XGB' not 'XGBoost'
                 'LightGBM': 'GBM',  # LightGBM functionality is included in GBM
                 'CatBoost': 'CAT',
