@@ -1,0 +1,65 @@
+[
+  {
+    "column": "age",
+    "action": "transform",
+    "reason": "default_policy",
+    "details": {
+      "type": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none"
+    }
+  },
+  {
+    "column": "bmi",
+    "action": "transform",
+    "reason": "default_policy",
+    "details": {
+      "type": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none"
+    }
+  },
+  {
+    "column": "children",
+    "action": "transform",
+    "reason": "default_policy",
+    "details": {
+      "type": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none"
+    }
+  },
+  {
+    "column": "region",
+    "action": "transform",
+    "reason": "default_policy",
+    "details": {
+      "type": "categorical",
+      "missing": "mode",
+      "encoding": "label"
+    }
+  },
+  {
+    "column": "sex",
+    "action": "transform",
+    "reason": "default_policy",
+    "details": {
+      "type": "categorical",
+      "missing": "mode",
+      "encoding": "onehot"
+    }
+  },
+  {
+    "column": "smoker",
+    "action": "transform",
+    "reason": "default_policy",
+    "details": {
+      "type": "categorical",
+      "missing": "mode",
+      "encoding": "onehot"
+    }
+  }
+]

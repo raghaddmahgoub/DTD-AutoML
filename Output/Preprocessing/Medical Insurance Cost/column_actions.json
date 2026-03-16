@@ -1,0 +1,41 @@
+{
+  "age": {
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy"
+  },
+  "sex": {
+    "type": "categorical",
+    "missing": "mode",
+    "encoding": "onehot",
+    "reason": "default_policy"
+  },
+  "bmi": {
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy"
+  },
+  "children": {
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy"
+  },
+  "smoker": {
+    "type": "categorical",
+    "missing": "mode",
+    "encoding": "onehot",
+    "reason": "default_policy"
+  },
+  "region": {
+    "type": "categorical",
+    "missing": "mode",
+    "encoding": "label",
+    "reason": "default_policy"
+  }
+}

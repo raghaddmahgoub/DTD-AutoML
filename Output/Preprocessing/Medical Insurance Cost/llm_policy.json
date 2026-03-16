@@ -1,0 +1,80 @@
+{
+  "duplicates": {
+    "action": "drop_exact"
+  },
+  "columns": {
+    "age": {
+      "drop": false,
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none",
+      "reason": "default_policy"
+    },
+    "sex": {
+      "drop": false,
+      "dtype": "categorical",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "onehot",
+      "reason": "default_policy"
+    },
+    "bmi": {
+      "drop": false,
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none",
+      "reason": "default_policy"
+    },
+    "children": {
+      "drop": false,
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none",
+      "reason": "default_policy"
+    },
+    "smoker": {
+      "drop": false,
+      "dtype": "categorical",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "onehot",
+      "reason": "default_policy"
+    },
+    "region": {
+      "drop": false,
+      "dtype": "categorical",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "label",
+      "reason": "default_policy"
+    }
+  },
+  "feature_selection": {
+    "method": "none"
+  },
+  "feature_creation": {
+    "method": "none"
+  },
+  "dimensionality_reduction": {
+    "method": "none"
+  },
+  "scaling": {
+    "method": "standard"
+  },
+  "normalization": {
+    "method": "none"
+  },
+  "imbalance": {
+    "method": "none"
+  },
+  "safeguards": {
+    "safe_mode": true,
+    "notes": [],
+    "max_row_drop_fraction": 0.02,
+    "rows": 1338,
+    "target_imbalance_ratio": 2.0
+  }
+}

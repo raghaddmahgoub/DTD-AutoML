@@ -89,6 +89,7 @@ class PreprocessingState(TypedDict):
     y_test_path: Optional[str]
     summary_path: Optional[str]
     column_actions_path: Optional[str]
+    column_actions_frontend_path: Optional[str]
     policy_path: Optional[str]
     evidence_path: Optional[str]
     status: str
@@ -227,6 +228,7 @@ class PreprocessingNode:
                     "y_test_path": str(paths["y_test"]),
                     "summary_path": str(paths["summary"]),
                     "column_actions_path": str(paths["column_actions"]),
+                    "column_actions_frontend_path": str(paths["column_actions_frontend"]),
                     "policy_path": str(paths["policy"]),
                     "evidence_path": str(paths["evidence"]),
                     "status": "success",
@@ -240,6 +242,34 @@ class PreprocessingNode:
             logger.error("FAILED: %s", str(e), exc_info=True)
             state.update({"status": "failed", "error": str(e)})
             return state
+
+    def _build_frontend_column_actions(self, column_actions: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Normalize column actions for frontend consumption as a stable list."""
+        frontend_rows: List[Dict[str, Any]] = []
+
+        for column_name in sorted(column_actions.keys()):
+            details = column_actions.get(column_name, {})
+            action = details.get("action")
+            if not action:
+                action = "drop" if details.get("reason") in {
+                    "high_cardinality_drop", "constant_column_drop", "id_like_column_drop", "policy_drop"
+                } else "transform"
+
+            row: Dict[str, Any] = {
+                "column": column_name,
+                "action": action,
+                "reason": details.get("reason", "policy"),
+            }
+
+            # Keep details dynamic for frontend rendering while preserving a fixed top-level shape.
+            dynamic_details = {k: v for k, v in details.items() if k not in {
+                "action", "reason"}}
+            if dynamic_details:
+                row["details"] = dynamic_details
+
+            frontend_rows.append(row)
+
+        return frontend_rows
 
     def _validate_target_column(self, df: pd.DataFrame, target_col: str) -> None:
         if target_col not in df.columns:
@@ -990,6 +1020,7 @@ class PreprocessingNode:
         y_test_path = output_folder / "y_test.csv"
         summary_path = output_folder / "preprocessing_summary.json"
         column_actions_path = output_folder / "column_actions.json"
+        column_actions_frontend_path = output_folder / "column_actions_frontend.json"
         policy_path = output_folder / "llm_policy.json"
         evidence_path = output_folder / "evidence_snapshot.json"
 
@@ -1024,6 +1055,9 @@ class PreprocessingNode:
             json.dump(summary, f, indent=2)
         with open(column_actions_path, "w", encoding="utf-8") as f:
             json.dump(metadata["column_actions"], f, indent=2)
+        with open(column_actions_frontend_path, "w", encoding="utf-8") as f:
+            json.dump(self._build_frontend_column_actions(
+                metadata["column_actions"]), f, indent=2)
         with open(policy_path, "w", encoding="utf-8") as f:
             json.dump(policy, f, indent=2)
         with open(evidence_path, "w", encoding="utf-8") as f:
@@ -1036,6 +1070,7 @@ class PreprocessingNode:
             "y_test": y_test_path,
             "summary": summary_path,
             "column_actions": column_actions_path,
+            "column_actions_frontend": column_actions_frontend_path,
             "policy": policy_path,
             "evidence": evidence_path,
         }
