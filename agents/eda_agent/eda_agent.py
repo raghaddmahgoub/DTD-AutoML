@@ -693,14 +693,34 @@ class EDAAgent:
     # OUTPUT C — Frontend-ready JSON
     # ==================================================================
 
+    def _flatten_to_string(self, obj):
+        """Recursively flatten nested {title, value} structures into a readable string."""
+        if isinstance(obj, list):
+            parts = []
+            for item in obj:
+                if isinstance(item, dict) and "title" in item:
+                    parts.append(f"{item['title']}: {self._flatten_to_string(item['value'])}")
+                else:
+                    parts.append(str(item))
+            return ", ".join(parts)
+        elif isinstance(obj, dict) and "title" in obj:
+            return f"{obj['title']}: {self._flatten_to_string(obj['value'])}"
+        else:
+            return str(obj)
+    
+    def _flatten_array(self, arr):
+        """Flatten any nested value in a [{title, value}] array to a plain string."""
+        result = []
+        for item in arr:
+            flat = dict(item)
+            if isinstance(flat["value"], list):
+                flat["value"] = self._flatten_to_string(flat["value"])
+            result.append(flat)
+        return result
+    
     def dict_to_array(self, obj):
-        """
-        Recursively convert dictionaries into UI-friendly arrays
-        of {title, value} objects while preserving nested structure.
-        """
         if isinstance(obj, dict):
             result = []
-
             for k, v in obj.items():
                 key = str(k)
                 if isinstance(v, (dict, list)):
@@ -714,59 +734,72 @@ class EDAAgent:
                         "value": v
                     })
             return result
-
         elif isinstance(obj, list):
             return [self.dict_to_array(v) for v in obj]
-
         else:
             return obj
-
-
+    
     def generate_frontend_json(self, output_dir="Output"):
-
-       if not self.report:
-           raise ValueError("Run EDA before generating frontend JSON.")
-       
-       stage = self.report["run_type"]
-
-       frontend_payload = {
-            "meta": self.dict_to_array({
-                "Agent": (f"{stage} data analysis").capitalize(),
-                "dataset_name": self.df_name,
-                "run_type": stage,
-                "timestamp": pd.Timestamp.now().isoformat()
-            }),
-
-            "summary": self.dict_to_array(self.report["dataset_summary"]),
-            "feature_scale_analysis": self.dict_to_array(self.report["feature_scale_analysis"]),
-            "target_analysis": self.dict_to_array(self.report["target_analysis"]),
-            "data_quality": self.dict_to_array(self.report["data_quality_report"]),
-            "relationships": self.report["relationship_insights"],
-            "columns": self.report["column_profiles"],
-            "warnings": self.report["eda_warnings"],
-            "multicollinearity": self.report["multicollinearity"],
-            "signal_analysis": self.report["signal_analysis"],
-            "total_feature_count": self.report["total_feature_count"],
-
+        if not self.report:
+            raise ValueError("Run EDA before generating frontend JSON.")
+    
+        stage = self.report["run_type"]
+    
+        # columns: normalize top_values dict -> [{label, count}] and hoist col name
+        raw_columns = self.report["column_profiles"]
+        columns_arr = []
+        for col_name, col_data in raw_columns.items():
+            col = dict(col_data)
+            if "top_values" in col and isinstance(col["top_values"], dict):
+                col["top_values"] = [
+                    {"label": k, "count": v} for k, v in col["top_values"].items()
+                ]
+            col["column"] = col_name
+            columns_arr.append(col)
+    
+        # relationships: extract feature correlations -> [{title, value}] sorted by abs
+        raw_rel = self.report["relationship_insights"]
+        feature_corrs = (
+            raw_rel.get("target_relationships", {}).get("feature_correlations", {})
+        )
+        relationships_arr = sorted(
+            [{"title": k, "value": round(abs(v), 4)} for k, v in feature_corrs.items()],
+            key=lambda x: x["value"],
+            reverse=True
+        )
+    
+        frontend_payload = {
+            "meta":                   self._flatten_array(self.dict_to_array({
+                                          "Agent": f"{stage} data analysis".capitalize(),
+                                          "dataset_name": self.df_name,
+                                          "run_type": stage,
+                                          "timestamp": pd.Timestamp.now().isoformat()
+                                      })),
+            "summary":                self._flatten_array(self.dict_to_array(self.report["dataset_summary"])),
+            "feature_scale_analysis": self._flatten_array(self.dict_to_array(self.report["feature_scale_analysis"])),
+            "target_analysis":        self.dict_to_array(self.report["target_analysis"]),  # kept nested for pie chart
+            "data_quality":           self._flatten_array(self.dict_to_array(self.report["data_quality_report"])),
+            "relationships":          relationships_arr,
+            "columns":                columns_arr,
+            "warnings":               self.report["eda_warnings"],
+            "multicollinearity":      self.report["multicollinearity"],
+            "signal_analysis":        self.report["signal_analysis"],
+            "total_feature_count":    self.report["total_feature_count"],
             "visualizations": {
-                "missing_values_chart": self._get_missing_values_data(),
-                "numeric_distributions": self._get_numeric_distribution_data(),
+                "missing_values_chart":      self._get_missing_values_data(),
+                "numeric_distributions":     self._get_numeric_distribution_data(),
                 "categorical_distributions": self._get_categorical_distribution_data(),
-                "correlation_matrix": self._get_correlation_matrix_data(),
+                "correlation_matrix":        self._get_correlation_matrix_data(),
             }
         }
-
-       run_type = self.report["run_type"]
-       path = Path(output_dir) / run_type  
-
-       path.mkdir(parents=True, exist_ok=True)
-
-       json_path = path / f"{self.df_name}_frontend_data.json"
-
-       with open(json_path, "w", encoding="utf-8") as f:
-           json.dump(frontend_payload, f, indent=2, default=str)
-
-       return str(json_path)
+    
+        run_type = self.report["run_type"]
+        path = Path(output_dir) / run_type
+        path.mkdir(parents=True, exist_ok=True)
+        json_path = path / f"{self.df_name}_frontend_data.json"
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(frontend_payload, f, indent=2, default=str)
+        return str(json_path)
 
     
     def _get_missing_values_data(self):

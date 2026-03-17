@@ -14,7 +14,7 @@
     },
     {
       "title": "Timestamp",
-      "value": "2026-03-14T21:06:17.994039"
+      "value": "2026-03-16T05:41:56.452048"
     }
   ],
   "summary": [
@@ -28,42 +28,11 @@
     },
     {
       "title": "Column Types",
-      "value": [
-        {
-          "title": "Numerical",
-          "value": [
-            "PassengerId",
-            "Survived",
-            "Pclass",
-            "Age",
-            "SibSp",
-            "Parch",
-            "Fare"
-          ]
-        },
-        {
-          "title": "Categorical",
-          "value": [
-            "Name",
-            "Sex",
-            "Ticket",
-            "Cabin",
-            "Embarked"
-          ]
-        },
-        {
-          "title": "Datetime",
-          "value": []
-        },
-        {
-          "title": "Boolean",
-          "value": []
-        }
-      ]
+      "value": "Numerical: PassengerId, Survived, Pclass, Age, SibSp, Parch, Fare, Categorical: Name, Sex, Ticket, Cabin, Embarked, Datetime: , Boolean: "
     },
     {
       "title": "Memory Usage Mb",
-      "value": 0.12
+      "value": 0.28
     },
     {
       "title": "Duplicate Rows",
@@ -81,25 +50,15 @@
   "feature_scale_analysis": [
     {
       "title": "Wide Scale Features",
-      "value": [
-        "PassengerId"
-      ]
+      "value": "PassengerId"
     },
     {
       "title": "Heavy Tailed Features",
-      "value": [
-        "SibSp",
-        "Parch",
-        "Fare"
-      ]
+      "value": "SibSp, Parch, Fare"
     },
     {
       "title": "Approximately Standard Scale Features",
-      "value": [
-        "Pclass",
-        "SibSp",
-        "Parch"
-      ]
+      "value": "Pclass, SibSp, Parch"
     }
   ],
   "target_analysis": [
@@ -172,129 +131,53 @@
   "data_quality": [
     {
       "title": "Missing Values",
-      "value": [
-        {
-          "title": "Total Missing Cells",
-          "value": 866
-        },
-        {
-          "title": "Columns With Missing",
-          "value": [
-            {
-              "title": "Age",
-              "value": [
-                {
-                  "title": "Missing Count",
-                  "value": 177
-                },
-                {
-                  "title": "Missing Ratio",
-                  "value": 0.1987
-                }
-              ]
-            },
-            {
-              "title": "Cabin",
-              "value": [
-                {
-                  "title": "Missing Count",
-                  "value": 687
-                },
-                {
-                  "title": "Missing Ratio",
-                  "value": 0.771
-                }
-              ]
-            },
-            {
-              "title": "Embarked",
-              "value": [
-                {
-                  "title": "Missing Count",
-                  "value": 2
-                },
-                {
-                  "title": "Missing Ratio",
-                  "value": 0.0022
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "title": "N Columns With Missing",
-          "value": 3
-        }
-      ]
+      "value": "Total Missing Cells: 866, Columns With Missing: Age: Missing Count: 177, Missing Ratio: 0.1987, Cabin: Missing Count: 687, Missing Ratio: 0.771, Embarked: Missing Count: 2, Missing Ratio: 0.0022, N Columns With Missing: 3"
     },
     {
       "title": "Duplicates",
-      "value": [
-        {
-          "title": "Duplicate Row Count",
-          "value": 0
-        },
-        {
-          "title": "Duplicate Ratio",
-          "value": 0.0
-        }
-      ]
+      "value": "Duplicate Row Count: 0, Duplicate Ratio: 0.0"
     },
     {
       "title": "Low Variance Columns",
-      "value": [
-        {
-          "title": "Constant Columns",
-          "value": []
-        },
-        {
-          "title": "Near Constant Columns",
-          "value": []
-        }
-      ]
+      "value": "Constant Columns: , Near Constant Columns: "
     },
     {
       "title": "Unique Per Row Columns",
-      "value": [
-        "PassengerId",
-        "Name"
-      ]
+      "value": "PassengerId, Name"
     },
     {
       "title": "Type Issues",
-      "value": [
-        {
-          "title": "Mixed Type Columns",
-          "value": []
-        }
-      ]
+      "value": "Mixed Type Columns: "
     }
   ],
-  "relationships": {
-    "numeric_correlations": {
-      "threshold": 0.5,
-      "strong_pairs": [
-        {
-          "feature_1": "Pclass",
-          "feature_2": "Fare",
-          "correlation": -0.549
-        }
-      ]
+  "relationships": [
+    {
+      "title": "Pclass",
+      "value": 0.338
     },
-    "target_relationships": {
-      "target_type": "numeric",
-      "feature_correlations": {
-        "PassengerId": -0.005,
-        "Pclass": -0.338,
-        "Age": -0.077,
-        "SibSp": -0.035,
-        "Parch": 0.082,
-        "Fare": 0.257
-      }
+    {
+      "title": "Fare",
+      "value": 0.257
+    },
+    {
+      "title": "Parch",
+      "value": 0.082
+    },
+    {
+      "title": "Age",
+      "value": 0.077
+    },
+    {
+      "title": "SibSp",
+      "value": 0.035
+    },
+    {
+      "title": "PassengerId",
+      "value": 0.005
     }
-  },
-  "columns": {
-    "PassengerId": {
+  ],
+  "columns": [
+    {
       "data_type": "numeric",
       "dtype": "int64",
       "missing_count": 0,
@@ -314,9 +197,10 @@
       "zero_count": 0,
       "outlier_count_iqr": 0,
       "outlier_ratio_iqr": 0.0,
-      "is_normal": false
+      "is_normal": false,
+      "column": "PassengerId"
     },
-    "Survived": {
+    {
       "data_type": "numeric",
       "dtype": "int64",
       "missing_count": 0,
@@ -336,9 +220,10 @@
       "zero_count": 549,
       "outlier_count_iqr": 0,
       "outlier_ratio_iqr": 0.0,
-      "is_normal": false
+      "is_normal": false,
+      "column": "Survived"
     },
-    "Pclass": {
+    {
       "data_type": "numeric",
       "dtype": "int64",
       "missing_count": 0,
@@ -358,38 +243,62 @@
       "zero_count": 0,
       "outlier_count_iqr": 0,
       "outlier_ratio_iqr": 0.0,
-      "is_normal": false
+      "is_normal": false,
+      "column": "Pclass"
     },
-    "Name": {
+    {
       "data_type": "categorical",
-      "dtype": "str",
+      "dtype": "object",
       "missing_count": 0,
       "missing_ratio": 0.0,
       "unique_count": 891,
       "is_unique_per_row": true,
-      "top_values": {
-        "Braund, Mr. Owen Harris": 1,
-        "Cumings, Mrs. John Bradley (Florence Briggs Thayer)": 1,
-        "Heikkinen, Miss. Laina": 1,
-        "Futrelle, Mrs. Jacques Heath (Lily May Peel)": 1,
-        "Allen, Mr. William Henry": 1
-      },
-      "is_high_cardinality": true
+      "top_values": [
+        {
+          "label": "Braund, Mr. Owen Harris",
+          "count": 1
+        },
+        {
+          "label": "Boulos, Mr. Hanna",
+          "count": 1
+        },
+        {
+          "label": "Frolicher-Stehli, Mr. Maxmillian",
+          "count": 1
+        },
+        {
+          "label": "Gilinski, Mr. Eliezer",
+          "count": 1
+        },
+        {
+          "label": "Murdlin, Mr. Joseph",
+          "count": 1
+        }
+      ],
+      "is_high_cardinality": true,
+      "column": "Name"
     },
-    "Sex": {
+    {
       "data_type": "categorical",
-      "dtype": "str",
+      "dtype": "object",
       "missing_count": 0,
       "missing_ratio": 0.0,
       "unique_count": 2,
       "is_unique_per_row": false,
-      "top_values": {
-        "male": 577,
-        "female": 314
-      },
-      "is_high_cardinality": false
+      "top_values": [
+        {
+          "label": "male",
+          "count": 577
+        },
+        {
+          "label": "female",
+          "count": 314
+        }
+      ],
+      "is_high_cardinality": false,
+      "column": "Sex"
     },
-    "Age": {
+    {
       "data_type": "numeric",
       "dtype": "float64",
       "missing_count": 177,
@@ -409,9 +318,10 @@
       "zero_count": 0,
       "outlier_count_iqr": 11,
       "outlier_ratio_iqr": 0.0154,
-      "is_normal": false
+      "is_normal": false,
+      "column": "Age"
     },
-    "SibSp": {
+    {
       "data_type": "numeric",
       "dtype": "int64",
       "missing_count": 0,
@@ -431,9 +341,10 @@
       "zero_count": 608,
       "outlier_count_iqr": 46,
       "outlier_ratio_iqr": 0.0516,
-      "is_normal": false
+      "is_normal": false,
+      "column": "SibSp"
     },
-    "Parch": {
+    {
       "data_type": "numeric",
       "dtype": "int64",
       "missing_count": 0,
@@ -453,25 +364,42 @@
       "zero_count": 678,
       "outlier_count_iqr": 213,
       "outlier_ratio_iqr": 0.2391,
-      "is_normal": false
+      "is_normal": false,
+      "column": "Parch"
     },
-    "Ticket": {
+    {
       "data_type": "categorical",
-      "dtype": "str",
+      "dtype": "object",
       "missing_count": 0,
       "missing_ratio": 0.0,
       "unique_count": 681,
       "is_unique_per_row": false,
-      "top_values": {
-        "347082": 7,
-        "1601": 7,
-        "CA. 2343": 7,
-        "3101295": 6,
-        "CA 2144": 6
-      },
-      "is_high_cardinality": true
+      "top_values": [
+        {
+          "label": "347082",
+          "count": 7
+        },
+        {
+          "label": "CA. 2343",
+          "count": 7
+        },
+        {
+          "label": "1601",
+          "count": 7
+        },
+        {
+          "label": "3101295",
+          "count": 6
+        },
+        {
+          "label": "CA 2144",
+          "count": 6
+        }
+      ],
+      "is_high_cardinality": true,
+      "column": "Ticket"
     },
-    "Fare": {
+    {
       "data_type": "numeric",
       "dtype": "float64",
       "missing_count": 0,
@@ -491,70 +419,85 @@
       "zero_count": 15,
       "outlier_count_iqr": 116,
       "outlier_ratio_iqr": 0.1302,
-      "is_normal": false
+      "is_normal": false,
+      "column": "Fare"
     },
-    "Cabin": {
+    {
       "data_type": "categorical",
-      "dtype": "str",
+      "dtype": "object",
       "missing_count": 687,
       "missing_ratio": 0.771,
       "unique_count": 147,
       "is_unique_per_row": false,
-      "top_values": {
-        "G6": 4,
-        "C23 C25 C27": 4,
-        "B96 B98": 4,
-        "F33": 3,
-        "E101": 3
-      },
-      "is_high_cardinality": false
+      "top_values": [
+        {
+          "label": "B96 B98",
+          "count": 4
+        },
+        {
+          "label": "G6",
+          "count": 4
+        },
+        {
+          "label": "C23 C25 C27",
+          "count": 4
+        },
+        {
+          "label": "C22 C26",
+          "count": 3
+        },
+        {
+          "label": "F33",
+          "count": 3
+        }
+      ],
+      "is_high_cardinality": false,
+      "column": "Cabin"
     },
-    "Embarked": {
+    {
       "data_type": "categorical",
-      "dtype": "str",
+      "dtype": "object",
       "missing_count": 2,
       "missing_ratio": 0.0022,
       "unique_count": 3,
       "is_unique_per_row": false,
-      "top_values": {
-        "S": 644,
-        "C": 168,
-        "Q": 77
-      },
-      "is_high_cardinality": false
+      "top_values": [
+        {
+          "label": "S",
+          "count": 644
+        },
+        {
+          "label": "C",
+          "count": 168
+        },
+        {
+          "label": "Q",
+          "count": 77
+        }
+      ],
+      "is_high_cardinality": false,
+      "column": "Embarked"
     }
-  },
+  ],
   "warnings": [
     {
       "type": "high_missingness",
-      "columns": [
-        "Cabin"
-      ],
+      "columns": ["Cabin"],
       "message": "Columns with > 50% missing values detected."
     },
     {
       "type": "high_cardinality_categoricals",
-      "columns": [
-        "Name",
-        "Ticket"
-      ],
+      "columns": ["Name", "Ticket"],
       "message": "High-cardinality categoricals detected."
     },
     {
       "type": "unique_per_row_columns",
-      "columns": [
-        "PassengerId",
-        "Name"
-      ],
+      "columns": ["PassengerId", "Name"],
       "message": "Likely identifier columns (unique per row)."
     },
     {
       "type": "high_outlier_ratio",
-      "columns": [
-        "SibSp",
-        "Parch",
-        "Fare"
-      ],
+      "columns": ["SibSp", "Parch", "Fare"],
       "message": "Numeric columns with > 5 % outliers (IQR)."
     },
     {
@@ -611,611 +554,118 @@
         "column": "PassengerId",
         "histogram": {
           "counts": [
-            45,
-            44,
-            45,
-            44,
-            45,
-            44,
-            45,
-            44,
-            45,
-            44,
-            45,
-            44,
-            45,
-            44,
-            45,
-            44,
-            45,
-            44,
-            45,
-            45
+            45, 44, 45, 44, 45, 44, 45, 44, 45, 44, 45, 44, 45, 44, 45, 44, 45,
+            44, 45, 45
           ],
           "bins": [
-            1.0,
-            45.5,
-            90.0,
-            134.5,
-            179.0,
-            223.5,
-            268.0,
-            312.5,
-            357.0,
-            401.5,
-            446.0,
-            490.5,
-            535.0,
-            579.5,
-            624.0,
-            668.5,
-            713.0,
-            757.5,
-            802.0,
-            846.5,
-            891.0
+            1.0, 45.5, 90.0, 134.5, 179.0, 223.5, 268.0, 312.5, 357.0, 401.5,
+            446.0, 490.5, 535.0, 579.5, 624.0, 668.5, 713.0, 757.5, 802.0,
+            846.5, 891.0
           ]
         },
         "raw_sample": [
-          710,
-          440,
-          841,
-          721,
-          40,
-          291,
-          301,
-          334,
-          209,
-          137,
-          138,
-          697,
-          486,
-          245,
-          345,
-          854,
-          622,
-          654,
-          887,
-          111,
-          295,
-          448,
-          193,
-          683,
-          539,
-          820,
-          31,
-          674,
-          64,
-          397,
-          878,
-          142,
-          794,
-          236,
-          205,
-          621,
-          24,
-          199,
-          843,
-          740,
-          121,
-          478,
-          838,
-          791,
-          363,
-          87,
-          68,
-          351,
-          211,
-          660
+          710, 440, 841, 721, 40, 291, 301, 334, 209, 137, 138, 697, 486, 245,
+          345, 854, 622, 654, 887, 111, 295, 448, 193, 683, 539, 820, 31, 674,
+          64, 397, 878, 142, 794, 236, 205, 621, 24, 199, 843, 740, 121, 478,
+          838, 791, 363, 87, 68, 351, 211, 660
         ]
       },
       {
         "column": "Pclass",
         "histogram": {
           "counts": [
-            216,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            184,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            491
+            216, 0, 0, 0, 0, 0, 0, 0, 0, 0, 184, 0, 0, 0, 0, 0, 0, 0, 0, 491
           ],
           "bins": [
-            1.0,
-            1.1,
-            1.2,
-            1.3,
-            1.4,
-            1.5,
-            1.6,
-            1.7000000000000002,
-            1.8,
-            1.9,
-            2.0,
-            2.1,
-            2.2,
-            2.3,
-            2.4000000000000004,
-            2.5,
-            2.6,
-            2.7,
-            2.8,
-            2.9000000000000004,
-            3.0
+            1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7000000000000002, 1.8, 1.9,
+            2.0, 2.1, 2.2, 2.3, 2.4000000000000004, 2.5, 2.6, 2.7, 2.8,
+            2.9000000000000004, 3.0
           ]
         },
         "raw_sample": [
-          3,
-          2,
-          3,
-          2,
-          3,
-          1,
-          3,
-          3,
-          3,
-          1,
-          1,
-          3,
-          3,
-          3,
-          2,
-          1,
-          1,
-          3,
-          2,
-          1,
-          3,
-          1,
-          3,
-          3,
-          3,
-          3,
-          1,
-          2,
-          3,
-          3,
-          3,
-          3,
-          1,
-          3,
-          3,
-          3,
-          1,
-          3,
-          1,
-          3,
-          2,
-          3,
-          3,
-          3,
-          3,
-          3,
-          3,
-          3,
-          3,
-          1
+          3, 2, 3, 2, 3, 1, 3, 3, 3, 1, 1, 3, 3, 3, 2, 1, 1, 3, 2, 1, 3, 1, 3,
+          3, 3, 3, 1, 2, 3, 3, 3, 3, 1, 3, 3, 3, 1, 3, 1, 3, 2, 3, 3, 3, 3, 3,
+          3, 3, 3, 1
         ]
       },
       {
         "column": "Age",
         "histogram": {
           "counts": [
-            40,
-            14,
-            15,
-            31,
-            79,
-            98,
-            85,
-            84,
-            73,
-            45,
-            35,
-            35,
-            29,
-            16,
-            13,
-            11,
-            4,
-            5,
-            1,
-            1
+            40, 14, 15, 31, 79, 98, 85, 84, 73, 45, 35, 35, 29, 16, 13, 11, 4,
+            5, 1, 1
           ],
           "bins": [
-            0.42,
-            4.399,
-            8.378,
-            12.357000000000001,
-            16.336000000000002,
-            20.315,
-            24.294000000000004,
-            28.273000000000003,
-            32.252,
-            36.231,
-            40.21,
-            44.189,
-            48.168000000000006,
-            52.147000000000006,
-            56.126000000000005,
-            60.105000000000004,
-            64.084,
-            68.063,
-            72.042,
-            76.021,
-            80.0
+            0.42, 4.399, 8.378, 12.357000000000001, 16.336000000000002, 20.315,
+            24.294000000000004, 28.273000000000003, 32.252, 36.231, 40.21,
+            44.189, 48.168000000000006, 52.147000000000006, 56.126000000000005,
+            60.105000000000004, 64.084, 68.063, 72.042, 76.021, 80.0
           ]
         },
         "raw_sample": [
-          42.0,
-          3.0,
-          29.0,
-          24.0,
-          43.0,
-          8.0,
-          33.0,
-          54.0,
-          28.0,
-          23.0,
-          17.0,
-          32.5,
-          31.0,
-          38.0,
-          35.0,
-          23.0,
-          23.5,
-          16.0,
-          27.0,
-          54.0,
-          16.0,
-          50.0,
-          9.0,
-          35.0,
-          22.0,
-          17.0,
-          16.0,
-          26.0,
-          14.5,
-          38.0,
-          21.0,
-          9.0,
-          36.0,
-          35.0,
-          37.0,
-          36.0,
-          34.0,
-          56.0,
-          61.0,
-          51.0,
-          9.0,
-          20.0,
-          36.0,
-          54.0,
-          52.0,
-          29.0,
-          34.0,
-          21.0,
-          40.0,
-          48.0
+          42.0, 3.0, 29.0, 24.0, 43.0, 8.0, 33.0, 54.0, 28.0, 23.0, 17.0, 32.5,
+          31.0, 38.0, 35.0, 23.0, 23.5, 16.0, 27.0, 54.0, 16.0, 50.0, 9.0, 35.0,
+          22.0, 17.0, 16.0, 26.0, 14.5, 38.0, 21.0, 9.0, 36.0, 35.0, 37.0, 36.0,
+          34.0, 56.0, 61.0, 51.0, 9.0, 20.0, 36.0, 54.0, 52.0, 29.0, 34.0, 21.0,
+          40.0, 48.0
         ]
       },
       {
         "column": "SibSp",
         "histogram": {
           "counts": [
-            608,
-            0,
-            209,
-            0,
-            0,
-            28,
-            0,
-            16,
-            0,
-            0,
-            18,
-            0,
-            5,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            7
+            608, 0, 209, 0, 0, 28, 0, 16, 0, 0, 18, 0, 5, 0, 0, 0, 0, 0, 0, 7
           ],
           "bins": [
-            0.0,
-            0.4,
-            0.8,
-            1.2000000000000002,
-            1.6,
-            2.0,
-            2.4000000000000004,
-            2.8000000000000003,
-            3.2,
-            3.6,
-            4.0,
-            4.4,
-            4.800000000000001,
-            5.2,
-            5.6000000000000005,
-            6.0,
-            6.4,
-            6.800000000000001,
-            7.2,
-            7.6000000000000005,
-            8.0
+            0.0, 0.4, 0.8, 1.2000000000000002, 1.6, 2.0, 2.4000000000000004,
+            2.8000000000000003, 3.2, 3.6, 4.0, 4.4, 4.800000000000001, 5.2,
+            5.6000000000000005, 6.0, 6.4, 6.800000000000001, 7.2,
+            7.6000000000000005, 8.0
           ]
         },
         "raw_sample": [
-          1,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          2,
-          0,
-          0,
-          1,
-          0,
-          3,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          3,
-          0,
-          0,
-          3,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          0,
-          2,
-          1,
-          0,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          0
+          1, 0, 0, 0, 1, 0, 0, 2, 0, 0, 1, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1,
+          0, 0, 3, 0, 0, 3, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 2, 1, 0, 0, 0, 1,
+          0, 0, 0, 0
         ]
       },
       {
         "column": "Parch",
         "histogram": {
           "counts": [
-            678,
-            0,
-            0,
-            118,
-            0,
-            0,
-            80,
-            0,
-            0,
-            0,
-            5,
-            0,
-            0,
-            4,
-            0,
-            0,
-            5,
-            0,
-            0,
-            1
+            678, 0, 0, 118, 0, 0, 80, 0, 0, 0, 5, 0, 0, 4, 0, 0, 5, 0, 0, 1
           ],
           "bins": [
-            0.0,
-            0.3,
-            0.6,
-            0.8999999999999999,
-            1.2,
-            1.5,
-            1.7999999999999998,
-            2.1,
-            2.4,
-            2.6999999999999997,
-            3.0,
-            3.3,
-            3.5999999999999996,
-            3.9,
-            4.2,
-            4.5,
-            4.8,
-            5.1,
-            5.3999999999999995,
-            5.7,
-            6.0
+            0.0, 0.3, 0.6, 0.8999999999999999, 1.2, 1.5, 1.7999999999999998,
+            2.1, 2.4, 2.6999999999999997, 3.0, 3.3, 3.5999999999999996, 3.9,
+            4.2, 4.5, 4.8, 5.1, 5.3999999999999995, 5.7, 6.0
           ]
         },
         "raw_sample": [
-          1,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          2,
-          0,
-          0,
-          1,
-          0,
-          0,
-          1,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          2,
-          0,
-          0,
-          2,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          0,
-          1,
-          3,
-          0,
-          0,
-          0,
-          2
+          1, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+          0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 3,
+          0, 0, 0, 2
         ]
       },
       {
         "column": "Fare",
         "histogram": {
           "counts": [
-            562,
-            170,
-            67,
-            39,
-            15,
-            16,
-            2,
-            0,
-            9,
-            2,
-            6,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0,
-            3
+            562, 170, 67, 39, 15, 16, 2, 0, 9, 2, 6, 0, 0, 0, 0, 0, 0, 0, 0, 3
           ],
           "bins": [
-            0.0,
-            25.61646,
-            51.23292,
-            76.84938,
-            102.46584,
-            128.0823,
-            153.69876,
-            179.31522,
-            204.93168,
-            230.54814,
-            256.1646,
-            281.78106,
-            307.39752,
-            333.01398,
-            358.63044,
-            384.2469,
-            409.86336,
-            435.47982,
-            461.09628,
-            486.71274,
-            512.3292
+            0.0, 25.61646, 51.23292, 76.84938, 102.46584, 128.0823, 153.69876,
+            179.31522, 204.93168, 230.54814, 256.1646, 281.78106, 307.39752,
+            333.01398, 358.63044, 384.2469, 409.86336, 435.47982, 461.09628,
+            486.71274, 512.3292
           ]
         },
         "raw_sample": [
-          15.2458,
-          10.5,
-          7.925,
-          33.0,
-          11.2417,
-          78.85,
-          7.75,
-          18.0,
-          7.75,
-          26.2833,
-          53.1,
-          8.05,
-          25.4667,
-          7.225,
-          13.0,
-          39.4,
-          52.5542,
-          7.8292,
-          13.0,
-          52.0,
-          7.8958,
-          26.55,
-          7.8542,
-          9.225,
-          14.5,
-          27.9,
-          27.7208,
-          13.0,
-          27.9,
-          7.8542,
-          7.8958,
-          7.75,
-          30.6958,
-          7.55,
-          8.05,
-          14.4542,
-          35.5,
-          7.75,
-          31.0,
-          7.8958,
-          73.5,
-          7.0458,
-          8.05,
-          7.75,
-          14.4542,
-          34.375,
-          8.1583,
-          9.225,
-          7.05,
+          15.2458, 10.5, 7.925, 33.0, 11.2417, 78.85, 7.75, 18.0, 7.75, 26.2833,
+          53.1, 8.05, 25.4667, 7.225, 13.0, 39.4, 52.5542, 7.8292, 13.0, 52.0,
+          7.8958, 26.55, 7.8542, 9.225, 14.5, 27.9, 27.7208, 13.0, 27.9, 7.8542,
+          7.8958, 7.75, 30.6958, 7.55, 8.05, 14.4542, 35.5, 7.75, 31.0, 7.8958,
+          73.5, 7.0458, 8.05, 7.75, 14.4542, 34.375, 8.1583, 9.225, 7.05,
           113.275
         ]
       }
@@ -1229,19 +679,19 @@
             "count": 1
           },
           {
-            "label": "Cumings, Mrs. John Bradley (Florence Briggs Thayer)",
+            "label": "Boulos, Mr. Hanna",
             "count": 1
           },
           {
-            "label": "Heikkinen, Miss. Laina",
+            "label": "Frolicher-Stehli, Mr. Maxmillian",
             "count": 1
           },
           {
-            "label": "Futrelle, Mrs. Jacques Heath (Lily May Peel)",
+            "label": "Gilinski, Mr. Eliezer",
             "count": 1
           },
           {
-            "label": "Allen, Mr. William Henry",
+            "label": "Murdlin, Mr. Joseph",
             "count": 1
           }
         ]
@@ -1267,11 +717,11 @@
             "count": 7
           },
           {
-            "label": "1601",
+            "label": "CA. 2343",
             "count": 7
           },
           {
-            "label": "CA. 2343",
+            "label": "1601",
             "count": 7
           },
           {
@@ -1288,6 +738,10 @@
         "column": "Cabin",
         "top_values": [
           {
+            "label": "B96 B98",
+            "count": 4
+          },
+          {
             "label": "G6",
             "count": 4
           },
@@ -1296,15 +750,11 @@
             "count": 4
           },
           {
-            "label": "B96 B98",
-            "count": 4
-          },
-          {
-            "label": "F33",
+            "label": "C22 C26",
             "count": 3
           },
           {
-            "label": "E101",
+            "label": "F33",
             "count": 3
           }
         ]
@@ -1338,69 +788,13 @@
         "Fare"
       ],
       "values": [
-        [
-          1.0,
-          -0.005,
-          -0.035,
-          0.037,
-          -0.058,
-          -0.002,
-          0.013
-        ],
-        [
-          -0.005,
-          1.0,
-          -0.338,
-          -0.077,
-          -0.035,
-          0.082,
-          0.257
-        ],
-        [
-          -0.035,
-          -0.338,
-          1.0,
-          -0.369,
-          0.083,
-          0.018,
-          -0.549
-        ],
-        [
-          0.037,
-          -0.077,
-          -0.369,
-          1.0,
-          -0.308,
-          -0.189,
-          0.096
-        ],
-        [
-          -0.058,
-          -0.035,
-          0.083,
-          -0.308,
-          1.0,
-          0.415,
-          0.16
-        ],
-        [
-          -0.002,
-          0.082,
-          0.018,
-          -0.189,
-          0.415,
-          1.0,
-          0.216
-        ],
-        [
-          0.013,
-          0.257,
-          -0.549,
-          0.096,
-          0.16,
-          0.216,
-          1.0
-        ]
+        [1.0, -0.005, -0.035, 0.037, -0.058, -0.002, 0.013],
+        [-0.005, 1.0, -0.338, -0.077, -0.035, 0.082, 0.257],
+        [-0.035, -0.338, 1.0, -0.369, 0.083, 0.018, -0.549],
+        [0.037, -0.077, -0.369, 1.0, -0.308, -0.189, 0.096],
+        [-0.058, -0.035, 0.083, -0.308, 1.0, 0.415, 0.16],
+        [-0.002, 0.082, 0.018, -0.189, 0.415, 1.0, 0.216],
+        [0.013, 0.257, -0.549, 0.096, 0.16, 0.216, 1.0]
       ]
     }
   }
