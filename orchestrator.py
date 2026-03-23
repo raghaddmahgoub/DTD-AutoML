@@ -14,7 +14,6 @@ from agents.preprocessing_agent.preprocessing_node import preprocessing_node
 
 load_dotenv()
 
-
 ORCHESTRATOR_CONFIG = {
     "data_path": "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
     "target_column": "Survived",
@@ -22,7 +21,6 @@ ORCHESTRATOR_CONFIG = {
     "preprocessing_output_root": os.path.join("Output", "Preprocessing"),
     "use_preprocessing_llm": False,
 }
-
 
 class AgentState(TypedDict):
     """Shared pipeline memory."""
@@ -93,6 +91,7 @@ class DTDPipeline:
         builder.add_edge("preprocessing",   "clean_analysis")
         builder.add_edge("clean_analysis",  "automl_training")
         builder.add_edge("automl_training", END)
+        # builder.add_edge("clean_analysis",  END)
 
         return builder.compile()
 
@@ -157,20 +156,34 @@ class DTDPipeline:
             output_folder=result_state["output_folder"],
         )
 
-        state["agent_output"] = {
-            "stage":          "preprocessing",
-            "X_train":        result_state["X_train_path"],
-            "X_test":         result_state["X_test_path"],
-            "y_train":        result_state["y_train_path"],
-            "y_test":         result_state["y_test_path"],
-            "full_dataset":   state["clean_data_path"],
-            "summary":        result_state["summary_path"],
-            "column_actions": result_state["column_actions_path"],
-            "column_actions_frontend": result_state.get("column_actions_frontend_path"),
-            "policy":         result_state.get("policy_path"),
-            "evidence":       result_state.get("evidence_path"),
-        }
+        # state["agent_output"] = {
+        #     "stage":          "preprocessing",
+        #     "X_train":        result_state["X_train_path"],
+        #     "X_test":         result_state["X_test_path"],
+        #     "y_train":        result_state["y_train_path"],
+        #     "y_test":         result_state["y_test_path"],
+        #     "full_dataset":   state["clean_data_path"],
+        #     "summary":        result_state["summary_path"],
+        #     "column_actions": result_state["column_actions_path"],
+        #     "column_actions_frontend": result_state.get("column_actions_frontend_path"),
+        #     "policy":         result_state.get("policy_path"),
+        #     "evidence":       result_state.get("evidence_path"),
+        # }
 
+        column_actions_frontend = None
+        column_actions_path = result_state.get("column_actions_frontend_path")
+
+        if column_actions_path and os.path.exists(column_actions_path):
+            try:
+                with open(column_actions_path, "r", encoding="utf-8") as f:
+                    column_actions_frontend = json.load(f)
+            except Exception as e:
+                column_actions_frontend = {"error": f"Failed to load JSON: {str(e)}"}
+        state["agent_output"] = {
+            "stage":"preprocessing",  
+            "column_actions": column_actions_frontend,
+        }
+        # print(column_actions_frontend)
         print(f"✅ Preprocessing complete.")
         print(f"📂 Output folder: {result_state['output_folder']}")
         print(f"📄 Rebuilt full dataset: {state['clean_data_path']}")
