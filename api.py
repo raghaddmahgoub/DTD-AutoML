@@ -11,7 +11,8 @@ from pymongo import MongoClient
 from orchestrator import DTDPipeline
 from dotenv import load_dotenv
 from datetime import datetime
-
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 # Load environment variables
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
@@ -31,25 +32,8 @@ db = client[MONGO_DB]
 reports_collection = db["reports"]
 print("Connected to MongoDB database:", MONGO_DB)
 from fastapi.responses import FileResponse
-
-# @app.get("/download-model/{report_id}")
-# async def download_model(report_id: str):
-#     # 1. Look up the report in Mongo to find the file path
-#     report = reports_collection.find_one({"_id": ObjectId(report_id)})
-    
-#     if not report or "model_path" not in report.get("report", {}).get("autom_ml", {}):
-#         return {"error": "Model file not found for this report"}
-
-#     file_path = report["report"]["autom_ml"]["model_path"]
-    
-#     # 2. Return the file as a download
-#     if os.path.exists(file_path):
-#         return FileResponse(
-#             path=file_path, 
-#             filename=f"model_{report_id}.pkl", 
-#             media_type='application/octet-stream'
-#         )
-#     return {"error": "File missing on server"}
+# Create a global executor for heavy lifting
+executor = ThreadPoolExecutor(max_workers=5)
 
 @app.post("/run-pipeline/{dataset_id}/{report_id}")
 async def run_pipeline(
@@ -73,11 +57,32 @@ async def run_pipeline(
     }
 
     async def event_generator():
+        loop = asyncio.get_event_loop()
         start_recorded = False  # flag to record start_time only once
+        def get_stream():
+            return pipeline_instance.workflow.stream(inputs)
 
-        for output in pipeline_instance.workflow.stream(inputs):
+        def safe_next(gen):
+            try:
+                return next(gen)
+            except StopIteration:
+                return None
+        # Offload the blocking generator to the executor
+        # We wrap it to ensure each 'yield' from LangGraph can be awaited by FastAPI
+        gen = await loop.run_in_executor(executor, get_stream)
+        while True:
+            try:
+                # Get next item WITHOUT blocking event loop
+                output = await loop.run_in_executor(None, safe_next, gen)
+
+            except StopIteration:
+                break
+        # for output in pipeline_instance.workflow.stream(inputs):
+            if output is None:
+                break
             for node_name, state_update in output.items():
                 # Record start_time only once at first node
+                print("Streaming:", node_name)
                 if not start_recorded:
                     start_time = datetime.utcnow()
                     reports_collection.update_one(
@@ -109,7 +114,7 @@ async def run_pipeline(
         report = reports_collection.find_one({"_id": ObjectId(report_id)})
         start_time = report.get("start_time", end_time)
 
-# Convert if it is int (timestamp)
+        # Convert if it is int (timestamp)
         if isinstance(start_time, int) or isinstance(start_time, float):
             start_time = datetime.utcfromtimestamp(start_time) # fallback if missing
         runtime = (end_time - start_time).total_seconds()
@@ -127,3 +132,22 @@ if __name__ == "__main__":
     import uvicorn
     print("Starting API server...")
     uvicorn.run(app, host="127.0.0.1", port=8000)
+
+# @app.get("/download-model/{report_id}")
+# async def download_model(report_id: str):
+#     # 1. Look up the report in Mongo to find the file path
+#     report = reports_collection.find_one({"_id": ObjectId(report_id)})
+    
+#     if not report or "model_path" not in report.get("report", {}).get("autom_ml", {}):
+#         return {"error": "Model file not found for this report"}
+
+#     file_path = report["report"]["autom_ml"]["model_path"]
+    
+#     # 2. Return the file as a download
+#     if os.path.exists(file_path):
+#         return FileResponse(
+#             path=file_path, 
+#             filename=f"model_{report_id}.pkl", 
+#             media_type='application/octet-stream'
+#         )
+#     return {"error": "File missing on server"}

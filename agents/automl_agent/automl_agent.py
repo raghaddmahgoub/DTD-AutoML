@@ -654,7 +654,7 @@ Your response must be a single JSON object with these EXACT keys:
   "reasoning": "Detailed explanation of your choice",
   "autogluon_settings": {
     "models_to_prioritize": ["GBM", "XGB", "CAT"],
-    "time_limit_seconds": 300,
+    "time_limit_seconds": 60,
     "preset_mode": "best_quality"
   },
   "simple_models": ["Model1", "Model2", "Model3"]
