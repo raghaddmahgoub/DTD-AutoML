@@ -402,7 +402,13 @@ class PreprocessingNode:
                     "q3": float(numeric_conv.quantile(0.75)) if numeric_conv.notna().any() else None,
                 },
             }
+        n_classes = int(y.nunique(dropna=False))
+        is_numeric = pd.api.types.is_numeric_dtype(y)
 
+        if is_numeric and n_classes > 30:
+            task_type = "regression"
+        else:
+            task_type = "classification"
         evidence_result = {
             "rows": int(len(df)),
             "columns": int(len(df.columns) - 1),
@@ -412,6 +418,7 @@ class PreprocessingNode:
                 "n_classes": int(y.nunique(dropna=False)),
                 "class_counts": {str(k): int(v) for k, v in class_counts.items()},
                 "imbalance_ratio": imbalance_ratio,
+                "task_type": task_type 
             },
             "metric_priority": self.config["target_metric_priority"],
             "columns_profile": columns,
@@ -1049,6 +1056,7 @@ class PreprocessingNode:
             "imbalance": metadata.get("imbalance", {}),
             "scaling": metadata["scaler"],
             "safeguards": policy.get("safeguards", {}),
+            "task_type": evidence["target"]["task_type"],
         }
 
         with open(summary_path, "w", encoding="utf-8") as f:

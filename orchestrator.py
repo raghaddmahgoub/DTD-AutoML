@@ -17,9 +17,8 @@ load_dotenv()
 ORCHESTRATOR_CONFIG = {
     "data_path": "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
     "target_column": "Survived",
-    "task_type": "classification",
     "preprocessing_output_root": os.path.join("Output", "Preprocessing"),
-    "use_preprocessing_llm": False,
+    "use_preprocessing_llm": True,
 }
 
 class AgentState(TypedDict):
@@ -142,6 +141,17 @@ class DTDPipeline:
                 "error": state["error"]
             }
             return state
+        summary_path = result_state.get("summary_path")
+
+        if summary_path and os.path.exists(summary_path):
+            try:
+                with open(summary_path, "r", encoding="utf-8") as f:
+                    summary = json.load(f)
+
+                state["task_type"] = summary.get("task_type")   # ✅ SET IT HERE
+
+            except Exception as e:
+                print(f"⚠️ Failed to read task_type from preprocessing summary: {e}")
 
         state["X_train_path"] = result_state["X_train_path"]
         state["X_test_path"] = result_state["X_test_path"]
@@ -180,11 +190,13 @@ class DTDPipeline:
             except Exception as e:
                 column_actions_frontend = {"error": f"Failed to load JSON: {str(e)}"}
         state["agent_output"] = {
-            "stage":"preprocessing",  
+            "stage":"preprocessing", 
+            "task_type": state.get("task_type"),  
             "column_actions": column_actions_frontend,
         }
         # print(column_actions_frontend)
         print(f"✅ Preprocessing complete.")
+        print(f"📊 Problem Type: {state['task_type']}")
         print(f"📂 Output folder: {result_state['output_folder']}")
         print(f"📄 Rebuilt full dataset: {state['clean_data_path']}")
         return state
@@ -351,7 +363,6 @@ if __name__ == "__main__":
     inputs = {
         "data_path":     ORCHESTRATOR_CONFIG["data_path"],
         "target_column": ORCHESTRATOR_CONFIG["target_column"],
-        "task_type":     ORCHESTRATOR_CONFIG["task_type"],
         }
     # inputs = {
     #     "data_path":     "assets/data/Datasets/Regression Datasets/car_prices.csv",

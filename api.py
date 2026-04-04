@@ -41,7 +41,6 @@ async def run_pipeline(
     report_id: str,
     file: UploadFile = File(...),
     target_column: str = Form(...),
-    task_type: str = Form("classification"),
 ):
     # Save uploaded file
     file_path = UPLOAD_DIR / file.filename
@@ -51,7 +50,6 @@ async def run_pipeline(
     inputs = {
         "data_path": str(file_path),
         "target_column": target_column,
-        "task_type": task_type,
         "dataset_id": dataset_id,
         "report_id": report_id,
     }
@@ -114,7 +112,6 @@ async def run_pipeline(
         report = reports_collection.find_one({"_id": ObjectId(report_id)})
         start_time = report.get("start_time", end_time)
 
-        # Convert if it is int (timestamp)
         if isinstance(start_time, int) or isinstance(start_time, float):
             start_time = datetime.utcfromtimestamp(start_time) # fallback if missing
         runtime = (end_time - start_time).total_seconds()
