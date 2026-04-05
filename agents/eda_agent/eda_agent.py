@@ -917,104 +917,221 @@ class EDAAgent:
             (path / filename).write_text(payload, encoding="utf-8")
 
 
-class TargetInferenceAgent:
-    """
-    Infers the most likely target column using structural,
-    semantic, and distributional heuristics.
-    """
+class TargetSuggestionAgent:
 
     ID_KEYWORDS = {"id", "uuid", "vin", "index"}
-    POSITIVE_KEYWORDS = {"target", "label", "price", "score", "rating", "outcome"}
-    NEGATIVE_KEYWORDS = {"class", "level", "rank", "group"}
+    TARGET_KEYWORDS = {"target", "label", "price", "score", "rating", "outcome"}
 
     def __init__(self, df: pd.DataFrame):
         self.df = df
         self.n_rows = len(df)
 
-    def _score_column(self, col: str, series: pd.Series) -> float:
-        name = col.lower()
-
-        # --- Hard exclusion ---
-        if any(k in name for k in self.ID_KEYWORDS):
-            return float("-inf")
-
-        score = 0.0
-
-        nunique = series.nunique(dropna=True)
-        missing_ratio = series.isna().mean()
-
-        # --- Missingness ---
-        if missing_ratio < 0.05:
-            score += 1.0
-        elif missing_ratio > 0.3:
-            score -= 1.0
-
-        # --- Cardinality ---
-        if nunique == 2:
-            score += 3.0
-        elif 2 < nunique <= 10:
-            score += 1.5
-        elif nunique < self.n_rows:
-            score += 0.3
-
-        # --- Distribution signal ---
-        if nunique > 1:
-            vc = series.value_counts(normalize=True, dropna=True)
-            majority_ratio = vc.iloc[0]
-
-            if 0.5 <= majority_ratio <= 0.9:
-                score += 1.0
-            elif majority_ratio > 0.95:
-                score -= 1.0
-
-        # --- Type signal ---
-        if pd.api.types.is_numeric_dtype(series):
-            score += 0.5
-        elif nunique <= 20:
-            score += 0.3
-
-        # --- Semantic signals ---
-        if any(k in name for k in self.POSITIVE_KEYWORDS):
-            score += 2.5
-
-        if any(k in name for k in self.NEGATIVE_KEYWORDS):
-            score -= 1.5
-
-        return score
-
+    # =========================
+    # Public API
+    # =========================
     def run(self) -> Dict[str, Any]:
-
-        scores = {}
+        suggestions = []
 
         for col in self.df.columns:
-            score = self._score_column(col, self.df[col])
-            if score != float("-inf"):
-                scores[col] = score
+            series = self.df[col]
 
-        if not scores:
-            return {
-                "inferred_target": None,
-                "confidence": 0.0,
-                "alternatives": []
-            }
+            # --- Hard filtering ---
+            if self._is_excluded(col, series):
+                continue
 
-        # --- Get top 3 efficiently ---
-        top_candidates = heapq.nlargest(3, scores.items(), key=lambda x: x[1])
+            analysis = self._analyze_column(col, series)
 
-        best_col, best_score = top_candidates[0]
+            if analysis["priority"] != "low":
+                suggestions.append(analysis)
 
-        # --- Confidence ---
-        total = sum(abs(s) for _, s in top_candidates) or 1.0
-        confidence = round(min(0.95, best_score / total), 3)
-
-        # --- Alternatives for user confirmation ---
-        alternatives = [
-            {"column": col, "score": round(score, 3)}
-            for col, score in top_candidates[1:]
-        ]
+        # Sort by priority (not numeric score)
+        priority_order = {"high": 0, "medium": 1, "low": 2}
+        suggestions.sort(key=lambda x: priority_order[x["priority"]])
 
         return {
-            "inferred_target": best_col,
-            "confidence": confidence,
-            "alternatives": alternatives
+            "suggestions": suggestions[:3],  # top 5 for UI
+            "note": "Select your target column before proceeding"
         }
+
+    # =========================
+    # Core Logic
+    # =========================
+    def _analyze_column(self, col: str, series: pd.Series) -> Dict[str, Any]:
+        evidence = []
+        exclusions = []
+
+        # Run detectors
+        for detector in self._get_detectors():
+            result = detector(col, series)
+
+            if result is None:
+                continue
+
+            if result["type"] == "exclude":
+                exclusions.append(result["message"])
+            else:
+                evidence.append(result["message"])
+
+        task = self._infer_task(series)
+        priority = self._assign_priority(evidence, exclusions)
+
+        return {
+            "column": col,
+            "priority": priority,
+            "task": task,
+            "evidence": evidence,
+            "exclusions": exclusions
+        }
+
+    # =========================
+    # Detectors (Modular)
+    # =========================
+    def _get_detectors(self):
+        return [
+            self._detect_binary,
+            self._detect_low_missing,
+            self._detect_high_missing,
+            self._detect_semantic_name,
+            self._detect_categorical,
+            self._detect_numeric,
+            self._detect_imbalanced,
+            self._detect_id_like,
+        ]
+
+    def _detect_binary(self, col, series):
+        if series.nunique(dropna=True) == 2:
+            return {
+                "type": "positive",
+                "message": "Binary column: strong classification candidate"
+            }
+
+    def _detect_low_missing(self, col, series):
+        if series.isna().mean() < 0.05:
+            return {
+                "type": "positive",
+                "message": "Low missing values: reliable target candidate"
+            }
+
+    def _detect_high_missing(self, col, series):
+        if series.isna().mean() > 0.3:
+            return {
+                "type": "exclude",
+                "message": "High missing values: unreliable as target"
+            }
+
+    def _detect_semantic_name(self, col, series):
+        name = col.lower()
+        for keyword in self.TARGET_KEYWORDS:
+            if keyword in name:
+                return {
+                    "type": "positive",
+                    "message": f"Column name suggests target ('{keyword}')"
+                }
+
+    def _detect_categorical(self, col, series):
+        nunique = series.nunique(dropna=True)
+        if 2 < nunique <= 10:
+            return {
+                "type": "positive",
+                "message": f"Categorical-like column ({nunique} unique values)"
+            }
+
+    def _detect_numeric(self, col, series):
+        if pd.api.types.is_numeric_dtype(series):
+            return {
+                "type": "positive",
+                "message": "Numeric column: suitable for regression"
+            }
+
+    def _detect_imbalanced(self, col, series):
+        if series.nunique() > 1:
+            vc = series.value_counts(normalize=True, dropna=True)
+            if not vc.empty and vc.iloc[0] > 0.95:
+                return {
+                    "type": "exclude",
+                    "message": "Highly imbalanced: weak target signal"
+                }
+
+    def _detect_id_like(self, col, series):
+        name = col.lower()
+        if any(k in name for k in self.ID_KEYWORDS):
+            return {
+                "type": "exclude",
+                "message": "Identifier column: not a valid target"
+            }
+
+    # =========================
+    # Helpers
+    # =========================
+    def _is_excluded(self, col, series):
+        name = col.lower()
+
+        if any(k in name for k in self.ID_KEYWORDS):
+            return True
+
+        nunique = series.nunique(dropna=True)
+
+        # Constant column
+        if nunique <= 1:
+            return True
+
+        # All unique (ID-like)
+        if nunique == self.n_rows:
+            return True
+
+        return False
+
+    def _infer_task(self, series):
+        nunique = series.nunique(dropna=True)
+
+        if nunique == 2:
+            return "classification (binary)"
+        elif nunique <= 10:
+            return "classification (multiclass)"
+        else:
+            return "regression"
+
+    def _assign_priority(self, evidence: List[str], exclusions: List[str]) -> str:
+        if exclusions:
+            return "low"
+
+        if any("Binary column" in e for e in evidence):
+            return "high"
+
+        if any("name suggests target" in e.lower() for e in evidence):
+            return "high"
+
+        if len(evidence) >= 2:
+            return "medium"
+
+        return "low"
+    
+    def generate_target_json(self, output_dir="Output"):
+        raw = self.run()
+
+        formatted = []
+
+        for s in raw["suggestions"]:
+            formatted.append({
+                "column": s["column"],
+                "priority": s["priority"],
+                "task": s["task"],
+                "evidence": [
+                    {"title": "Evidence", "value": e}
+                    for e in s["evidence"]
+                ]
+            })
+
+        payload = {
+            "suggestions": formatted,
+            "note": raw.get("note")
+        }
+
+        path = Path(output_dir)
+        path.mkdir(parents=True, exist_ok=True)
+        file_path = path / "target_suggestions_frontend.json"
+
+        with open(file_path, "w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2)
+
+        return str(file_path)
