@@ -1,0 +1,108 @@
+{
+  "dataset": "Titanic-Dataset.csv",
+  "target_column": "Survived",
+  "rows": 891,
+  "features": 14,
+  "dropped_columns": [
+    "PassengerId",
+    "Name"
+  ],
+  "duplicates_removed": 0,
+  "test_size": 0.2,
+  "random_state": 42,
+  "llm": {
+    "enabled": true,
+    "policy_used": true,
+    "provider": "gemini",
+    "model": "gemini-2.5-flash",
+    "final_decision_enabled": true
+  },
+  "steps_status": {
+    "missing_values": "handled",
+    "outliers": "handled",
+    "duplicates": "handled",
+    "type_conversion": "handled",
+    "categorical_encoding": "handled",
+    "feature_selection": "skipped",
+    "feature_creation": "handled",
+    "dimensionality_reduction": "skipped",
+    "normalization": "skipped",
+    "scaling": "handled",
+    "imbalance": "handled_after_split"
+  },
+  "imbalance": {
+    "method": "class_weight",
+    "before_counts": {
+      "0": 439,
+      "1": 273
+    },
+    "imbalance_ratio": 1.6080586080586081,
+    "status": "handled_class_weight_metadata_only",
+    "class_weights": {
+      "0": 1.0,
+      "1": 1.6080586080586081
+    }
+  },
+  "scaling": {
+    "method": "standard",
+    "columns": [
+      "Pclass_1",
+      "Pclass_2",
+      "Pclass_3",
+      "Sex_female",
+      "Sex_male",
+      "Age",
+      "SibSp",
+      "Parch",
+      "Ticket__freq",
+      "Fare",
+      "Cabin__freq",
+      "Embarked_C",
+      "Embarked_Q",
+      "Embarked_S"
+    ],
+    "means": [
+      0.24242424242424243,
+      0.20650953984287318,
+      0.5510662177328844,
+      0.35241301907968575,
+      0.6475869809203143,
+      29.36158249158249,
+      0.5230078563411896,
+      0.38159371492704824,
+      0.002006597966193926,
+      32.204207968574636,
+      0.5949443304475103,
+      0.18855218855218855,
+      0.08641975308641975,
+      0.7250280583613917
+    ],
+    "scales": [
+      0.4285495643554833,
+      0.40480038265391743,
+      0.4973854053010176,
+      0.4777217632292115,
+      0.47772176322921145,
+      13.012388272793666,
+      1.1021244350892878,
+      0.8056047612452208,
+      0.0015267987655698079,
+      49.6655344447741,
+      0.32316304222539294,
+      0.39115247761501976,
+      0.2809828809071862,
+      0.4465001376820639
+    ]
+  },
+  "safeguards": {
+    "safe_mode": true,
+    "notes": [
+      "PassengerId: dropped as high-cardinality numeric ID-like column before encoding",
+      "Name: dropped as high-cardinality non-numeric values before encoding"
+    ],
+    "max_row_drop_fraction": 0.02,
+    "rows": 891,
+    "target_imbalance_ratio": 1.605263157894737
+  },
+  "task_type": "classification"
+}

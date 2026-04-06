@@ -255,15 +255,17 @@ class PreprocessingNode:
                     "high_cardinality_drop", "constant_column_drop", "id_like_column_drop", "policy_drop"
                 } else "transform"
 
+            policy_source = details.get("policy_source", "default_policy")
             row: Dict[str, Any] = {
                 "column": column_name,
                 "action": action,
                 "reason": details.get("reason", "policy"),
+                "policy_source": policy_source,
             }
 
             # Keep details dynamic for frontend rendering while preserving a fixed top-level shape.
             dynamic_details = {k: v for k, v in details.items() if k not in {
-                "action", "reason"}}
+                "action", "reason", "policy_source"}}
             if dynamic_details:
                 row["details"] = dynamic_details
 
@@ -418,7 +420,7 @@ class PreprocessingNode:
                 "n_classes": int(y.nunique(dropna=False)),
                 "class_counts": {str(k): int(v) for k, v in class_counts.items()},
                 "imbalance_ratio": imbalance_ratio,
-                "task_type": task_type 
+                "task_type": task_type
             },
             "metric_priority": self.config["target_metric_priority"],
             "columns_profile": columns,
@@ -441,17 +443,24 @@ class PreprocessingNode:
                 "numeric_parse_ratio"] > 0.85 else "categorical"
             if profile["datetime_parse_ratio"] > 0.85 and not is_numeric_dtype:
                 dtype_guess = "datetime"
-            # High-cardinality dropping should only target non-numeric ID-like columns.
+            # High-cardinality dropping: categorical/text OR numeric ID-like columns (almost unique)
             high_card = (
-                dtype_guess in {"categorical", "text"}
-                and (
-                    profile["unique_ratio"] > float(
-                        self.config["high_cardinality_unique_ratio"])
-                    or (
-                        profile["unique_count"] > int(
-                            self.config["high_cardinality_unique_count"])
-                        and profile["unique_ratio"] > 0.9
+                (
+                    dtype_guess in {"categorical", "text"}
+                    and (
+                        profile["unique_ratio"] > float(
+                            self.config["high_cardinality_unique_ratio"])
+                        or (
+                            profile["unique_count"] > int(
+                                self.config["high_cardinality_unique_count"])
+                            and profile["unique_ratio"] > 0.9
+                        )
                     )
+                )
+                or (
+                    # Also catch numeric ID-like columns (almost 100% unique)
+                    dtype_guess == "numeric"
+                    and profile["unique_ratio"] > 0.98
                 )
             )
             drop = profile["missing_ratio"] > 0.6 or (
@@ -497,7 +506,7 @@ class PreprocessingNode:
             "Allowed methods only: duplicates.action=drop_exact|keep; "
             "columns.dtype=numeric|categorical|datetime|text; "
             "columns.missing=median|mean|mode|constant|indicator; "
-            "columns.outlier=keep|clip|log_transform; "
+            "columns.outlier=keep|clip|log_transform|drop_rows; "
             "columns.encoding=none|label|onehot|frequency; "
             "feature_selection.method=none|variance; "
             "feature_creation.method=none|datetime_parts; "
@@ -507,7 +516,7 @@ class PreprocessingNode:
             "imbalance.method=none|class_weight|oversample|undersample. "
             "IMPORTANT RULES: onehot is allowed only when unique_count <= 3; "
             "if unique_count > 3 use label or frequency; "
-            "very high-cardinality non-numeric ID-like columns should be dropped before encoding; "
+            "very high-cardinality columns (including numeric ID-like columns) should be dropped before encoding; "
             "do not use pca. "
             "Do not remove more than 20 percent of features. "
             f"Target column is '{target_col}'. "
@@ -529,13 +538,26 @@ class PreprocessingNode:
         total_rows: int,
     ) -> Dict[str, Any]:
         policy = default_policy
+        policy_source_tracking = {}  # Track which policy each decision came from
+
+        # Track default_policy source for all columns
+        if "columns" in default_policy:
+            for col in default_policy["columns"]:
+                policy_source_tracking[col] = "default_policy"
+
         if llm_policy and self.config["llm_final_decision"]:
             policy = {**default_policy, **llm_policy}
             if "columns" in llm_policy:
                 merged_cols = default_policy["columns"].copy()
                 if isinstance(llm_policy["columns"], dict):
-                    merged_cols.update(llm_policy["columns"])
+                    # Update with llm_policy and track source
+                    for col, llm_decision in llm_policy["columns"].items():
+                        merged_cols[col] = llm_decision
+                        policy_source_tracking[col] = "llm_policy"
                 policy["columns"] = merged_cols
+
+        # Store tracking info in policy for later use
+        policy["_policy_source_tracking"] = policy_source_tracking
 
         allowed_scaling = {"none", "standard",
                            "minmax", "robust", "quantile", "power"}
@@ -545,7 +567,7 @@ class PreprocessingNode:
         allowed_dtype = {"numeric", "categorical", "datetime", "text"}
         allowed_missing = {"median", "mean",
                            "mode", "constant", "indicator"}
-        allowed_outlier = {"keep", "clip", "log_transform"}
+        allowed_outlier = {"keep", "clip", "log_transform", "drop_rows"}
 
         if policy.get("scaling", {}).get("method") not in allowed_scaling:
             policy["scaling"] = {"method": "standard"}
@@ -589,10 +611,10 @@ class PreprocessingNode:
                 safe_notes.append(
                     f"{col}: missing strategy 'keep' replaced with {decisions['missing']}")
 
-            # Force drop only on very high-cardinality non-numeric ID-like columns.
+            # Force drop for very high-cardinality columns: categorical/text OR numeric ID-like.
             col_profile = evidence.get("columns_profile", {}).get(col, {})
             col_dtype = decisions.get("dtype")
-            if (
+            is_high_card_categorical = (
                 col_dtype in {"categorical", "text"}
                 and (
                     col_profile.get("unique_ratio", 0.0) > float(
@@ -603,16 +625,23 @@ class PreprocessingNode:
                         and col_profile.get("unique_ratio", 0.0) > 0.9
                     )
                 )
-            ):
+            )
+            is_high_card_numeric = (
+                col_dtype == "numeric"
+                and col_profile.get("unique_ratio", 0.0) > 0.98
+            )
+
+            if is_high_card_categorical or is_high_card_numeric:
                 decisions["drop"] = True
                 decisions["reason"] = "high_cardinality_drop"
+                reason_msg = "non-numeric values" if is_high_card_categorical else "numeric ID-like column"
                 safe_notes.append(
-                    f"{col}: dropped for very high-cardinality non-numeric values before encoding")
+                    f"{col}: dropped as high-cardinality {reason_msg} before encoding")
 
             if bool(decisions.get("drop")):
                 dropped_count += 1
 
-            if self.config["safe_mode"] and decisions.get("outlier") not in {"keep", "clip", "log_transform"}:
+            if self.config["safe_mode"] and decisions.get("outlier") not in {"keep", "clip", "log_transform", "drop_rows"}:
                 decisions["outlier"] = "keep"
                 safe_notes.append(f"{col}: unsafe outlier action replaced")
 
@@ -681,16 +710,23 @@ class PreprocessingNode:
         categorical_cols: List[str] = []
         dropped_cols: List[str] = []
         column_actions: Dict[str, Any] = {}
+        outlier_row_drop_mask = pd.Series(False, index=df_work.index)
+
+        policy_source_tracking = policy.get("_policy_source_tracking", {})
 
         for col in [c for c in df_work.columns if c != target_col]:
             s = df_work[col]
             p = policy["columns"].get(col, {})
             if bool(p.get("drop", False)):
                 dropped_cols.append(col)
+                policy_source = policy_source_tracking.get(
+                    col, "default_policy")
+                drop_reason = p.get("reason", "policy_drop")
                 column_actions[col] = {"action": "drop",
-                                       "reason": p.get("reason", "policy_drop")}
-                logger.debug("  col %-30s -> DROP (%s)", col,
-                             p.get("reason", "policy_drop"))
+                                       "reason": drop_reason,
+                                       "policy_source": policy_source}
+                logger.debug("  col %-30s -> DROP (%s via %s)", col,
+                             drop_reason, policy_source)
                 continue
 
             dtype_choice = p.get("dtype", "categorical")
@@ -755,6 +791,12 @@ class PreprocessingNode:
                 elif outlier_method == "log_transform":
                     converted = np.sign(converted) * \
                         np.log1p(np.abs(converted))
+                elif outlier_method == "drop_rows":
+                    q = float(self.config["max_outlier_clip_quantile"])
+                    lo, hi = converted.quantile(q), converted.quantile(1.0 - q)
+                    col_outlier_mask = (converted < lo) | (converted > hi)
+                    outlier_row_drop_mask = outlier_row_drop_mask | col_outlier_mask.fillna(
+                        False)
 
             # Feature creation
             if dtype_choice == "datetime":
@@ -769,30 +811,40 @@ class PreprocessingNode:
                             index=df_work.index,
                         )
                     )
+                    policy_source = policy_source_tracking.get(
+                        col, "default_policy")
                     column_actions[col] = {
                         "type": "datetime",
                         "action": "datetime_parts",
                         "missing": missing_method,
                         "reason": p.get("reason", "policy"),
+                        "policy_source": policy_source,
                     }
                     continue
                 feature_frames.append(pd.DataFrame(
                     {col: converted.astype("int64")}, index=df_work.index))
                 numeric_cols.append(col)
+                policy_source = policy_source_tracking.get(
+                    col, "default_policy")
                 column_actions[col] = {
-                    "type": "datetime", "action": "timestamp", "reason": p.get("reason", "policy")}
+                    "type": "datetime", "action": "timestamp", "reason": p.get("reason", "policy"),
+                    "policy_source": policy_source
+                }
                 continue
 
             if dtype_choice == "numeric":
                 feature_frames.append(pd.DataFrame(
                     {col: converted}, index=df_work.index))
                 numeric_cols.append(col)
+                policy_source = policy_source_tracking.get(
+                    col, "default_policy")
                 column_actions[col] = {
                     "type": "numeric",
                     "missing": missing_method,
                     "outlier": outlier_method,
                     "encoding": "none",
                     "reason": p.get("reason", "policy"),
+                    "policy_source": policy_source,
                 }
                 continue
 
@@ -824,14 +876,16 @@ class PreprocessingNode:
                     {col: cleaned}, index=df_work.index))
                 categorical_cols.append(col)
 
+            policy_source = policy_source_tracking.get(col, "default_policy")
             column_actions[col] = {
                 "type": "categorical",
                 "missing": missing_method,
                 "encoding": encoding_method,
                 "reason": p.get("reason", "policy"),
+                "policy_source": policy_source,
             }
-            logger.debug("  col %-30s -> CATEGORICAL | missing=%-8s encoding=%s",
-                         col, missing_method, encoding_method)
+            logger.debug("  col %-30s -> CATEGORICAL | missing=%-8s encoding=%s (via %s)",
+                         col, missing_method, encoding_method, policy_source)
 
         if not feature_frames:
             logger.error(
@@ -841,6 +895,29 @@ class PreprocessingNode:
         X = pd.concat(feature_frames, axis=1)
         logger.debug("Feature matrix assembled: %d rows x %d cols",
                      X.shape[0], X.shape[1])
+
+        # Optional row dropping for outliers, guarded by max_row_drop_fraction.
+        rows_dropped_outliers = 0
+        marked_outlier_rows = int(outlier_row_drop_mask.sum())
+        if marked_outlier_rows > 0:
+            max_fraction = float(self.config.get(
+                "max_row_drop_fraction", 0.02))
+            max_rows_to_drop = max(1, int(len(X) * max_fraction))
+            outlier_indices = outlier_row_drop_mask[outlier_row_drop_mask].index.tolist(
+            )
+            if marked_outlier_rows > max_rows_to_drop:
+                logger.warning(
+                    "Outlier row drop capped by safeguard: marked=%d cap=%d",
+                    marked_outlier_rows,
+                    max_rows_to_drop,
+                )
+                outlier_indices = outlier_indices[:max_rows_to_drop]
+                steps_status["outliers"] = "drop_rows_capped"
+            else:
+                steps_status["outliers"] = "drop_rows"
+            X = X.drop(index=outlier_indices)
+            y = y.drop(index=outlier_indices)
+            rows_dropped_outliers = len(outlier_indices)
 
         # Feature selection
         fs_method = policy.get("feature_selection", {}).get("method", "none")
@@ -913,6 +990,7 @@ class PreprocessingNode:
         metadata = {
             "column_actions": column_actions,
             "dropped_columns": dropped_cols,
+            "rows_dropped_outliers": rows_dropped_outliers,
             "numeric_columns": numeric_cols,
             "categorical_columns": categorical_cols,
             "duplicates_removed": duplicate_rows_removed,

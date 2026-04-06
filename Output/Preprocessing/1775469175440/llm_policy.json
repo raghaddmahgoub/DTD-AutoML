@@ -1,0 +1,120 @@
+{
+  "duplicates": {
+    "action": "keep"
+  },
+  "columns": {
+    "PassengerId": {
+      "action": "drop",
+      "dtype": "numeric",
+      "encoding": "none",
+      "missing": "median",
+      "outlier": "keep",
+      "drop": true,
+      "reason": "high_cardinality_drop"
+    },
+    "Pclass": {
+      "dtype": "categorical",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "onehot"
+    },
+    "Name": {
+      "dtype": "text",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "label",
+      "drop": true,
+      "reason": "high_cardinality_drop"
+    },
+    "Sex": {
+      "dtype": "categorical",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "onehot"
+    },
+    "Age": {
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "clip",
+      "encoding": "none"
+    },
+    "SibSp": {
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none"
+    },
+    "Parch": {
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none"
+    },
+    "Ticket": {
+      "dtype": "text",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "label"
+    },
+    "Fare": {
+      "dtype": "numeric",
+      "missing": "median",
+      "outlier": "log_transform",
+      "encoding": "none"
+    },
+    "Cabin": {
+      "action": "drop",
+      "dtype": "categorical",
+      "encoding": "label",
+      "missing": "mode",
+      "outlier": "keep"
+    },
+    "Embarked": {
+      "dtype": "categorical",
+      "missing": "mode",
+      "outlier": "keep",
+      "encoding": "onehot"
+    }
+  },
+  "feature_selection": {
+    "method": "none"
+  },
+  "feature_creation": {
+    "method": "none"
+  },
+  "dimensionality_reduction": {
+    "method": "none"
+  },
+  "scaling": {
+    "method": "standard"
+  },
+  "normalization": {
+    "method": "none"
+  },
+  "imbalance": {
+    "method": "oversample"
+  },
+  "_policy_source_tracking": {
+    "PassengerId": "llm_policy",
+    "Pclass": "llm_policy",
+    "Name": "llm_policy",
+    "Sex": "llm_policy",
+    "Age": "llm_policy",
+    "SibSp": "llm_policy",
+    "Parch": "llm_policy",
+    "Ticket": "llm_policy",
+    "Fare": "llm_policy",
+    "Cabin": "llm_policy",
+    "Embarked": "llm_policy"
+  },
+  "safeguards": {
+    "safe_mode": true,
+    "notes": [
+      "PassengerId: dropped as high-cardinality numeric ID-like column before encoding",
+      "Name: dropped as high-cardinality non-numeric values before encoding"
+    ],
+    "max_row_drop_fraction": 0.02,
+    "rows": 891,
+    "target_imbalance_ratio": 1.605263157894737
+  }
+}
