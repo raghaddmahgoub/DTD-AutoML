@@ -758,10 +758,11 @@ class EDAAgent:
             columns_arr.append(col)
     
         # relationships: extract feature correlations -> [{title, value}] sorted by abs
-        raw_rel = self.report["relationship_insights"]
-        feature_corrs = (
-            raw_rel.get("target_relationships", {}).get("feature_correlations", {})
-        )
+        raw_rel = self.report.get("relationship_insights") or {}
+
+        target_rel = raw_rel.get("target_relationships") or {}
+        feature_corrs = target_rel.get("feature_correlations") or {}
+
         relationships_arr = sorted(
             [{"title": k, "value": round(abs(v), 4)} for k, v in feature_corrs.items()],
             key=lambda x: x["value"],

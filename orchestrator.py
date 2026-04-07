@@ -1,5 +1,6 @@
 from importlib.resources import path
 import os
+import time
 import pandas as pd
 from typing import TypedDict, Optional
 from langgraph.graph import StateGraph, END
@@ -387,9 +388,18 @@ if __name__ == "__main__":
     #     "task_type":     "regression"
     # }
 
+
+    runtime_start=time.time()
+
     result = pipeline.workflow.invoke(inputs)
 
-    print("\n🏁 Pipeline Finished.")
+    runtime_end=time.time()
+    runtime_duration = runtime_end - runtime_start
+    minutes = int(runtime_duration // 60)
+    seconds = runtime_duration % 60
+
+    print(f"\n🏁 Pipeline Finished in {minutes} min {seconds:.2f} sec.")
+    
     if result.get('error'):
         print(f"⚠️  Completed with error: {result['error']}")
     else:

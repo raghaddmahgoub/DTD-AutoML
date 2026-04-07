@@ -176,6 +176,15 @@ class PreprocessingNode:
             logger.debug("Steps status: %s", metadata["steps_status"])
             logger.info("CHECK: preprocessing completed successfully")
 
+            # clean target before split
+            n_before = len(y)
+            valid_idx = ~y.isna()
+            X = X.loc[valid_idx]
+            y = y.loc[valid_idx]
+            n_after = len(y)
+
+            logger.warning(f"Dropped {n_before - n_after} rows due to missing target")
+
             logger.info(
                 "Splitting train/test (test_size=%.0f%%)...", test_size * 100)
             X_train, X_test, y_train, y_test = train_test_split(
@@ -797,30 +806,35 @@ class PreprocessingNode:
                     col_outlier_mask = (converted < lo) | (converted > hi)
                     outlier_row_drop_mask = outlier_row_drop_mask | col_outlier_mask.fillna(
                         False)
-
+            
             # Feature creation
             if dtype_choice == "datetime":
                 if policy.get("feature_creation", {}).get("method") == "datetime_parts":
-                    feature_frames.append(
-                        pd.DataFrame(
-                            {
-                                f"{col}__year": converted.dt.year.astype(int),
-                                f"{col}__month": converted.dt.month.astype(int),
-                                f"{col}__day": converted.dt.day.astype(int),
-                            },
-                            index=df_work.index,
+                    converted = pd.to_datetime(s, errors="coerce", utc=True)
+                    if pd.api.types.is_datetime64_any_dtype(converted):
+                        feature_frames.append(
+                            pd.DataFrame(
+                                {
+                                    f"{col}__year": converted.dt.year.astype(int),
+                                    f"{col}__month": converted.dt.month.astype(int),
+                                    f"{col}__day": converted.dt.day.astype(int),
+                                },
+                                index=df_work.index,
+                            )
                         )
-                    )
-                    policy_source = policy_source_tracking.get(
-                        col, "default_policy")
-                    column_actions[col] = {
-                        "type": "datetime",
-                        "action": "datetime_parts",
-                        "missing": missing_method,
-                        "reason": p.get("reason", "policy"),
-                        "policy_source": policy_source,
-                    }
+                        policy_source = policy_source_tracking.get(
+                            col, "default_policy")
+                        column_actions[col] = {
+                            "type": "datetime",
+                            "action": "datetime_parts",
+                            "missing": missing_method,
+                            "reason": p.get("reason", "policy"),
+                            "policy_source": policy_source,
+                        }
+                    else:
+                        logger.warning(f"Column {col} could not be converted to datetime — skipping datetime parts")
                     continue
+
                 feature_frames.append(pd.DataFrame(
                     {col: converted.astype("int64")}, index=df_work.index))
                 numeric_cols.append(col)

@@ -10,7 +10,9 @@ from json import encoder
 from pathlib import Path
 from typing import TypedDict, Annotated, Literal, Any, Optional
 
+from fastapi import params
 import numpy as np
+from opentelemetry import metrics
 import pandas as pd
 import dask.dataframe as dd
 from dask_ml.linear_model import LogisticRegression
@@ -21,6 +23,10 @@ import dask_ml.ensemble as dme
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingClassifier, GradientBoostingRegressor
 from sklearn.linear_model import LogisticRegression, LinearRegression
 import xgboost as xgb
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix, f1_score
+from dask_ml.model_selection import train_test_split as dask_split
+from dask_ml.preprocessing import OneHotEncoder as DaskOHE
 
 from langgraph.graph import StateGraph, END
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -110,36 +116,57 @@ class AutoMLAgent:
     def load_data_node(self, state: AgentState) -> AgentState:
         """Load data from file path."""
         try:
+            load_starttime=time.time()
+
             logger.info(f"Loading data from: {state['data_path']}")
             data_path = str(state['data_path'])
-            if data_path.endswith('.csv'):
-                self.data = dd.read_csv(
-                    data_path,
-                    blocksize="256MB",  # partition size
-                    assume_missing=True  # handle missing numeric values
-                    # no dtype=str
-                )
-            elif data_path.endswith('.xlsx') or data_path.endswith('.xls'):
-                pdf = pd.read_excel(data_path)
-                self.data = dd.from_pandas(pdf, npartitions=4)
-            elif data_path.endswith('.json'):
-                self.data = dd.read_json(data_path, blocksize="256MB", lines=True)
-            else:
-                raise ValueError(f"Unsupported file format")
 
             directives = state.get('automl_directives') or {}
             report = directives.get('report') or {}
-            # dataset_summary = report.get("dataset_summary", {})
-            # rows = dataset_summary.get("n_rows", 0)
+            dataset_summary = report.get("dataset_summary", {})
 
-            # Compute the exact number of rows and columns
-            n_rows = len(self.data)  # This is lazy
-            n_rows = self.data.shape[0].compute()  # Actually computes total rows
-            n_cols = len(self.data.columns)
+            if 'data' in state and state['data'] is not None:
+                n_rows = state['data'].shape[0].compute()
+                n_cols = state['data'].shape[1]
+            else:
+                n_rows = dataset_summary.get("n_rows", 0)
+                n_cols = dataset_summary.get("n_columns", 0)
 
+            if n_rows > 700_000:
+
+                if data_path.endswith('.csv'):
+                    self.data = dd.read_csv(
+                        data_path,
+                        blocksize="256MB",  # partition size
+                        assume_missing=True  # handle missing numeric values
+                        # no dtype=str
+                    )
+                elif data_path.endswith('.xlsx') or data_path.endswith('.xls'):
+                    pdf = pd.read_excel(data_path)
+                    self.data = dd.from_pandas(pdf, npartitions=4)
+                elif data_path.endswith('.json'):
+                    self.data = dd.read_json(data_path, blocksize="256MB", lines=True)
+                else:
+                    raise ValueError(f"Unsupported file format")
+            else:
+                if data_path.endswith('.csv'):
+                    self.data = pd.read_csv(
+                        data_path
+                    )
+                elif data_path.endswith('.xlsx') or data_path.endswith('.xls'):
+                    pdf = pd.read_excel(data_path)
+                elif data_path.endswith('.json'):
+                    self.data = pd.read_json(data_path, blocksize="256MB", lines=True)
+                else:
+                    raise ValueError(f"Unsupported file format")
+                
+            state['use_dask']=isinstance(self.data, dd.DataFrame)
+            logger.info(f"[Data Loading Agent] Dask :{state.get('use_dask',False)}")
             state['data'] = self.data
             state['step'] = 'data_loaded'
-            logger.info(f"Data loaded successfully. Shape: {({n_rows}, {n_cols})}")
+
+            load_endtime = time.time()
+            logger.info(f"Data loaded successfully in {load_endtime - load_starttime:.2f} seconds. Shape: {({n_rows}, {n_cols})}")
             
         except Exception as e:
             logger.error(f"Error loading data: {str(e)}", e)
@@ -285,6 +312,50 @@ class AutoMLAgent:
         
     #     return state
     
+
+    # def _detect_dataset_complexity(self, rows: int, features: int, problem_type: str) -> dict:
+    #     """
+    #     Determine optimal AutoML strategy based on dataset size and complexity.
+    #     This acts as a safeguard to prevent inefficient model training.
+    #     """
+
+    #     logger.info("[AutoML] Detecting dataset complexity")
+
+    #     strategy = {}
+        
+    #     # SMALL DATASET
+    #     if rows < 50000:
+    #         logger.info("[AutoML] Small dataset detected")
+
+    #         strategy = {
+    #             "strategy": "simple",
+    #             "models": ["RandomForest", "LogisticRegression"] if problem_type == "classification"
+    #                     else ["RandomForest", "LinearRegression"]
+    #         }
+
+    #     # MEDIUM DATASET
+    #     elif rows < 1_000_000:
+    #         logger.info("[AutoML] Medium dataset detected")
+
+    #         strategy = {
+    #             "strategy": "autogluon",
+    #             "models": ["GBM", "XGB"],
+    #             "preset": "best_quality"
+    #         }
+
+    #     # LARGE DATASET
+    #     else:
+    #         logger.info("[AutoML] Large dataset detected")
+
+    #         strategy = {
+    #             "strategy": "dask_xgb",
+    #             "models": ["Dask-XGBoost"],
+    #             "time_limit": 600,
+    #             "preset": "good_quality_faster_inference"
+    #         }
+
+    #     return strategy
+    
     def model_selection_agent(self, state: AgentState) -> AgentState:
         """
         Model Selection Subagent that depends on external Analysis Agent directives.
@@ -306,12 +377,20 @@ class AutoMLAgent:
             dataset_summary = report.get("dataset_summary", {})
             # rows = dataset_summary.get("n_rows", 0)
             # features = dataset_summary.get("n_columns", 0)
-            if 'data' in state and state['data'] is not None:
-                n_rows = state['data'].shape[0].compute()  # compute the total rows
-                n_cols = state['data'].shape[1]            # columns are known lazily
+            if isinstance(state['data'], dd.DataFrame):
+                if 'data' in state and state['data'] is not None:
+                    n_rows = state['data'].shape[0].compute()
+                    n_cols = state['data'].shape[1]
+                else:
+                    n_rows = dataset_summary.get("n_rows", 0)
+                    n_cols = dataset_summary.get("n_columns", 0)
             else:
-                n_rows = dataset_summary.get("n_rows", 0)
-                n_cols = dataset_summary.get("n_columns", 0)
+                if 'data' in state and state['data'] is not None:
+                    n_rows = state['data'].shape[0]
+                    n_cols = state['data'].shape[1]
+                else:
+                    n_rows = dataset_summary.get("n_rows", 0)
+                    n_cols = dataset_summary.get("n_columns", 0)
 
             duplicate_ratio = report['data_quality_report']['duplicates']['duplicate_ratio']
 
@@ -320,12 +399,6 @@ class AutoMLAgent:
                     f"Dataset contains {duplicate_ratio:.2%} duplicates. "
                     "Model performance may be unreliable."
                 )
-
-            complexity_strategy = self._detect_dataset_complexity(
-                n_rows,
-                n_cols,
-                task_type
-            )
 
             target_info = report.get('target_analysis') or {}
 
@@ -353,13 +426,15 @@ class AutoMLAgent:
             Plan and decide between:
             1. AutoGluon: For high complexity or non-linear signals.
             2. Simple Training: For linear signals or smaller datasets.
-            
+            3. Dask-XGBoost: For very large datasets with strong gradient boosting signals.
+
             Response Format (STRICT JSON):
             {{
-            "approach": "AutoGluon" or "Simple",
+            "approach": "AutoGluon" or "Simple" or "Dask Large-Scale",
             "reasoning": "Explain why based on the signals above",
             "autogluon_settings": {{ "models_to_prioritize": ["GBM", "XGB"], "time_limit_seconds": 300, "preset_mode": "best_quality" }},
-            "simple_models": ["RandomForest", "XGBoost", "LogisticRegression"]
+            "simple_models": ["RandomForest", "XGBoost", "LogisticRegression"],
+            "dask_models": ["Dask-XGBoost"]
             }}
             """
 
@@ -373,77 +448,162 @@ class AutoMLAgent:
             reasoning = response.content
             
             # 5. Parse and update state
-            use_automl, automl_config, selected_models = self._parse_automl_decision(
+            use_automl,use_dask, automl_config, selected_models = self._parse_automl_decision(
                 reasoning, state.get('data_summary', {}), task_type
             )
 
-                        # Apply complexity safeguard
-            if complexity_strategy["strategy"] == "simple":
-                logger.info("[AutoML] Overriding LLM decision → Simple training")
-
-                use_automl = False
-                selected_models = complexity_strategy["models"]
-
-            elif complexity_strategy["strategy"] == "autogluon":
-                logger.info("[AutoML] Using AutoGluon based on dataset complexity")
-
-                use_automl = True
-                automl_config["models_to_prioritize"] = complexity_strategy["models"]
-
-                if "time_limit" in complexity_strategy:
-                    automl_config["time_limit_seconds"] = complexity_strategy["time_limit"]
-
             logger.info(
                 f"[AutoML Decision] rows={n_rows}, features={n_cols}, "
-                f"strategy={'AutoGluon' if use_automl else 'Simple'}"
+                f"strategy={'Dask Large-Scale' if use_dask else 'AutoGluon' if use_automl else 'Simple'}"
             )
             state['model_selection_reasoning'] = reasoning
             state['use_automl'] = use_automl
+            state['use_dask'] = use_dask
             state['automl_config'] = automl_config
             state['selected_models'] = selected_models
             state['step'] = 'models_selected'
-            
-                        # Large-scale safeguard
-            if use_automl and n_rows > 1_000_000:
-                automl_config['models_to_prioritize'] = \
-                    automl_config.get('models_to_prioritize', ['GBM', 'XGB'])[:2]
                 
-                automl_config['preset_mode'] = 'good_quality_faster_inference'
-                
-                automl_config['time_limit_seconds'] = \
-                    min(automl_config.get('time_limit_seconds', 300), 600)
-
-                state['automl_config'] = automl_config
-                
-            state['step'] = 'models_selected'
-
             return state
 
         except Exception as e:
             logger.error(f"[Model Selection Agent] Error: {str(e)}")
+            # state['use_dask'] = True
             state['error'] = f"Failed in model selection: {str(e)}"
             return state
 
-    def _train_with_dask_xgboost(self, X_train, y_train, X_test, problem_type):
-        import xgboost.dask as dxgb
-        from dask.distributed import Client
+    def _train_with_dask_xgb(self, X, y, problem_type: str, state: dict = None) -> tuple:
+        """
+        Train a Dask-compatible XGBoost model on a large dataset in parallel.
+        
+        Args:
+            X: Dask DataFrame of features
+            y: Dask Series of target
+            problem_type: 'classification' or 'regression'
+            state: Optional dict to store extra info (e.g., {'dask': True})
+        
+        Returns:
+            tuple: (trained_model, metrics_dict)
+        """
+        import dask.dataframe as dd
+        # import xgboost as xgb
+        from dask.distributed import Client, LocalCluster
+        import time
+        from xgboost import dask as dxgb
 
-        client = Client(processes=False)
+        # --- 1. Start Dask cluster (local) ---
+        cluster = LocalCluster(n_workers=2, threads_per_worker=2,memory_limit='5GB')
+        client = Client(cluster)
+        logger.info(f"[Dask-XGB] Dask cluster started: {cluster}")
 
-        dtrain = dxgb.DaskDMatrix(client, X_train, y_train)
+        try:
+            # --- 2. Ensure numeric features ---
+            # X = X.map_partitions(lambda df: df.apply(pd.to_numeric,axis=1, errors="coerce"), meta=X)
+            # y = y.map_partitions(lambda s: s.astype(float), meta=y)
+            X = X.astype("float32")
+            y = y.astype("float32")
 
-        params = {
-            "objective": "binary:logistic" if problem_type == "classification" else "reg:squarederror",
-            "eval_metric": "logloss" if problem_type == "classification" else "rmse",
-        }
+            X = X.repartition(npartitions=50)
+            y = y.repartition(npartitions=50)
 
-        model = dxgb.train(client, params, dtrain, num_boost_round=100)
+            X, y = X.align(y, join="inner", axis=0)
+            df = dd.concat([X, y.rename("target")], axis=1)
+            df = df.dropna(subset=["target"])
+            X = df.drop(columns=["target"])
+            y = df["target"]
 
-        dtest = dxgb.DaskDMatrix(client, X_test)
-        preds = dxgb.predict(client, model, dtest)
+            # if state is not None:
+            #     state['use_dask'] = True
 
-        return model, preds
-    
+            # --- 3. Train-test split using Dask ---
+            from dask_ml.model_selection import train_test_split
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=0.2, random_state=42,shuffle=False
+            )
+
+            # --- 4. Create Dask DMatrix ---
+            dtrain = dxgb.DaskDMatrix(client, X_train, y_train)
+            dtest = dxgb.DaskDMatrix(client, X_test, y_test)
+
+            # --- 5. Set XGBoost parameters ---
+            params = {}
+            if problem_type == "classification":
+                unique_classes = y_train.drop_duplicates().shape[0].compute()
+                params = {
+                    "objective": "binary:logistic" if unique_classes == 2 else "multi:softprob",
+                    "eval_metric": "mlogloss" if unique_classes > 2 else "logloss",
+                }
+                if unique_classes > 2:
+                    params["num_class"] = unique_classes
+            elif problem_type == "regression":
+                params = {"objective": "reg:squarederror", "eval_metric": "rmse"}
+            else:
+                raise ValueError(f"Unknown problem type: {problem_type}")
+            
+            params["tree_method"] = "hist"
+            # --- 6. Train the model ---
+            start_time = time.time()
+            output = dxgb.train(
+                client,
+                params,
+                dtrain,
+                num_boost_round=100,
+                evals=[(dtrain, "train"), (dtest, "eval")],
+            )
+            trained_model = output["booster"]  # booster object
+            training_time = time.time() - start_time
+            logger.info(f"[Dask-XGB] Training complete in {training_time:.2f} seconds")
+
+            # --- 7. Predictions ---
+            y_pred = dxgb.predict(client, trained_model, X_test)
+            y_test_np = y_test.compute()
+            y_pred_np = y_pred.compute()
+
+            # --- 8. Metrics ---
+            metrics = {
+                "training_method": "Dask-XGBoost",
+                "training_time": training_time,
+                "best_model": "Dask-XGBoost",
+                "best_score": None,
+            }
+            try:
+                from sklearn.metrics import f1_score, r2_score, mean_squared_error
+                from sklearn.metrics import confusion_matrix
+
+                if problem_type == "classification":
+                    if y_pred_np.ndim > 1:  # multiclass
+                        y_pred_labels = y_pred_np.argmax(axis=1)
+                    else:  # binary
+                        y_pred_labels = (y_pred_np > 0.5).astype(int)
+
+                    metrics["f1_score"] = f1_score(y_test_np, y_pred_labels, average="weighted")
+                    metrics["best_score"] = metrics["f1_score"]
+                    metrics["confusion_matrix"] = confusion_matrix(y_test_np, y_pred_labels).tolist()
+                
+                else:
+                    mse = mean_squared_error(y_test_np, y_pred_np)
+                    metrics["rmse"] = np.sqrt(mse)
+                    metrics["r2_score"] = r2_score(y_test_np, y_pred_np)
+                    metrics["best_score"] = metrics["r2_score"]
+
+                if metrics.get("best_score") is None:
+                    logger.warning("[Dask-XGB] best_score is None → setting fallback value")
+                    metrics["best_score"] = 0.0
+            except Exception as e:
+                logger.warn(f"[Dask-XGB] Metrics calculation failed: {e}")
+
+            # --- 9. Feature importance ---
+            try:
+                fi = trained_model.get_score(importance_type="weight")
+                metrics["feature_importance"] = fi
+            except Exception:
+                metrics["feature_importance"] = {}
+        finally:
+        # --- 10. Shutdown Dask client ---
+            client.close()
+            cluster.close()
+
+        return trained_model, y_test_np, y_pred_np, metrics  
+      
     def training_agent(self, state: AgentState) -> AgentState:
         """
         Deep Agent: Training Subagent with Confusion Matrix Support.
@@ -452,10 +612,11 @@ class AutoMLAgent:
         """
         try:
             use_automl = state.get('use_automl', False)
+            use_dask = isinstance(state['data'], dd.DataFrame)
             model_selection_reasoning = state.get('model_selection_reasoning', '')
 
             logger.info(
-                f"[Training Agent] Executing {'AutoGluon' if use_automl else 'simple'} training strategy"
+                f"[Training Agent] Executing {'Dask Large-Scale' if use_dask else 'AutoGluon' if use_automl else 'simple'} training strategy"
             )
 
             # --- LLM strategy assessment block ---
@@ -473,171 +634,145 @@ class AutoMLAgent:
             except Exception:
                 training_insight = "Executing training strategy..."
 
-            # --- 1. LOAD DATA & ENSURE DASK ---
-            data = state['data'].copy()
+            data = state['data']
             target_column = state['target_column']
             problem_type = state['problem_type']
-
-            if not isinstance(data, dd.DataFrame):
-                data = dd.from_pandas(data, npartitions=10)
-
 
             X = data.drop(columns=[target_column])
             y = data[target_column]
 
-            # Numeric coercion
-            X = X.map_partitions(lambda df: df.apply(pd.to_numeric, errors="coerce"))
-            y = y.map_partitions(lambda s: pd.to_numeric(s, errors='coerce'))
+            if isinstance(X, dd.DataFrame):
 
-            # Drop missing target BEFORE compute
-            valid_idx = ~y.isna()
-            X = X.loc[valid_idx]
-            y = y.loc[valid_idx]
+                # logger.info("[Training Agent] ERROR IS HERE (1)")
+                # logger.info(f"[Training Agent] Dask :{state.get('use_dask',False)}")
 
-            # Convert to pandas (safe stage)
-            n_rows = X.shape[0].compute()
-            USE_DASK_TRAINING = n_rows > 500_000
+                def convert_numeric(df):
+                    import pandas as pd
+                    return df.apply(pd.to_numeric, axis=1, errors="coerce")
 
-            if n_rows > 1_000_000:
-                logger.info("[Training Agent] Large dataset → sampling")
-                frac = min(0.2, 500_000 / n_rows)
-                X = X.sample(frac=frac, random_state=42)
-                y = y.loc[X.index]
+                X = X.map_partitions(convert_numeric, meta=X)
+                # X = X.map_partitions(lambda df: df.apply(pd.to_numeric,axis=1, errors="coerce"))
+                y = y.map_partitions(lambda s: s.astype(float), meta=y)
 
-            from sklearn.model_selection import train_test_split
-            from sklearn.metrics import confusion_matrix, f1_score
-            from dask_ml.model_selection import train_test_split as dask_split
-            from dask_ml.preprocessing import OneHotEncoder as DaskOHE
-  
-            if not USE_DASK_TRAINING:
-                logger.info("[Training Agent] Using Pandas training")
-                X = X.compute()
-                y = y.compute()
+                df = dd.concat([X, y.rename("target")], axis=1).dropna(subset=["target"])
+                X = df.drop(columns=["target"])
+                y = df["target"]
+                n_rows = X.shape[0].compute()
+            else:
+                X = X.apply(
+                    pd.to_numeric,
+                    axis=1,
+                    errors="coerce"
+                    )
+                y = pd.to_numeric(y, errors="coerce")
+                df = pd.concat([X, y.rename("target")], axis=1).dropna(subset=["target"])
+                X = df.drop(columns=["target"])
+                y = df["target"]
+                n_rows = len(X)
 
-                # Identify categorical columns
-                categorical_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
-                numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
+            categorical_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
+            numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
 
-                if categorical_cols:
+            if categorical_cols:
+                if isinstance(X, dd.DataFrame):
+                    for col in categorical_cols:
+                        X[col] = X[col].cat.codes if X[col].dtype.name == 'category' else X[col].astype('category').cat.codes
+                    X_encoded = X
+                else:
+
+                    from sklearn.preprocessing import OneHotEncoder
                     encoder = OneHotEncoder(drop='first', sparse_output=False)
-                    X_cat_encoded = pd.DataFrame(
+                    X_cat = pd.DataFrame(
                         encoder.fit_transform(X[categorical_cols]),
                         columns=encoder.get_feature_names_out(categorical_cols),
                         index=X.index
                     )
-                    # Combine with numeric columns
-                    if numeric_cols:
-                        X_encoded = pd.concat([X[numeric_cols], X_cat_encoded], axis=1)
-                    else:
-                        X_encoded = X_cat_encoded
-                else:
-                    X_encoded = X  # No categorical columns
+                    X_encoded = pd.concat([X[numeric_cols], X_cat], axis=1) if numeric_cols else X_cat
+            else:
+                X_encoded = X
 
+            if isinstance(X, dd.DataFrame):
+                # Large dataset → Dask-XGBoost
+                logger.info("[Training Agent] USING DASK-XGBOOST")
+                trained_model, y_test_np, y_pred_np, metrics = self._train_with_dask_xgb(X, y, problem_type, state=state)
+                # y_test_np = y.compute()
+                # if problem_type == 'classification':
+                #     y_pred_np = y_pred
+            else:
+                # Small/medium dataset → AutoGluon or simple models
+                from sklearn.model_selection import train_test_split
                 X_train, X_test, y_train, y_test = train_test_split(
                     X_encoded, y, test_size=0.2, random_state=42
                 )
-            else:
-                logger.info("[Training Agent] Using Dask training")
 
-                categorical_cols = X.select_dtypes(include=['object']).columns.tolist()
-                numeric_cols = X.select_dtypes(include=['number']).columns.tolist()
-
-                # Convert categorical columns to 'category' dtype
-                for col in categorical_cols:
-                    X[col] = X[col].astype('category')
-
-                # Only encode categorical columns
-                if categorical_cols:
-                    encoder = DaskOHE(sparse_output=False)
-                    X_cat_encoded = encoder.fit_transform(X[categorical_cols])
-                    
-                    # Manually drop first dummy per categorical feature if needed
-                    # (Optional, for mimicking drop='first')
-                    # X_cat_encoded = X_cat_encoded[:, 1:]
-                    
-                    # Combine numeric columns
-                    if numeric_cols:
-                        X_numeric = X[numeric_cols]
-                        X_encoded = dd.concat([X_numeric, X_cat_encoded], axis=1)
-                    else:
-                        X_encoded = X_cat_encoded
-                else:
-                    # No categorical columns
-                    X_encoded = X
-                X_train, X_test, y_train, y_test = dask_split(
-                    X_encoded, y, test_size=0.2, random_state=42
-                )
-
-            X = X.convert_dtypes()
-
-            # --- 4. TRAINING ---
-            if use_automl:
-                automl_config = state.get('automl_config', {})
-                # Ensure pandas for AutoGluon
-                if hasattr(X_train, 'compute'):
-                    X_train = X_train.compute()
-                if hasattr(y_train, 'compute'):
-                    y_train = y_train.compute()
-
-                trained_model, metrics = self._train_with_autogluon(
-                    X_train, y_train, problem_type, automl_config
-                )
-
-                # Safe prediction
-                if hasattr(trained_model, 'feature_names_in_'):
-                    seen_cols = list(trained_model.feature_names_in_)
-                    if isinstance(X_test, np.ndarray):
-                        X_test_pre = pd.DataFrame(X_test, columns=seen_cols)
-                    else:
-                        X_test_pre = X_test.reindex(columns=seen_cols, fill_value=0)
-                    y_pred = trained_model.predict(X_test_pre)
-                else:
-                    y_pred = trained_model.predict(X_test)
-            elif USE_DASK_TRAINING:
-                logger.info("[Training Agent] Using Dask XGBoost")
-
-                trained_model, y_pred = self._train_with_dask_xgboost(
-                    X_train, y_train, X_test, problem_type
-                )
-
-                metrics = {"training_method": "Dask-XGBoost"}
-            else:
-                selected_models = state.get('selected_models', ['RandomForest'])
-                trained_model, metrics = self._train_simple_models(
-                    X_train, y_train, problem_type, selected_models
-                )
-
-                if hasattr(trained_model, 'feature_names_in_'):
-                    seen_cols = list(trained_model.feature_names_in_)
-                    X_test_aligned = (
-                        X_test.reindex(columns=seen_cols, fill_value=0)
-                        if not isinstance(X_test, np.ndarray)
-                        else pd.DataFrame(X_test, columns=seen_cols)
+                if use_automl:
+                    logger.info("[Training Agent] USING AUTOGLUON")
+                    trained_model, metrics = self._train_with_autogluon(
+                        X_train, y_train, problem_type, state.get('automl_config', {})
                     )
+                    y_pred = trained_model.predict(X_test)
                 else:
-                    X_test_aligned = X_test
-                y_pred = trained_model.predict(X_test_aligned)
+                    logger.info("[Training Agent] USING SIMPLE MODELS")
+                    trained_model, metrics = self._train_simple_models(
+                        X_train, y_train, problem_type, state.get('selected_models', ['RandomForest'])
+                    )
+                    y_pred = trained_model.predict(X_test)
 
-            # --- 5. CONFUSION MATRIX & F1 (Classification) ---
+                if problem_type == 'classification':
+                    y_test_np = y_test
+                    y_pred_np = y_pred
+
+            # --- 4. Classification metrics ---
+       # --- 4. Classification metrics (robust & unified) ---
             if problem_type == 'classification':
-                y_test_np = y_test.compute() if hasattr(y_test, 'compute') else y_test
-                y_pred_np = y_pred.compute() if hasattr(y_pred, 'compute') else y_pred
 
-                metrics['f1_score'] = f1_score(y_test_np, y_pred_np)
+                # --- Ensure y_test_np is a clean NumPy array ---
+                if isinstance(y_test_np, (pd.Series, pd.DataFrame)):
+                    y_test_np = y_test_np.to_numpy()
 
+                # --- Ensure predictions are NumPy ---
+                if isinstance(y_pred_np, (pd.Series, pd.DataFrame)):
+                    y_pred_np = y_pred_np.to_numpy()
+
+                # --- Convert probabilities → labels ---
+                if y_pred_np.ndim > 1:
+                    # multiclass
+                    y_pred_labels = np.argmax(y_pred_np, axis=1)
+                else:
+                    # binary
+                    y_pred_labels = (y_pred_np > 0.5).astype(int)
+
+                # --- Safety check (VERY IMPORTANT) ---
+                min_len = min(len(y_test_np), len(y_pred_labels))
+                if len(y_test_np) != len(y_pred_labels):
+                    logger.warning(
+                        f"[Training Agent] Length mismatch detected "
+                        f"(y_test={len(y_test_np)}, y_pred={len(y_pred_labels)}). Truncating..."
+                    )
+                    y_test_np = y_test_np[:min_len]
+                    y_pred_labels = y_pred_labels[:min_len]
+
+                # --- F1 Score ---
+                metrics['f1_score'] = f1_score(y_test_np, y_pred_labels, average="weighted")
+
+                # --- Confusion Matrix (with sampling for large data) ---
                 if len(y_test_np) > 50_000:
                     sample_idx = np.random.choice(len(y_test_np), 50_000, replace=False)
-                    cm = confusion_matrix(y_test_np[sample_idx], y_pred_np[sample_idx])
+
+                    cm = confusion_matrix(
+                        y_test_np[sample_idx],
+                        y_pred_labels[sample_idx]
+                    )
                 else:
-                    cm = confusion_matrix(y_test_np, y_pred_np)
+                    cm = confusion_matrix(y_test_np, y_pred_labels)
 
                 metrics['confusion_matrix'] = cm.tolist()
-                logger.info(f"[Training Agent] Confusion Matrix generated")
-
-            # --- 6. INTERPRET RESULTS ---
+                logger.info("[Training Agent] Confusion Matrix generated")
+                
+            # --- 4. Interpret results ---
             results_interpretation = self._interpret_training_results(metrics, use_automl)
 
-            # --- 7. UPDATE STATE ---
+            # --- 5. Update state ---
             state['trained_model'] = trained_model
             state['model_metrics'] = metrics
             state['step'] = 'model_trained'
@@ -646,7 +781,10 @@ class AutoMLAgent:
                 'message': f"Training complete. {results_interpretation}"
             })
 
-            logger.info(f"[Training Agent] Training complete. Score: {metrics.get('best_score', 0):.4f}")
+            best_score = metrics.get('best_score')
+            best_score_str = f"{best_score:.4f}" if isinstance(best_score, (int, float)) else "N/A"
+
+            logger.info(f"[Training Agent] Training complete. Score: {best_score_str}")
 
         except Exception as e:
             logger.error(f"[Training Agent] Error: {str(e)}") #exc_info=True
@@ -775,9 +913,12 @@ Provide your analysis and decision:
         
         reasoning_lower = reasoning.lower()
         use_automl = None
+        use_dask=None
         automl_config = {}
         selected_models = []
 
+        logger.info("[AutoML] Parsing LLM Decision - Detecting dataset complexity")
+ 
         # PRIORITY 1: Try to parse structured JSON from the reasoning
         try:
             json_match = re.search(r'\{.*\}', reasoning, re.DOTALL)
@@ -786,10 +927,20 @@ Provide your analysis and decision:
                 
                 # Check approach key (matches the new prompt)
                 approach = str(data.get("approach") or "").lower()
-                if "autogluon" in approach:
+                if "autogluon" in approach or rows < 1_000_000:
+                    logger.info("[AutoML] Medium dataset detected")
+
                     use_automl = True
-                elif "simple" in approach:
+                    # state['use_dask'] = False
+
+                elif "simple" in approach or rows < 50000:
+                    logger.info("[AutoML] Small dataset detected")
                     use_automl = False
+                    # state['use_dask'] = False
+                elif "dask large-scale" in approach:
+                    logger.info("[AutoML] Large dataset detected")
+                    use_automl = False
+                    state['use_dask'] = True
                 
                 # If JSON explicitly decided, extract the rest
                 if use_automl is not None:
@@ -801,7 +952,10 @@ Provide your analysis and decision:
                             'preset': settings.get("preset_mode", 'best_quality')
                         }
                     else:
-                        selected_models = data.get("simple_models", [])
+                        if isinstance(state['data'], dd.DataFrame):
+                            selected_models = data.get("dask_models", [])
+                        else:
+                            selected_models = data.get("simple_models", [])
         except Exception as e:
             logger.warn(f"JSON parsing failed, falling back to regex: {e}")
 
@@ -857,51 +1011,7 @@ Provide your analysis and decision:
                     }
                     selected_models = default_models.get(problem_type, ['RandomForest'])
         
-        return use_automl, automl_config, selected_models[:3]
-
-
-    def _detect_dataset_complexity(self, rows: int, features: int, problem_type: str) -> dict:
-        """
-        Determine optimal AutoML strategy based on dataset size and complexity.
-        This acts as a safeguard to prevent inefficient model training.
-        """
-
-        logger.info("[AutoML] Detecting dataset complexity")
-
-        strategy = {}
-        
-        # SMALL DATASET
-        if rows < 50000:
-            logger.info("[AutoML] Small dataset detected")
-
-            strategy = {
-                "strategy": "simple",
-                "models": ["RandomForest", "LogisticRegression"] if problem_type == "classification"
-                        else ["RandomForest", "LinearRegression"]
-            }
-
-        # MEDIUM DATASET
-        elif rows < 1_000_000:
-            logger.info("[AutoML] Medium dataset detected")
-
-            strategy = {
-                "strategy": "autogluon",
-                "models": ["GBM", "XGB"],
-                "preset": "best_quality"
-            }
-
-        # LARGE DATASET
-        else:
-            logger.info("[AutoML] Large dataset detected")
-
-            strategy = {
-                "strategy": "autogluon",
-                "models": ["GBM"],   # LightGBM scales best
-                "time_limit": 600,
-                "preset": "good_quality_faster_inference"
-            }
-
-        return strategy
+        return use_automl,use_dask, automl_config, selected_models[:3]
 
     def _train_with_autogluon(self, X, y, problem_type: str, config: dict) -> tuple:
         """
@@ -1293,8 +1403,8 @@ Provide your analysis and decision:
 
             elif ('xgboost' in name_lower or 'xgb' in name_lower) and xgb_available:
                 n_rows = X.shape[0].compute()
-                USE_DASK_TRAINING = n_rows > 500_000
-                if USE_DASK_TRAINING:
+                # USE_DASK_TRAINING = n_rows > 500_000
+                if state.get('use_dask',False):
                     if problem_type=='classification':
                         return xgb.dask.DaskXGBClassifier(**params, random_state=42)
                     else:
@@ -1370,8 +1480,8 @@ Provide your analysis and decision:
                 model = build_model(model_name, params)
                 if 'xgboost' in model_name.lower() and xgb_available:
                     n_rows = X.shape[0].compute()
-                    USE_DASK_TRAINING = n_rows > 500_000
-                    if USE_DASK_TRAINING:
+                    # USE_DASK_TRAINING = n_rows > 500_000
+                    if state.get('use_dask',False):
                         from xgboost.dask import DaskXGBClassifier, DaskXGBRegressor
                         model = DaskXGBClassifier(**params) if problem_type=='classification' else DaskXGBRegressor(**params)
                     model.fit(X_train, y_train)
