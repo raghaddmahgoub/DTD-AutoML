@@ -10,6 +10,22 @@ from src.utils.logger import Logger
 from langchain_google_genai import ChatGoogleGenerativeAI
 load_dotenv(PROJECT_ROOT / ".env")
 
+#tools
+from tools.registry import ToolRegistry
+
+from tools.data_understanding import run as data_understanding
+from tools.data_cleaning import run as data_cleaning
+from tools.feature_engineering import run as feature_engineering
+from tools.model_training import run as model_training
+from tools.evaluate import run as evaluate
+
+tool_registry = ToolRegistry()
+tool_registry.register("data_understanding", data_understanding)
+tool_registry.register("data_cleaning", data_cleaning)
+tool_registry.register("feature_engineering", feature_engineering)
+tool_registry.register("train_model", model_training)
+tool_registry.register("evaluate", evaluate)
+
 def run():
     logger = Logger()
     llm = ChatGoogleGenerativeAI(
@@ -18,20 +34,9 @@ def run():
         temperature=0.3,
     )
 
-    controller = ControllerAgent(logger, llm)
+    controller = ControllerAgent(logger, llm, tool_registry)
+    controller.run("Analyze the dataset and train a model to predict the target variable.")
 
-    controller.plan("""
-Build an AutoML pipeline for a classification dataset.
-
-Dataset contains mixed numeric and categorical features with missing values.
-
-Goal:
-- Predict target column
-- Handle missing values
-- Encode categorical features
-- Train multiple models
-- Select best model based on accuracy
-""")
 
 
 if __name__ == "__main__":

@@ -1,63 +1,99 @@
 import json
 from langchain_core.messages import SystemMessage, HumanMessage
+
+
 class ControllerAgent:
-    def __init__(self, logger, llm):
+    def __init__(self, logger, llm, registry):
         self.logger = logger
-        self.llm =llm 
-    def plan(self, prompt: str):
+        self.llm = llm
+        self.registry = registry
+
+    def run(self, prompt: str):
+
         print("Plan Started")
+
         self.logger.info("\n" + "=" * 50)
-        self.logger.info("LLM AGENT PLANNING MODE")
+        self.logger.info("LLM TOOL-CALLING AGENT MODE")
         self.logger.info("=" * 50)
 
-        system_prompt = """
-You are an AutoML planner agent.
+        system_prompt = f"""
+You are an AutoML agent that executes tasks step-by-step.
 
-Your job is to convert a user request into an ordered execution plan.
+You MUST select ONE tool at a time and execute it.
 
-Available agents:
-- Data Understanding Agent
-- Data Cleaning Agent
-- Feature Engineering Agent
-- Deterministic Training Agent
-- Dynamic AutoML Agent
-- Evaluation Agent
+Available tools:
+{self.registry.list_tools()}
 
-Rules:
-- Always start with Data Understanding Agent
-- Always end with Evaluation Agent
-- Choose intermediate agents based on the task
+RULES:
 - Return ONLY valid JSON
+- Choose one tool per step
+- Stop when task is complete
 
-Output format:
-{
-  "plan": [
-    "Agent 1",
-    "Agent 2",
-    ...
-  ]
-}
+FORMAT:
+
+{{
+  "tool": "tool_name",
+  "input": "input_data",
+  "done": false
+}}
+
+FINAL STEP:
+
+{{
+  "tool": "none",
+  "input": "",
+  "done": true
+}}
 """
 
-        response = self.llm.invoke([
-        SystemMessage(content=system_prompt),
-        HumanMessage(content=prompt)
-        ])
+        memory = prompt
 
-        response = response.content
+        while True:
 
-        try:
-            result = json.loads(response)
-            plan = result["plan"]
-        except Exception:
-            self.logger.error("Failed to parse LLM output")
-            self.logger.info("Raw output:")
-            self.logger.info(response)
-            return []
+            response = self.llm.invoke([
+                SystemMessage(content=system_prompt),
+                HumanMessage(content=memory)
+            ])
 
-        self.logger.info("Execution Plan:\n")
+            raw = response.content.strip()
 
-        for i, step in enumerate(plan, 1):
-            self.logger.info(f"{i}. {step}")
+            # remove ```json and ```
+            if raw.startswith("```"):
+                raw = raw.replace("```json", "").replace("```", "").strip()
 
-        return plan
+            try:
+                data = json.loads(raw)
+            except Exception:
+                self.logger.error("Failed to parse LLM output")
+                self.logger.info("Raw output:")
+                self.logger.info(response.content)
+                return []
+
+            tool_name = data.get("tool")
+            tool_input = data.get("input")
+            done = data.get("done", False)
+
+            if done:
+                self.logger.info("\n[AGENT] Workflow completed successfully")
+                break
+
+            tool = self.registry.get(tool_name)
+
+            if tool is None:
+                self.logger.error(f"Unknown tool: {tool_name}")
+                break
+
+            self.logger.info(f"\n[AGENT] Executing tool: {tool_name}")
+
+            result = tool(tool_input)
+
+            self.logger.info(f"[RESULT] {result}")
+
+            # feed result back into LLM (memory loop)
+            memory = f"""
+Previous tool result:
+{result}
+
+Continue the AutoML workflow.
+Task: {prompt}
+"""
