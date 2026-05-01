@@ -28,12 +28,13 @@ RULES:
 - Return ONLY valid JSON
 - Choose one tool per step
 - Stop when task is complete
+- Be logical in ordering (understand → clean → features → train → evaluate)
 
 FORMAT:
 
 {{
   "tool": "tool_name",
-  "input": "input_data",
+  "input": "input_data_for_that_tool",
   "done": false
 }}
 
@@ -46,7 +47,8 @@ FINAL STEP:
 }}
 """
 
-        memory = prompt
+        memory = f"Task: {prompt}"
+        data = None  # shared pipeline data
 
         while True:
 
@@ -57,21 +59,21 @@ FINAL STEP:
 
             raw = response.content.strip()
 
-            # remove ```json and ```
+            # clean markdown
             if raw.startswith("```"):
                 raw = raw.replace("```json", "").replace("```", "").strip()
 
             try:
-                data = json.loads(raw)
+                step = json.loads(raw)
             except Exception:
                 self.logger.error("Failed to parse LLM output")
                 self.logger.info("Raw output:")
                 self.logger.info(response.content)
                 return []
 
-            tool_name = data.get("tool")
-            tool_input = data.get("input")
-            done = data.get("done", False)
+            tool_name = step.get("tool")
+            tool_input = step.get("input")
+            done = step.get("done", False)
 
             if done:
                 self.logger.info("\n[AGENT] Workflow completed successfully")
@@ -85,15 +87,23 @@ FINAL STEP:
 
             self.logger.info(f"\n[AGENT] Executing tool: {tool_name}")
 
-            result = tool(tool_input)
+            # 🔥 KEY CHANGE: pass BOTH input + ORIGINAL PROMPT
+            result = tool(tool_input, prompt)
 
             self.logger.info(f"[RESULT] {result}")
 
-            # feed result back into LLM (memory loop)
-            memory = f"""
-Previous tool result:
-{result}
+            # update shared data if tool returns something meaningful
+            if result is not None:
+                data = result
 
-Continue the AutoML workflow.
+            # memory loop (gives context to next step)
+            memory = f"""
 Task: {prompt}
+
+Last tool used: {tool_name}
+Tool input: {tool_input}
+Tool result: {result}
+
+What is the NEXT best tool?
+Remember: choose ONLY ONE tool.
 """
