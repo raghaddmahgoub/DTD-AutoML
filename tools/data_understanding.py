@@ -1,4 +1,5 @@
-def run(input_data,prompt):
-    print(f"[TOOL] Understanding data: {input_data}")
+def run(task,prompt,data_path):
+    print(f"[TOOL] Understanding data: {task}")
     print(f"[TOOL] Prompt: {prompt}")
-    return "data_summary"
+    print(f"[TOOL] Data path: {data_path}")
+    return "data_summary","new_data_summary_path"

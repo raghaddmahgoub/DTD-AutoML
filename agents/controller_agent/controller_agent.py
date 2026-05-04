@@ -8,7 +8,7 @@ class ControllerAgent:
         self.llm = llm
         self.registry = registry
 
-    def run(self, prompt: str):
+    def run(self,data_path: str, prompt: str):
 
         print("Plan Started")
 
@@ -48,7 +48,7 @@ FINAL STEP:
 """
 
         memory = f"Task: {prompt}"
-        data = None  # shared pipeline data
+        data = data_path  # shared pipeline data
 
         while True:
 
@@ -88,8 +88,9 @@ FINAL STEP:
             self.logger.info(f"\n[AGENT] Executing tool: {tool_name}")
 
             # 🔥 KEY CHANGE: pass BOTH input + ORIGINAL PROMPT
-            result = tool(tool_input, prompt)
-
+            result , data_path = tool(tool_input, prompt,data_path)
+            print("***********************")
+            print(data_path)
             self.logger.info(f"[RESULT] {result}")
 
             # update shared data if tool returns something meaningful

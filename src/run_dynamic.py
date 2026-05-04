@@ -33,9 +33,9 @@ def run():
         google_api_key=os.getenv("GOOGLE_API_KEY"),
         temperature=0.3,
     )
-
+    data = "path/to/dataset.csv"
     controller = ControllerAgent(logger, llm, tool_registry)
-    controller.run("Analyze the dataset and train a model to predict the target variable.")
+    controller.run(data,"Analyze the dataset and train a model to predict the target variable.")
 
 
 

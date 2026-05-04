@@ -1,4 +1,5 @@
-def run(input_data,prompt):
-    print(f"[TOOL] Evaluating model: {input_data}")
+def run(task,prompt,data_path):
+    print(f"[TOOL] Evaluating model: {task}")
     print(f"[PROMPT] {prompt}")
-    return "accuracy=0.92"
+    print(f"[DATA_PATH] {data_path}")
+    return "accuracy=0.92" , "evaluation_report_path"
