@@ -1,16 +1,12 @@
 {
   "run_timestamp": "20260312_042432",
-  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "data_path": "output/Preprocessing/full_preprocessed.csv",
   "target_column": "Survived",
   "problem_type": "classification",
   "model_selection": {
     "use_automl": true,
     "automl_config": {
-      "models": [
-        "GBM",
-        "XGB",
-        "CatBoost"
-      ],
+      "models": ["GBM", "XGB", "CatBoost"],
       "time_limit": 300,
       "preset": "best_quality"
     },
@@ -23,21 +19,11 @@
     "best_score": 0.9020979020979021,
     "metric_name": "accuracy",
     "models_trained": 1,
-    "all_models": [
-      "GBM"
-    ],
-    "all_scores": [
-      0.9020979020979021
-    ],
+    "all_models": ["GBM"],
+    "all_scores": [0.9020979020979021],
     "confusion_matrix": [
-      [
-        203,
-        22
-      ],
-      [
-        17,
-        115
-      ]
+      [203, 22],
+      [17, 115]
     ],
     "best_params_per_model": {
       "GBM": {}

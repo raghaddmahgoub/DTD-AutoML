@@ -10,8 +10,8 @@ Pipeline the agent lives in:
 Both runs also produce a self-contained HTML report with plots.
 
 
-All outputs land in ./Output/  (JSON + HTML).  Plan-stage copies go
-to ./Plan/.
+All outputs land in ./output/  (JSON + HTML).  Plan-stage copies go
+to ./plan/.
 ──────────────────────────────────────────────────────────────────────
 """
 
@@ -26,8 +26,8 @@ from agents.eda_agent.eda_agent import EDAAgent
 # CONFIG  
 # ===========================================================================
 TARGET_COLUMN = "sellingprice"
-PLAN_DIR      = "../Plan/EDA_TEST2"
-OUTPUT_DIR    = "../Output/EDA_TEST2"
+PLAN_DIR      = "../plan/EDA_TEST2"
+OUTPUT_DIR    = "../output/EDA_TEST2"
 
 RAW_CSV   = 'assets/data/Regression Datasets/car_prices.csv'
 CLEAN_CSV   = '../../assets/data/Classification Datasets/Titanic-Dataset.csv'

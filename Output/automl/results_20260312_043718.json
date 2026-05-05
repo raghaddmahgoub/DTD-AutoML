@@ -1,6 +1,6 @@
 {
   "run_timestamp": "20260312_043718",
-  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "data_path": "output/Preprocessing/full_preprocessed.csv",
   "target_column": "Survived",
   "problem_type": "classification",
   "model_selection": {
@@ -15,21 +15,11 @@
     "best_score": 0.8599439775910365,
     "metric_name": "accuracy",
     "models_trained": 1,
-    "all_models": [
-      "RandomForest"
-    ],
-    "all_scores": [
-      0.8599439775910365
-    ],
+    "all_models": ["RandomForest"],
+    "all_scores": [0.8599439775910365],
     "confusion_matrix": [
-      [
-        209,
-        11
-      ],
-      [
-        39,
-        98
-      ]
+      [209, 11],
+      [39, 98]
     ],
     "best_params_per_model": {
       "RandomForest": {

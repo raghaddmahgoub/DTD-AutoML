@@ -39,11 +39,11 @@ catboost_info/
 venv/
 .venv/
 
-Output/Preprocessing/*.csv
-Output/Preprocessing/best_pipeline.pkl
-Output/clean/clean_data_frontend_data.jsonOutput/
+output/Preprocessing/*.csv
+output/Preprocessing/best_pipeline.pkl
+output/clean/clean_data_frontend_data.jsonoutput/
 assets/logs/
-Output/automl/
+output/automl/
 
 # API key environment files
 .env

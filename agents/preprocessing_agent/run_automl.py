@@ -1,9 +1,9 @@
 """
 End-to-end runner
 - Imports local automl_preprocessing_search
-- Creates Plan/ and Output/ directories
+- Creates plan/ and output/ directories
 - Exports preprocessed TRAIN/TEST/FULL datasets as CSV (forced)
-- Saves best pipeline to Plan/best_pipeline.pkl
+- Saves best pipeline to plan/best_pipeline.pkl
 """
 from __future__ import annotations
 

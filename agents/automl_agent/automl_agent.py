@@ -916,7 +916,7 @@ Provide your analysis and decision:
                 logger.info(f"Mapped 'classification' to '{ag_problem_type}' ({unique_targets} classes)")
             
             # Create a unique path for this predictor to avoid conflicts
-            base_dir = Path("Output/automl")
+            base_dir = Path("output/automl")
             base_dir.mkdir(parents=True, exist_ok=True)
 
             predictor_path = base_dir / f"run_{int(time.time())}"
@@ -1376,7 +1376,7 @@ Provide your analysis and decision:
         logger.info(f"Best model: {metrics['best_model']} with {best_metric_name}: {best_score:.4f}")
         return best_model, metrics
     
-    def _save_outputs(self, state: AgentState, output_dir: str = "../../Output/automl") -> dict:
+    def _save_outputs(self, state: AgentState, output_dir: str = "../../output/automl") -> dict:
         """
         Save all training stage outputs:
         - results.json  → full metrics, configs, reasoning
@@ -1606,7 +1606,7 @@ Provide your analysis and decision:
         return saved_paths
     
     # AFTER
-    def run(self, data_path: str, target_column: str = None, output_dir: str = "../../Output/automl", automl_directives: dict = None, problem_type: str = None) -> dict:
+    def run(self, data_path: str, target_column: str = None, output_dir: str = "../../output/automl", automl_directives: dict = None, problem_type: str = None) -> dict:
         """
         Run the complete AutoML workflow.
 

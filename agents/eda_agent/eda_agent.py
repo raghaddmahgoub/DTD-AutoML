@@ -572,8 +572,8 @@ class EDAAgent:
 
     def generate_preprocessing_context(
         self,
-        plan_dir: str = "../../Plan/EDA",
-        output_dir: str = "../../Output/EDA",
+        plan_dir: str = "../../plan/EDA",
+        output_dir: str = "../../output/EDA",
         sample_size: int = 5,
     ) -> List[Dict[str, Any]]:
         """
@@ -611,8 +611,8 @@ class EDAAgent:
 
     def generate_automl_context(
         self,
-        plan_dir: str = "../../Plan/EDA",
-        output_dir: str = "../../Output/EDA",
+        plan_dir: str = "../../plan/EDA",
+        output_dir: str = "../../output/EDA",
     ) -> Dict[str, Any]:
         """
         Structured JSON consumed by the AutoMLAgent.
@@ -874,8 +874,8 @@ class EDAAgent:
 
     def export(
         self,
-        plan_dir: str = "../../Plan/EDA",
-        output_dir: str = "../../Output/EDA",
+        plan_dir: str = "../../plan/EDA",
+        output_dir: str = "../../output/EDA",
     ) -> Dict[str, Any]:
         """
         Single entry-point after run().
@@ -1107,7 +1107,7 @@ class TargetSuggestionAgent:
 
         return "low"
     
-    def generate_target_json(self, output_dir="../../Output/EDA"):
+    def generate_target_json(self, output_dir="../../output/EDA"):
         raw = self.run()
 
         formatted = []

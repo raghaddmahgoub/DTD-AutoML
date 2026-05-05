@@ -105,7 +105,7 @@ class DTDPipeline:
         agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(
             state['data_path']))
         agent.run(run_type="raw")
-        results = agent.export(output_dir="Output/Orchestrator")
+        results = agent.export(output_dir="output/orchestrator")
 
         frontend_json_path = results.get("frontend_json_path")
         with open(frontend_json_path, 'r', encoding='utf-8') as f:
@@ -196,7 +196,7 @@ class DTDPipeline:
         agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(
             state['clean_data_path']))
         agent.run(run_type="clean")
-        results = agent.export(output_dir="Output/Orchestrator")
+        results = agent.export(output_dir="output/orchestrator")
 
         state['automl_directives'] = results.get("automl_context")
 
@@ -256,7 +256,7 @@ class DTDPipeline:
             final_subagent_state = automl_agent_instance.run(
                 data_path=state['clean_data_path'],
                 target_column=target_col,
-                output_dir="Output/automl",
+                output_dir="output/automl",
                 automl_directives=directives,
                 problem_type=task_type,
               

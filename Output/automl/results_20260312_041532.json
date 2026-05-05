@@ -1,15 +1,12 @@
 {
   "run_timestamp": "20260312_041532",
-  "data_path": "Output/Preprocessing/full_preprocessed.csv",
+  "data_path": "output/Preprocessing/full_preprocessed.csv",
   "target_column": "Survived",
   "problem_type": "classification",
   "model_selection": {
     "use_automl": true,
     "automl_config": {
-      "models": [
-        "GBM",
-        "XGB"
-      ],
+      "models": ["GBM", "XGB"],
       "time_limit": 300,
       "preset": "best_quality"
     },

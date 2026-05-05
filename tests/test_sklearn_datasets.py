@@ -99,7 +99,7 @@ def test_dataset(data_path, target_column, dataset_name):
         results = agent.run(
             data_path=str(full_path),
             target_column=target_column,
-            output_dir="Output/test_runs"
+            output_dir="output/test_runs"
         )
         
         if isinstance(results, dict) and results.get('error'):

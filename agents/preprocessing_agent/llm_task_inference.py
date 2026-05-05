@@ -1,7 +1,7 @@
 """
 LLM-assisted task inference with safe fallbacks
-- Reads Plan/dataset_profile.json
-- Writes task_definition.json to Plan/ and Output/
+- Reads plan/dataset_profile.json
+- Writes task_definition.json to plan/ and output/
 """
 from __future__ import annotations
 
@@ -118,7 +118,7 @@ def main():
     print("\n=== LLM TASK INFERENCE ===\n")
     print(result)
 
-    # Write both to Plan/ and Output/
+    # Write both to plan/ and output/
     for p in (PLAN_OUT, OUTPUT_OUT):
         with open(p, "w", encoding="utf-8") as f:
             json.dump(result, f, indent=2)

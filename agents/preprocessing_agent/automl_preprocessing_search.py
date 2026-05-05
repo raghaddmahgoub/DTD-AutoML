@@ -1,7 +1,7 @@
 """
 Improved AutoML preprocessing + model search
 - Dense OHE for tree models (version-safe)
-- Optional: save best preprocessing config to Output/
+- Optional: save best preprocessing config to output/
 """
 from __future__ import annotations
 
