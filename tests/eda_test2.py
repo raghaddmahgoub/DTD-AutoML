@@ -25,19 +25,13 @@ from agents.eda_agent.eda_agent import EDAAgent
 # ===========================================================================
 # CONFIG  
 # ===========================================================================
-# TARGET_COLUMN = "Species"
 TARGET_COLUMN = "sellingprice"
-# TARGET_COLUMN = "Life expectancy "
-PLAN_DIR      = "Plan"
-OUTPUT_DIR    = "Output"
+PLAN_DIR      = "../Plan/EDA_TEST2"
+OUTPUT_DIR    = "../Output/EDA_TEST2"
 
 RAW_CSV   = 'assets/data/Regression Datasets/car_prices.csv'
-#RAW_CSV   = 'assets/data/Classification Datasets/Titanic-Dataset.csv'
-# CLEAN_CSV = '../../assets/data/Classification Datasets/Iris.csv'
 CLEAN_CSV   = '../../assets/data/Classification Datasets/Titanic-Dataset.csv'
-# CLEAN_CSV = '../../assets/data/Regression Datasets/Life Expectancy Data.csv'
 df_name = os.path.splitext(os.path.basename(RAW_CSV))[0] 
-#df_name = os.path.splitext(os.path.basename(CLEAN_CSV))[0] 
 
 
 # ===========================================================================

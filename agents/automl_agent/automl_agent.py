@@ -216,146 +216,6 @@ class AutoMLAgent:
 
         return state
     
-    # def model_selection_agent(self, state: AgentState) -> AgentState:
-    #     """
-    #     Deep Agent: Model Selection Subagent
-    #     Uses LLM planning and reasoning to decide on AutoML vs simple training and select models.
-    #     """
-    #     try:
-    #         logger.info("[Model Selection Agent] Starting  model selection with LLM planning")
-            
-    #         data_summary = state['data_summary']
-    #         problem_type = state['problem_type']
-    #         data_analysis_reasoning = state.get('data_analysis_reasoning', '')
-    #         # Create enhanced prompt with data analysis context
-    #         prompt = self._create_automl_decision_prompt(data_summary, problem_type, data_analysis_reasoning)
-            
-    #         # Get LLM reasoning with planning
-    #         messages = [
-    #             SystemMessage(content="You are a senior ML architect specializing in automated ML and model selection. You plan the best strategy considering complexity, resources, and performance requirements. Think step-by-step and provide detailed reasoning."),
-    #             HumanMessage(content=prompt)
-    #         ]
-            
-    #         # Include previous agent context if available
-    #         if data_analysis_reasoning:
-    #             messages.insert(1, AIMessage(content=f"Data Analysis Agent's findings:\n{data_analysis_reasoning}"))
-            
-    #         try:
-    #             response = self.llm.invoke(messages)
-    #             reasoning = response.content
-                
-    #             # Update agent messages
-    #             if 'agent_messages' not in state:
-    #                 state['agent_messages'] = []
-    #             state['agent_messages'].append({
-    #                 'agent': 'model_selection',
-    #                 'message': reasoning
-    #             })
-                
-    #             # Parse LLM decision
-    #             use_automl, automl_config, selected_models = self._parse_automl_decision(
-    #                 reasoning, data_summary, problem_type
-    #             )
-                
-    #             state['model_selection_reasoning'] = reasoning
-    #             state['reasoning'] = reasoning
-    #             state['use_automl'] = use_automl
-    #             state['automl_config'] = automl_config
-    #             state['selected_models'] = selected_models
-    #             state['step'] = 'models_selected'
-                
-    #             if use_automl:
-    #                 logger.info(f"[Model Selection Agent] Decision: Using AutoGluon with config: {automl_config}")
-    #                 logger.info(f"[Model Selection Agent] Selected models: {automl_config.get('models', [])}")
-    #             else:
-    #                 logger.info(f"[Model Selection Agent] Decision: Using simple approach with models: {selected_models}")
-    #             logger.info(f"[Model Selection Agent] Reasoning preview: {reasoning[:300]}...")
-                
-    #         except Exception as e:
-    #             logger.warn(f"[Model Selection Agent] LLM call failed: {str(e)}, using heuristic-based fallback...")
-    #             # Fallback: Use heuristics to decide
-    #             rows = data_summary.get('data_info', {}).get('rows', 0)
-    #             features = data_summary.get('feature_info', {}).get('total_features', 0)
-    #             has_missing = data_summary.get('data_quality', {}).get('has_missing', False)
-                
-    #             # Heuristic decision
-    #             use_automl = rows > 10000 or features > 20 or has_missing
-                
-    #             if use_automl:
-    #                 automl_config = {
-    #                     'models': ['GBM', 'XGBoost', 'LightGBM'],
-    #                     'time_limit': 300,
-    #                     'preset': 'best_quality'
-    #                 }
-    #                 selected_models = []
-    #             else:
-    #                 automl_config = {}
-    #                 default_models = {
-    #                     'classification': ['RandomForest', 'GradientBoosting'],
-    #                     'regression': ['RandomForest', 'GradientBoosting']
-    #                 }
-    #                 selected_models = default_models.get(problem_type, ['RandomForest'])
-                
-    #             state['model_selection_reasoning'] = f"LLM unavailable, using heuristic: dataset has {rows} rows, {features} features. Decision: {'AutoGluon' if use_automl else 'Simple training'}"
-    #             state['reasoning'] = state['model_selection_reasoning']
-    #             state['use_automl'] = use_automl
-    #             state['automl_config'] = automl_config
-    #             state['selected_models'] = selected_models
-    #             state['step'] = 'models_selected'
-                
-    #             logger.info(f"[Model Selection Agent] Fallback decision: Using {'AutoGluon' if use_automl else 'Simple'} approach with models: {selected_models}")
-        
-    #     except Exception as e:
-    #         logger.error(f"[Model Selection Agent] Error: {str(e)}", e)
-    #         state['error'] = f"Failed in model selection: {str(e)}"
-    #         state['step'] = 'error'
-        
-    #     return state
-    
-
-    # def _detect_dataset_complexity(self, rows: int, features: int, problem_type: str) -> dict:
-    #     """
-    #     Determine optimal AutoML strategy based on dataset size and complexity.
-    #     This acts as a safeguard to prevent inefficient model training.
-    #     """
-
-    #     logger.info("[AutoML] Detecting dataset complexity")
-
-    #     strategy = {}
-        
-    #     # SMALL DATASET
-    #     if rows < 50000:
-    #         logger.info("[AutoML] Small dataset detected")
-
-    #         strategy = {
-    #             "strategy": "simple",
-    #             "models": ["RandomForest", "LogisticRegression"] if problem_type == "classification"
-    #                     else ["RandomForest", "LinearRegression"]
-    #         }
-
-    #     # MEDIUM DATASET
-    #     elif rows < 1_000_000:
-    #         logger.info("[AutoML] Medium dataset detected")
-
-    #         strategy = {
-    #             "strategy": "autogluon",
-    #             "models": ["GBM", "XGB"],
-    #             "preset": "best_quality"
-    #         }
-
-    #     # LARGE DATASET
-    #     else:
-    #         logger.info("[AutoML] Large dataset detected")
-
-    #         strategy = {
-    #             "strategy": "dask_xgb",
-    #             "models": ["Dask-XGBoost"],
-    #             "time_limit": 600,
-    #             "preset": "good_quality_faster_inference"
-    #         }
-
-    #     return strategy
-    
     def model_selection_agent(self, state: AgentState) -> AgentState:
         """
         Model Selection Subagent that depends on external Analysis Agent directives.
@@ -365,18 +225,12 @@ class AutoMLAgent:
             
             # 1. Retrieve the directives from the shared state
             directives = state.get('automl_directives') or {}
-            # logger.info(f"\n{directives}\n")
-
             task_type = state.get('problem_type') or directives.get('task_type')
             
             # 2. Extract key signals for the LLM prompt
             # We access the report structure generated by eda_agent2.py
             report = directives.get('report') or {}
-            # logger.info(f"\n{report}\n")
-
             dataset_summary = report.get("dataset_summary", {})
-            # rows = dataset_summary.get("n_rows", 0)
-            # features = dataset_summary.get("n_columns", 0)
             if isinstance(state['data'], dd.DataFrame):
                 if 'data' in state and state['data'] is not None:
                     n_rows = state['data'].shape[0].compute()
@@ -467,7 +321,6 @@ class AutoMLAgent:
 
         except Exception as e:
             logger.error(f"[Model Selection Agent] Error: {str(e)}")
-            # state['use_dask'] = True
             state['error'] = f"Failed in model selection: {str(e)}"
             return state
 
@@ -485,7 +338,6 @@ class AutoMLAgent:
             tuple: (trained_model, metrics_dict)
         """
         import dask.dataframe as dd
-        # import xgboost as xgb
         from dask.distributed import Client, LocalCluster
         import time
         from xgboost import dask as dxgb
@@ -497,8 +349,6 @@ class AutoMLAgent:
 
         try:
             # --- 2. Ensure numeric features ---
-            # X = X.map_partitions(lambda df: df.apply(pd.to_numeric,axis=1, errors="coerce"), meta=X)
-            # y = y.map_partitions(lambda s: s.astype(float), meta=y)
             X = X.astype("float32")
             y = y.astype("float32")
 
@@ -510,10 +360,6 @@ class AutoMLAgent:
             df = df.dropna(subset=["target"])
             X = df.drop(columns=["target"])
             y = df["target"]
-
-            # if state is not None:
-            #     state['use_dask'] = True
-
             # --- 3. Train-test split using Dask ---
             from dask_ml.model_selection import train_test_split
             X_train, X_test, y_train, y_test = train_test_split(
@@ -643,9 +489,6 @@ class AutoMLAgent:
 
             if isinstance(X, dd.DataFrame):
 
-                # logger.info("[Training Agent] ERROR IS HERE (1)")
-                # logger.info(f"[Training Agent] Dask :{state.get('use_dask',False)}")
-
                 def convert_numeric(df):
                     import pandas as pd
                     return df.apply(pd.to_numeric, axis=1, errors="coerce")
@@ -695,9 +538,7 @@ class AutoMLAgent:
                 # Large dataset → Dask-XGBoost
                 logger.info("[Training Agent] USING DASK-XGBOOST")
                 trained_model, y_test_np, y_pred_np, metrics = self._train_with_dask_xgb(X, y, problem_type, state=state)
-                # y_test_np = y.compute()
-                # if problem_type == 'classification':
-                #     y_pred_np = y_pred
+    
             else:
                 # Small/medium dataset → AutoGluon or simple models
                 from sklearn.model_selection import train_test_split
@@ -1075,17 +916,6 @@ Provide your analysis and decision:
                 logger.info(f"Mapped 'classification' to '{ag_problem_type}' ({unique_targets} classes)")
             
             # Create a unique path for this predictor to avoid conflicts
-            # import tempfile
-            # predictor_path = os.path.join(tempfile.gettempdir(), f"autogluon_predictor_{os.getpid()}_{int(time.time())}")
-
-            # Anchor to dataset directory
-            # base_dir = Path(self.dataset_path).resolve().parent
-
-            # predictor_path = base_dir / "Output" / "AutoGluonModels" / f"run_{int(time.time())}"
-            # predictor_path.mkdir(parents=True, exist_ok=True)
-
-            # predictor_path = str(predictor_path)
-
             base_dir = Path("Output/automl")
             base_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1152,27 +982,6 @@ Provide your analysis and decision:
             
             # Train with specified configuration
             # Note: AutoGluon will automatically select the best model after training all specified models
-            # fit_kwargs = {
-            #     'time_limit': time_limit,
-            #     'presets': preset,
-            #     # FORCE SEQUENTIAL FOLD FITTING: This is the most important change for 2GB RAM
-            #     'ag_args_ensemble': {
-            #         'fold_fitting_strategy': 'sequential_local',
-            #         'use_ray': False
-            #     },
-            #     # DISABLE DYNAMIC STACKING: Prevents the sub-fits that trigger Ray
-            #     'dynamic_stacking': False,
-            #     # REDUCE MODEL COMPLEXITY: Limit to lighter models if needed
-            #     'hyperparameters': {
-            #         'GBM': {},  # LightGBM is generally memory efficient
-            #         'XGB': {},
-            #     },
-            #     # SAVE MEMORY: Delete intermediate data after fit
-            #     'save_space': True
-            # }
-            
-            # if hyperparameters:
-            #     fit_kwargs['hyperparameters'] = hyperparameters
 
             fit_kwargs = {
                 "time_limit": time_limit,
@@ -1366,13 +1175,6 @@ Provide your analysis and decision:
         except ImportError:
             xgb_dask_available = False
             logger.warn("XGBoost not available for Dask, skipping XGBoost models.")
-
-
-        # if X.shape[0] > 1_000_000 or X.shape[1] > 500:
-        #     frac = min(0.05, 500_000 / X.shape[0])  # max 500k rows
-        #     X = X.sample(frac=frac, random_state=42)
-        #     y = y.loc[X.index]
-        #     logger.info(f"[Simple Models] Large dataset detected. Sampling {len(X)} rows for training.")
 
         # Ensure we have a valid list to iterate over
         if not model_names or not isinstance(model_names, list):
@@ -1574,7 +1376,7 @@ Provide your analysis and decision:
         logger.info(f"Best model: {metrics['best_model']} with {best_metric_name}: {best_score:.4f}")
         return best_model, metrics
     
-    def _save_outputs(self, state: AgentState, output_dir: str = "outputs") -> dict:
+    def _save_outputs(self, state: AgentState, output_dir: str = "../../Output/automl") -> dict:
         """
         Save all training stage outputs:
         - results.json  → full metrics, configs, reasoning
@@ -1804,7 +1606,7 @@ Provide your analysis and decision:
         return saved_paths
     
     # AFTER
-    def run(self, data_path: str, target_column: str = None, output_dir: str = "outputs", automl_directives: dict = None, problem_type: str = None) -> dict:
+    def run(self, data_path: str, target_column: str = None, output_dir: str = "../../Output/automl", automl_directives: dict = None, problem_type: str = None) -> dict:
         """
         Run the complete AutoML workflow.
 

@@ -95,7 +95,6 @@ def automl_preprocessing_search(
 
     # Preprocessing search space
     search_space = [
-        # (num_imputer, cat_imputer, scaler)
         ("mean", "most_frequent", StandardScaler()),
         ("median", "most_frequent", StandardScaler()),
         ("mean", "most_frequent", MinMaxScaler()),

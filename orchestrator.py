@@ -16,7 +16,7 @@ from agents.preprocessing_agent.preprocessing_node import preprocessing_node
 load_dotenv()
 
 ORCHESTRATOR_CONFIG = {
-    "data_path": "assets/Datasets/Classification Datasets/Titanic-Dataset.csv",
+    "data_path": "assets/data/Classification Datasets/Titanic-Dataset.csv",
     "target_column": "Survived",
     "preprocessing_output_root": os.path.join("Output", "Preprocessing"),
     "use_preprocessing_llm": True,
@@ -105,7 +105,7 @@ class DTDPipeline:
         agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(
             state['data_path']))
         agent.run(run_type="raw")
-        results = agent.export(output_dir="Output")
+        results = agent.export(output_dir="Output/Orchestrator")
 
         frontend_json_path = results.get("frontend_json_path")
         with open(frontend_json_path, 'r', encoding='utf-8') as f:
@@ -167,20 +167,6 @@ class DTDPipeline:
             output_folder=result_state["output_folder"],
         )
 
-        # state["agent_output"] = {
-        #     "stage":          "preprocessing",
-        #     "X_train":        result_state["X_train_path"],
-        #     "X_test":         result_state["X_test_path"],
-        #     "y_train":        result_state["y_train_path"],
-        #     "y_test":         result_state["y_test_path"],
-        #     "full_dataset":   state["clean_data_path"],
-        #     "summary":        result_state["summary_path"],
-        #     "column_actions": result_state["column_actions_path"],
-        #     "column_actions_frontend": result_state.get("column_actions_frontend_path"),
-        #     "policy":         result_state.get("policy_path"),
-        #     "evidence":       result_state.get("evidence_path"),
-        # }
-
         column_actions_frontend = None
         column_actions_path = result_state.get("column_actions_frontend_path")
 
@@ -210,7 +196,7 @@ class DTDPipeline:
         agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(
             state['clean_data_path']))
         agent.run(run_type="clean")
-        results = agent.export(output_dir="Output")
+        results = agent.export(output_dir="Output/Orchestrator")
 
         state['automl_directives'] = results.get("automl_context")
 
