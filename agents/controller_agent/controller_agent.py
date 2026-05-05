@@ -34,6 +34,7 @@ FORMAT:
 
 {{
   "tool": "tool_name",
+  "task": "task_description",
   "input": "input_data_for_that_tool",
   "done": false
 }}
@@ -42,6 +43,7 @@ FINAL STEP:
 
 {{
   "tool": "none",
+  "task": "",
   "input": "",
   "done": true
 }}
@@ -73,6 +75,7 @@ FINAL STEP:
 
             tool_name = step.get("tool")
             tool_input = step.get("input")
+            task = step.get("task")
             done = step.get("done", False)
 
             if done:
@@ -88,7 +91,7 @@ FINAL STEP:
             self.logger.info(f"\n[AGENT] Executing tool: {tool_name}")
 
             # 🔥 KEY CHANGE: pass BOTH input + ORIGINAL PROMPT
-            result , data_path = tool(tool_input, prompt,data_path)
+            result , data_path = tool(task,tool_input, prompt,data_path)
             print("***********************")
             print(data_path)
             self.logger.info(f"[RESULT] {result}")
