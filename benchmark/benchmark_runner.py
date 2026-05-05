@@ -7,7 +7,7 @@ from orchestrator import DTDPipeline
 DATASETS = [
     {
         "name": "titanic",
-        "path": "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
+        "path": "assets/data/Classification Datasets/Titanic-Dataset.csv",
         "target": "Survived",
     },
     # Add more datasets later

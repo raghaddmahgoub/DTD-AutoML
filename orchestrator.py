@@ -16,7 +16,7 @@ from agents.preprocessing_agent.preprocessing_node import preprocessing_node
 load_dotenv()
 
 ORCHESTRATOR_CONFIG = {
-    "data_path": "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
+    "data_path": "assets/Datasets/Classification Datasets/Titanic-Dataset.csv",
     "target_column": "Survived",
     "preprocessing_output_root": os.path.join("Output", "Preprocessing"),
     "use_preprocessing_llm": True,
@@ -273,10 +273,7 @@ class DTDPipeline:
                 output_dir="Output/automl",
                 automl_directives=directives,
                 problem_type=task_type,
-                # X_train_path=state.get("X_train_path"),
-                # X_test_path=state.get("X_test_path"),
-                # y_train_path=state.get("y_train_path"),
-                # y_test_path=state.get("y_test_path"),
+              
             )
 
             # 5. Capture results back into orchestrator state
@@ -298,11 +295,9 @@ class DTDPipeline:
                     metrics = raw_metrics
 
                 # Add missing fields
-                # metrics["optuna_refined_config"] = raw_metrics.get("optuna_refined_config")
+            
                 from datetime import datetime
 
-                # metrics = final_subagent_state.get('model_metrics')
-                # run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 
                 state['final_metrics'] = metrics
                 state['saved_files'] = final_subagent_state.get(
@@ -365,29 +360,6 @@ if __name__ == "__main__":
         "data_path":     ORCHESTRATOR_CONFIG["data_path"],
         "target_column": ORCHESTRATOR_CONFIG["target_column"],
         }
-    # inputs = {
-    #     "data_path":     "assets/data/Datasets/Regression Datasets/car_prices.csv",
-    #     "target_column": "sellingprice",
-    #     "task_type":     "regression"
-    # }
-    # inputs = {
-    #     "data_path":     "assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv",
-    #     "target_column": "Survived",
-    #     "task_type":     "classification"  # or "regression" based on your dataset
-    # }
-
-    #------------------------------Large Datasets
-    # inputs = {
-    #     "data_path":     "assets/data/Datasets/Classification Datasets/customer_spending_1M_2018_2025.csv",
-    #     "target_column": "Referral",
-    #     "task_type":     "classification"
-    # }
-    # inputs = {
-    #     "data_path":     "assets/data/Datasets/Regression Datasets/student_performance.csv",
-    #     "target_column": "total_score",
-    #     "task_type":     "regression"
-    # }
-
 
     runtime_start=time.time()
 

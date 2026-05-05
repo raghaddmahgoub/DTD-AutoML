@@ -4,7 +4,7 @@ import os
 from benchmark import AnalysisEvaluator
 
 
-filename = 'assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
+filename = 'assets/data/Classification Datasets/Titanic-Dataset.csv'
 df_name = os.path.splitext(os.path.basename(filename))[0] 
 df = pd.read_csv(filename)
 

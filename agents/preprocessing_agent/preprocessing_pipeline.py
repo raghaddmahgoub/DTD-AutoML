@@ -26,7 +26,7 @@ import joblib
 # CONFIG
 # =========================
 
-DATA_PATH = "assets/data/Datasets/Classification Datasets/breast_cancer.csv"
+DATA_PATH = "assets/data/Classification Datasets/breast_cancer.csv"
 OUTPUT_DIR = Path("Output/Preprocessing")
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

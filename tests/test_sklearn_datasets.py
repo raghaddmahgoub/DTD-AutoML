@@ -152,7 +152,7 @@ def save_report():
 def main():
     test_datasets = [
         {
-            'path': 'assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv',
+            'path': 'assets/data/Classification Datasets/Titanic-Dataset.csv',
             'target': 'Survived',
             'name': 'Titanic (Classification)'
         }

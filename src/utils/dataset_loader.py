@@ -16,7 +16,7 @@ logger = Logger()
 class DatasetLoader:
     """Load datasets from various sources for testing AutoML agent."""
     
-    def __init__(self, download_dir: str = "assets/data/Datasets"):
+    def __init__(self, download_dir: str = "assets/data"):
         """
         Initialize dataset loader.
         

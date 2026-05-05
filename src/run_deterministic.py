@@ -13,7 +13,7 @@ logger = Logger()
 
 
 def run():
-    data_path = PROJECT_ROOT  / "assets/data/Datasets/Classification Datasets/iris.csv"
+    data_path = PROJECT_ROOT  / "assets/data/Classification Datasets/iris.csv"
 
     if not os.path.exists(data_path):
         logger.warn(f"Data file not found: {data_path}")

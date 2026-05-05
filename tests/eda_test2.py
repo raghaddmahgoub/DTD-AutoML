@@ -31,11 +31,11 @@ TARGET_COLUMN = "sellingprice"
 PLAN_DIR      = "Plan"
 OUTPUT_DIR    = "Output"
 
-RAW_CSV   = 'assets/data/Datasets/Regression Datasets/car_prices.csv'
-#RAW_CSV   = 'assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
-# CLEAN_CSV = '../../assets/data/Datasets/Classification Datasets/Iris.csv'
-CLEAN_CSV   = '../../assets/data/Datasets/Classification Datasets/Titanic-Dataset.csv'
-# CLEAN_CSV = '../../assets/data/Datasets/Regression Datasets/Life Expectancy Data.csv'
+RAW_CSV   = 'assets/data/Regression Datasets/car_prices.csv'
+#RAW_CSV   = 'assets/data/Classification Datasets/Titanic-Dataset.csv'
+# CLEAN_CSV = '../../assets/data/Classification Datasets/Iris.csv'
+CLEAN_CSV   = '../../assets/data/Classification Datasets/Titanic-Dataset.csv'
+# CLEAN_CSV = '../../assets/data/Regression Datasets/Life Expectancy Data.csv'
 df_name = os.path.splitext(os.path.basename(RAW_CSV))[0] 
 #df_name = os.path.splitext(os.path.basename(CLEAN_CSV))[0] 
 
