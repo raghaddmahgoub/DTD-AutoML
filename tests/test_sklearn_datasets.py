@@ -22,7 +22,7 @@ from typing import Optional
 
 # Now imports should work
 try:
-    from static.automl_agent.automl_agent import AutoMLAgent
+    from agents.static.automl_agent.automl_agent import AutoMLAgent
     # If AgentState is not exportable directly, we define a local type or skip
     from src.utils.logger import Logger
 except ImportError as e:

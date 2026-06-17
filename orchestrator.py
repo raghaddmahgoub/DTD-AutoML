@@ -6,12 +6,12 @@ from typing import TypedDict, Optional
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv
 import json
-from static.preprocessing_agent.preprocessing_pipeline import PreprocessingPipelineAgent
+from agents.static.preprocessing_agent.preprocessing_pipeline import PreprocessingPipelineAgent
 
 # Import modular agents from your folders
-from static.eda_agent.eda_agent import EDAAgent
-from static.automl_agent.automl_agent import AutoMLAgent
-from static.preprocessing_agent.preprocessing_node import preprocessing_node
+from agents.static.eda_agent.eda_agent import EDAAgent
+from agents.static.automl_agent.automl_agent import AutoMLAgent
+from agents.static.preprocessing_agent.preprocessing_node import preprocessing_node
 
 load_dotenv()
 

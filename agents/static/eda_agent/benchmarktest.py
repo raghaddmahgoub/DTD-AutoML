@@ -1,5 +1,5 @@
 import pandas as pd
-from static.eda_agent import EDAAgent
+from agents.static.eda_agent import EDAAgent
 import os
 from benchmark import AnalysisEvaluator
 

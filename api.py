@@ -38,7 +38,7 @@ executor = ThreadPoolExecutor(max_workers=5)
 import pandas as pd
 from fastapi import UploadFile, File
 from fastapi.responses import JSONResponse
-from static.eda_agent.eda_agent import TargetSuggestionAgent
+from agents.static.eda_agent.eda_agent import TargetSuggestionAgent
 
 @app.post("/suggest-target")
 async def suggest_target(file: UploadFile = File(...)):
