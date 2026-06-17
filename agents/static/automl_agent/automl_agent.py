@@ -6,34 +6,31 @@ import time
 import pickle
 import re
 from datetime import datetime
-from json import encoder
 from pathlib import Path
-from typing import TypedDict, Annotated, Literal, Any, Optional
+from typing import TypedDict, Literal, Any, Optional
 
-from fastapi import params
 import numpy as np
-from opentelemetry import metrics
 import pandas as pd
 import dask.dataframe as dd
-from dask_ml.linear_model import LogisticRegression
-from dask_ml.preprocessing import OneHotEncoder
-from dask_ml.model_selection import train_test_split as dask_train_test_split
-import dask_ml.linear_model as dml
-import dask_ml.ensemble as dme
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, GradientBoostingClassifier, GradientBoostingRegressor
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    RandomForestRegressor,
+    GradientBoostingClassifier,
+    GradientBoostingRegressor,
+)
 from sklearn.linear_model import LogisticRegression, LinearRegression
-import xgboost as xgb
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, f1_score
-from dask_ml.model_selection import train_test_split as dask_split
-from dask_ml.preprocessing import OneHotEncoder as DaskOHE
+
+try:
+    import xgboost as xgb
+except ImportError:
+    xgb = None  # type: ignore[assignment]
 
 from langgraph.graph import StateGraph, END
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from dotenv import load_dotenv
-from ray import state
-from sklearn.metrics import f1_score
 
 from src.utils.logger import Logger
 
@@ -126,7 +123,10 @@ class AutoMLAgent:
             dataset_summary = report.get("dataset_summary", {})
 
             if 'data' in state and state['data'] is not None:
-                n_rows = state['data'].shape[0].compute()
+                if isinstance(state['data'], dd.DataFrame):
+                    n_rows = state['data'].shape[0].compute()
+                else:
+                    n_rows = state['data'].shape[0]
                 n_cols = state['data'].shape[1]
             else:
                 n_rows = dataset_summary.get("n_rows", 0)
@@ -190,10 +190,14 @@ class AutoMLAgent:
             if not problem_type:
                 target_data = state['data'][target_col]
 
-                # Check numeric dtype
-                if np.issubdtype(target_data.dtype, np.number):
-                    # Compute number of unique values lazily
+                if isinstance(state['data'], dd.DataFrame):
                     n_unique = target_data.nunique().compute()
+                elif np.issubdtype(target_data.dtype, np.number):
+                    n_unique = target_data.nunique()
+                else:
+                    n_unique = target_data.nunique()
+
+                if np.issubdtype(target_data.dtype, np.number):
                     if n_unique > 20:
                         problem_type = 'regression'
                     else:
@@ -1149,11 +1153,152 @@ Provide your analysis and decision:
         best_model.fit(X_train, y_train)
 
         return best_model, best_score, best_params, study
-    def _train_simple_models(self, X: pd.DataFrame, y: pd.Series, problem_type: str, model_names: list[str]) -> tuple:
+
+    def _train_simple_defaults(
+        self,
+        X: pd.DataFrame,
+        y: pd.Series,
+        problem_type: str,
+        model_names: list[str],
+    ) -> tuple:
+        """Train sklearn models with default hyperparameters (no Optuna)."""
+        from sklearn.model_selection import train_test_split
+        from sklearn.ensemble import (
+            RandomForestClassifier,
+            RandomForestRegressor,
+            GradientBoostingClassifier,
+            GradientBoostingRegressor,
+        )
+        from sklearn.linear_model import LogisticRegression, LinearRegression
+        from sklearn.metrics import accuracy_score, r2_score
+
+        try:
+            import xgboost as xgb
+            xgb_available = True
+        except ImportError:
+            xgb_available = False
+
+        if not model_names or not isinstance(model_names, list):
+            model_names = (
+                ["RandomForest", "GradientBoosting"]
+                if problem_type == "classification"
+                else ["RandomForest"]
+            )
+
+        logger.info(f"Training simple models (defaults, no Optuna): {model_names}")
+
+        X_processed = pd.get_dummies(X, drop_first=True)
+        X_tune, X_val, y_tune, y_val = train_test_split(
+            X_processed, y, test_size=0.2, random_state=42
+        )
+        best_metric_name = "accuracy" if problem_type == "classification" else "r2_score"
+
+        def build_model(model_name: str):
+            name_lower = model_name.lower()
+            if "randomforest" in name_lower:
+                return (
+                    RandomForestClassifier(random_state=42, n_jobs=-1)
+                    if problem_type == "classification"
+                    else RandomForestRegressor(random_state=42, n_jobs=-1)
+                )
+            if ("xgboost" in name_lower or "xgb" in name_lower) and xgb_available:
+                return (
+                    xgb.XGBClassifier(random_state=42, eval_metric="logloss")
+                    if problem_type == "classification"
+                    else xgb.XGBRegressor(random_state=42)
+                )
+            if "gradient" in name_lower:
+                return (
+                    GradientBoostingClassifier(random_state=42)
+                    if problem_type == "classification"
+                    else GradientBoostingRegressor(random_state=42)
+                )
+            if "logistic" in name_lower:
+                return LogisticRegression(max_iter=1000, random_state=42)
+            if "linear" in name_lower:
+                return LinearRegression()
+            return (
+                RandomForestClassifier(random_state=42, n_jobs=-1)
+                if problem_type == "classification"
+                else RandomForestRegressor(random_state=42, n_jobs=-1)
+            )
+
+        best_model = None
+        best_score = -float("inf")
+        best_model_name = None
+        all_results = []
+
+        for model_name in model_names:
+            try:
+                model = build_model(model_name)
+                model.fit(X_tune, y_tune)
+                preds = model.predict(X_val)
+                score = (
+                    accuracy_score(y_val, preds)
+                    if problem_type == "classification"
+                    else r2_score(y_val, preds)
+                )
+                all_results.append(
+                    {"model_name": model_name, "score": float(score), "best_params": {}}
+                )
+                if score > best_score:
+                    best_score = score
+                    best_model_name = model_name
+            except Exception as e:
+                logger.warn(f"Failed to train {model_name}: {e}")
+
+        if best_model_name is None:
+            best_model_name = "RandomForest"
+            best_model = build_model(best_model_name)
+            best_model.fit(X_processed, y)
+            preds = best_model.predict(X_val)
+            best_score = (
+                accuracy_score(y_val, preds)
+                if problem_type == "classification"
+                else float(best_model.score(X_val, y_val))
+            )
+            all_results = [
+                {"model_name": best_model_name, "score": float(best_score), "best_params": {}}
+            ]
+        else:
+            best_model = build_model(best_model_name)
+            best_model.fit(X_processed, y)
+
+        metrics = {
+            "best_model": best_model_name,
+            "best_score": float(best_score),
+            "metric_name": best_metric_name,
+            "models_trained": len(all_results),
+            "all_models": [r["model_name"] for r in all_results],
+            "all_scores": [r["score"] for r in all_results],
+            "best_params_per_model": {
+                r["model_name"]: r.get("best_params", {}) for r in all_results
+            },
+            "training_method": "Simple+Defaults",
+        }
+        logger.info(
+            f"Best model: {best_model_name} with {best_metric_name}: {best_score:.4f}"
+        )
+        return best_model, metrics
+
+    def _train_simple_models(
+        self,
+        X: pd.DataFrame,
+        y: pd.Series,
+        problem_type: str,
+        model_names: list[str],
+        use_optuna: bool = True,
+        agent_state: dict | None = None,
+    ) -> tuple:
         """
         Train models using simple scikit-learn approach with LLM-selected models.
-        Optuna is used for hyperparameter tuning for each model.
+        use_optuna=False → default hyperparameters (_train_simple_defaults).
+        use_optuna=True  → Optuna HPO per model.
         """
+        if not use_optuna:
+            return self._train_simple_defaults(X, y, problem_type, model_names)
+
+        agent_state = agent_state or {}
         import optuna
         from sklearn.model_selection import train_test_split
         from sklearn.ensemble import (RandomForestClassifier, RandomForestRegressor,
@@ -1187,6 +1332,8 @@ Provide your analysis and decision:
         if not isinstance(y, dd.Series):
             y = dd.from_pandas(y, npartitions=8)
 
+        from dask_ml.model_selection import train_test_split as dask_train_test_split
+
         # Split into train/test
         X_train, X_test, y_train, y_test = dask_train_test_split(
             X, y, test_size=0.2, random_state=42
@@ -1206,7 +1353,7 @@ Provide your analysis and decision:
             elif ('xgboost' in name_lower or 'xgb' in name_lower) and xgb_available:
                 n_rows = X.shape[0].compute()
                 # USE_DASK_TRAINING = n_rows > 500_000
-                if state.get('use_dask',False):
+                if agent_state.get("use_dask", False):
                     if problem_type=='classification':
                         return xgb.dask.DaskXGBClassifier(**params, random_state=42)
                     else:
@@ -1283,7 +1430,7 @@ Provide your analysis and decision:
                 if 'xgboost' in model_name.lower() and xgb_available:
                     n_rows = X.shape[0].compute()
                     # USE_DASK_TRAINING = n_rows > 500_000
-                    if state.get('use_dask',False):
+                    if agent_state.get("use_dask", False):
                         from xgboost.dask import DaskXGBClassifier, DaskXGBRegressor
                         model = DaskXGBClassifier(**params) if problem_type=='classification' else DaskXGBRegressor(**params)
                     model.fit(X_train, y_train)
@@ -1370,7 +1517,7 @@ Provide your analysis and decision:
             'all_models': [r['model_name'] for r in all_results],
             'all_scores': [r['score'] for r in all_results],
             'best_params_per_model': {r['model_name']: r.get('best_params', {}) for r in all_results},
-            'training_method': 'Simple'
+            'training_method': 'Simple+Optuna'
         }
 
         logger.info(f"Best model: {metrics['best_model']} with {best_metric_name}: {best_score:.4f}")

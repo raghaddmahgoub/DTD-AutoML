@@ -1,6 +1,8 @@
 import json
 from langchain_core.messages import SystemMessage, HumanMessage
 
+from tools.pipeline_state import empty_state, ensure_state
+
 
 class ControllerAgent:
     def __init__(self, logger, llm, registry):
@@ -8,8 +10,7 @@ class ControllerAgent:
         self.llm = llm
         self.registry = registry
 
-    def run(self,data_path: str, prompt: str):
-
+    def run(self, data_path: str, prompt: str):
         print("Plan Started")
 
         self.logger.info("\n" + "=" * 50)
@@ -17,51 +18,56 @@ class ControllerAgent:
         self.logger.info("=" * 50)
 
         system_prompt = f"""
-You are an AutoML agent that executes tasks step-by-step.
-
-You MUST select ONE tool at a time and execute it.
+You are an AutoML controller that executes ONE tool per step.
 
 Available tools:
 {self.registry.list_tools_with_schema()}
 
+PIPELINE ORDER (follow when possible):
+1) data_understanding
+2) data_cleaning / feature_engineering (optional)
+3) plan_training  (builds plan + user approval; does NOT train)
+4) exactly ONE training tool from plan:
+   - train_simple         → default sklearn hyperparameters
+   - train_simple_optuna  → sklearn + Optuna HPO
+   - train_autogluon      → AutoGluon AutoML
+   Large datasets (>700k rows) automatically use Dask-XGBoost inside training tools.
+5) evaluate
+
 RULES:
 - Return ONLY valid JSON
 - Choose one tool per step
-- Stop when task is complete
-- Be logical in ordering (understand → clean → features → train → evaluate)
+- After plan_training, call the train tool named in result.train_tool
+- Do not call a train tool before plan_training is approved
+- Stop when evaluation is done
 
 FORMAT:
-
 {{
   "tool": "tool_name",
   "task": "task_description",
-  "input": "input_data_for_that_tool",
+  "input": {{}},
   "done": false
 }}
 
 FINAL STEP:
-
 {{
   "tool": "none",
   "task": "",
-  "input": "",
+  "input": {{}},
   "done": true
 }}
 """
 
-        memory = f"Task: {prompt}"
-        data = data_path  # shared pipeline data
+        pipeline_state = empty_state(data_path, prompt)
+        memory = f"Task: {prompt}\nPipeline state step: {pipeline_state.get('step')}"
 
         while True:
-
             response = self.llm.invoke([
                 SystemMessage(content=system_prompt),
-                HumanMessage(content=memory)
+                HumanMessage(content=memory),
             ])
 
             raw = response.content.strip()
-
-            # clean markdown
             if raw.startswith("```"):
                 raw = raw.replace("```json", "").replace("```", "").strip()
 
@@ -71,43 +77,50 @@ FINAL STEP:
                 self.logger.error("Failed to parse LLM output")
                 self.logger.info("Raw output:")
                 self.logger.info(response.content)
-                return []
+                return pipeline_state
 
             tool_name = step.get("tool")
-            tool_input = step.get("input")
+            tool_input = step.get("input", {})
             task = step.get("task")
             done = step.get("done", False)
 
             if done:
                 self.logger.info("\n[AGENT] Workflow completed successfully")
+                pipeline_state["status"] = "completed"
                 break
 
             tool = self.registry.get(tool_name)
-
             if tool is None:
                 self.logger.error(f"Unknown tool: {tool_name}")
                 break
 
             self.logger.info(f"\n[AGENT] Executing tool: {tool_name}")
 
-            # 🔥 KEY CHANGE: pass BOTH input + ORIGINAL PROMPT
-            result , data_path = tool.invoke({"task": task, "tool_input": tool_input, "prompt": prompt, "data_path": data_path,"llm": self.llm})
-            print("***********************")
-            print(data_path)
+            result, pipeline_state = tool.invoke({
+                "task": task,
+                "tool_input": tool_input,
+                "prompt": prompt,
+                "data_path": pipeline_state.get("data_path", data_path),
+                "llm": self.llm,
+                "state": pipeline_state,
+            })
+
+            # Backward compatibility: if a tool still returns only data_path string
+            if isinstance(pipeline_state, str):
+                pipeline_state = ensure_state(None, pipeline_state, prompt)
+
             self.logger.info(f"[RESULT] {result}")
 
-            # update shared data if tool returns something meaningful
-            if result is not None:
-                data = result
-
-            # memory loop (gives context to next step)
             memory = f"""
 Task: {prompt}
 
-Last tool used: {tool_name}
-Tool input: {tool_input}
-Tool result: {result}
+Last tool: {tool_name}
+Last result: {json.dumps(result, default=str)[:2500]}
+Pipeline step: {pipeline_state.get('step')}
+Training plan approved: {(pipeline_state.get('training_plan') or {}).get('approved')}
+Next train tool (if planned): {(pipeline_state.get('training_plan') or {}).get('train_tool')}
 
-What is the NEXT best tool?
-Remember: choose ONLY ONE tool.
+Choose the NEXT single tool.
 """
+
+        return pipeline_state

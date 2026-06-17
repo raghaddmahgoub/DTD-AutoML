@@ -8,9 +8,11 @@ import seaborn as sns
 
 from langchain_core.tools import tool
 
+from tools.pipeline_state import ensure_state, merge_state
+
 
 @tool
-def data_understanding(task, tool_input, prompt, data_path, llm):
+def data_understanding(task, tool_input, prompt, data_path, llm, state=None):
     """
     Perform intelligent exploratory data analysis
     and return ONLY structured JSON results.
@@ -29,76 +31,22 @@ def data_understanding(task, tool_input, prompt, data_path, llm):
         
         dataset_info = {
             "shape": list(df.shape),
-            "columns": list(df.columns),
-            "dtypes": {
-                col: str(dtype)
-                for col, dtype in df.dtypes.items()
-            },
-            "missing_values": df.isnull().sum().to_dict(),
-            "sample_rows": df.head(3).to_dict(orient="records")
+            "columns": list(df.columns)[:20],
+            "dtypes": {col: str(dtype) for col, dtype in list(df.dtypes.items())[:20]},
+            "missing_total": int(df.isnull().sum().sum()),
+            "sample_rows": df.head(2).to_dict(orient="records"),
         }
 
-        eda_prompt = f"""
-        You are a senior data scientist.
+        eda_prompt = f"""Senior data scientist. Return ONLY valid JSON (no markdown).
 
-        Analyze the dataset and return ONLY valid JSON.
+Schema: {{"title":"","summary":"<=80 words","sections":[{{"title":"","content":[{{"type":"text|bullet|warning|metric","label":"","value":""}}]}}],"visualizations":[{{"plot_type":"histogram|boxplot|scatterplot|heatmap|countplot|missing_values","columns":[],"title":"","reason":""}}],"recommendations":["max 3 strings"]}}
 
-        IMPORTANT RULES:
-        - Return ONLY JSON
-        - No markdown
-        - No code blocks
-        - No explanations outside JSON
-        - No HTML
+Respect the user task when writing summary and recommendations.
 
-        JSON schema:
-
-        {{
-        "title": "string",
-
-        "summary": "string",
-
-        "sections": [
-            {{
-            "title": "string",
-
-            "content": [
-                {{
-                "type": "text|bullet|warning|metric",
-
-                "label": "optional",
-
-                "value": "string"
-                }}
-            ]
-            }}
-        ],
-
-        "visualizations": [
-            {{
-            "plot_type": "histogram|boxplot|scatterplot|heatmap|countplot|missing_values",
-            "columns": ["column1", "column2"],
-            "title": "string",
-            "reason": "string"
-            }}
-        ],
-
-        "recommendations": [
-            "string"
-        ]
-        }}
-
-        Dataset metadata:
-        {json.dumps(dataset_info, indent=2)}
-
-        Task:
-        {task}
-
-        Additional Prompt:
-        {prompt}
-
-        Tool Input:
-        {tool_input}
-        """
+Data: {json.dumps(dataset_info, separators=(",", ":"))}
+Task: {task}
+User prompt: {(str(prompt) or "")[:400]}
+"""
 
         result = llm.invoke(eda_prompt)
 
@@ -267,11 +215,19 @@ def data_understanding(task, tool_input, prompt, data_path, llm):
         print("\nEDA JSON GENERATED")
         print(f"Saved JSON: {json_path}")
 
+        pipeline_state = merge_state(
+            ensure_state(state, data_path, prompt),
+            {
+                "report": report_json,
+                "step": "eda_complete",
+                "status": "success",
+            },
+        )
         return {
             "status": "success",
             "json_report": json_path,
-            "report": report_json
-        }, data_path
+            "report": report_json,
+        }, pipeline_state
 
     except Exception as exc:
 
@@ -279,7 +235,11 @@ def data_understanding(task, tool_input, prompt, data_path, llm):
 
         print(error_message)
 
+        pipeline_state = merge_state(
+            ensure_state(state, data_path, prompt),
+            {"status": "error", "step": "eda_failed", "error": error_message},
+        )
         return {
             "status": "error",
-            "message": error_message
-        }, data_path
+            "message": error_message,
+        }, pipeline_state
