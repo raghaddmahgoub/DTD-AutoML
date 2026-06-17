@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-06-17T22:00:07.860529",
+  "best_model": "RandomForest",
+  "test_accuracy": 0.8044692737430168,
+  "train_accuracy": 0.9985955056179775,
+  "precision": 0.8032243131368064,
+  "recall": 0.8044692737430168,
+  "f1": 0.8036119392183224,
+  "model_path": "Output\\Model_Training\\Titanic-Dataset\\best_model_RandomForest.pkl",
+  "results_path": "Output\\Model_Training\\Titanic-Dataset\\model_comparison.json"
+}

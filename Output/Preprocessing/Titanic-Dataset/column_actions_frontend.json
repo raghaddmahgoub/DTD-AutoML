@@ -1,0 +1,113 @@
+[
+  {
+    "column": "Age",
+    "action": "transform",
+    "reason": "default_policy",
+    "policy_source": "default_policy",
+    "details": {
+      "type": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none"
+    }
+  },
+  {
+    "column": "Cabin",
+    "action": "drop",
+    "reason": "default_policy",
+    "policy_source": "default_policy"
+  },
+  {
+    "column": "Embarked",
+    "action": "transform",
+    "reason": "default_policy",
+    "policy_source": "default_policy",
+    "details": {
+      "type": "categorical",
+      "missing": "mode",
+      "encoding": "onehot"
+    }
+  },
+  {
+    "column": "Fare",
+    "action": "transform",
+    "reason": "default_policy",
+    "policy_source": "default_policy",
+    "details": {
+      "type": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none"
+    }
+  },
+  {
+    "column": "Name",
+    "action": "drop",
+    "reason": "high_cardinality_drop",
+    "policy_source": "default_policy"
+  },
+  {
+    "column": "Parch",
+    "action": "transform",
+    "reason": "default_policy",
+    "policy_source": "default_policy",
+    "details": {
+      "type": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none"
+    }
+  },
+  {
+    "column": "PassengerId",
+    "action": "drop",
+    "reason": "high_cardinality_drop",
+    "policy_source": "default_policy"
+  },
+  {
+    "column": "Pclass",
+    "action": "transform",
+    "reason": "default_policy",
+    "policy_source": "default_policy",
+    "details": {
+      "type": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none"
+    }
+  },
+  {
+    "column": "Sex",
+    "action": "transform",
+    "reason": "default_policy",
+    "policy_source": "default_policy",
+    "details": {
+      "type": "categorical",
+      "missing": "mode",
+      "encoding": "onehot"
+    }
+  },
+  {
+    "column": "SibSp",
+    "action": "transform",
+    "reason": "default_policy",
+    "policy_source": "default_policy",
+    "details": {
+      "type": "numeric",
+      "missing": "median",
+      "outlier": "keep",
+      "encoding": "none"
+    }
+  },
+  {
+    "column": "Ticket",
+    "action": "transform",
+    "reason": "default_policy",
+    "policy_source": "default_policy",
+    "details": {
+      "type": "categorical",
+      "missing": "mode",
+      "encoding": "label"
+    }
+  }
+]

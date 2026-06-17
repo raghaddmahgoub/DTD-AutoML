@@ -1,0 +1,78 @@
+{
+  "PassengerId": {
+    "action": "drop",
+    "reason": "high_cardinality_drop",
+    "policy_source": "default_policy"
+  },
+  "Pclass": {
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy",
+    "policy_source": "default_policy"
+  },
+  "Name": {
+    "action": "drop",
+    "reason": "high_cardinality_drop",
+    "policy_source": "default_policy"
+  },
+  "Sex": {
+    "type": "categorical",
+    "missing": "mode",
+    "encoding": "onehot",
+    "reason": "default_policy",
+    "policy_source": "default_policy"
+  },
+  "Age": {
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy",
+    "policy_source": "default_policy"
+  },
+  "SibSp": {
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy",
+    "policy_source": "default_policy"
+  },
+  "Parch": {
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy",
+    "policy_source": "default_policy"
+  },
+  "Ticket": {
+    "type": "categorical",
+    "missing": "mode",
+    "encoding": "label",
+    "reason": "default_policy",
+    "policy_source": "default_policy"
+  },
+  "Fare": {
+    "type": "numeric",
+    "missing": "median",
+    "outlier": "keep",
+    "encoding": "none",
+    "reason": "default_policy",
+    "policy_source": "default_policy"
+  },
+  "Cabin": {
+    "action": "drop",
+    "reason": "default_policy",
+    "policy_source": "default_policy"
+  },
+  "Embarked": {
+    "type": "categorical",
+    "missing": "mode",
+    "encoding": "onehot",
+    "reason": "default_policy",
+    "policy_source": "default_policy"
+  }
+}
