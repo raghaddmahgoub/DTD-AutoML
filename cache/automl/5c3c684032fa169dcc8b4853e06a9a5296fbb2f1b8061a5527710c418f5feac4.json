@@ -1,0 +1,113 @@
+{
+  "final_metrics": {
+    "best_model": "CatBoost_BAG_L1",
+    "best_score": 0.8089780324737345,
+    "feature_importance": {
+      "Sex": 0.11079274116523394,
+      "Pclass": 0.06914995224450808,
+      "Age": 0.03381088825214897,
+      "Embarked": 0.01795606494746893,
+      "Fare": 0.013180515759312273,
+      "sibsp": 0.011270296084049636,
+      "Parch": 0.009933142311365795
+    },
+    "models_trained": 4,
+    "all_models": [
+      "CatBoost_BAG_L1",
+      "WeightedEnsemble_L2",
+      "XGBoost_BAG_L1",
+      "LightGBM_BAG_L1"
+    ],
+    "all_scores": [
+      0.8089780324737345,
+      0.8089780324737345,
+      0.8042024832855779,
+      0.8032473734479465
+    ],
+    "training_method": "AutoGluon",
+    "f1_score": 0.7627513169536903,
+    "confusion_matrix": [
+      [
+        171,
+        20
+      ],
+      [
+        39,
+        32
+      ]
+    ]
+  },
+  "saved_files": {
+    "json": "output\\automl\\results_20260618_010011.json",
+    "markdown": "output\\automl\\report_20260618_010011.md",
+    "pickle": "output\\automl\\best_model_20260618_010011.pkl"
+  },
+  "agent_output": {
+    "run_timestamp": null,
+    "data_path": "Output\\Preprocessing\\titanic\\full_preprocessed.csv",
+    "target_column": "2urvived",
+    "problem_type": "classification",
+    "model_selection": {
+      "use_automl": true,
+      "automl_config": {
+        "models": [
+          "GBM",
+          "XGB",
+          "CatBoost"
+        ],
+        "time_limit": 300,
+        "preset": "best_quality"
+      },
+      "selected_models": [],
+      "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The 'Signal Analysis' section reveals a strong univariate class signal for several features, particularly 'Sex' (254.9626) and 'Pclass' (83.2348), with 'Fare' (40.7029) and 'Embarked' (11.0092) also showing moderate signal strength. The presence of such strong, non-linear signals, especially from categorical features like 'Sex' and 'Pclass', suggests that a more sophisticated modeling approach than simple linear models would be beneficial. AutoGluon is well-suited to automatically explore and optimize complex relationships and interactions within the data, potentially capturing these strong signals more effectively than a simple training approach. While the dataset size isn't explicitly stated as 'very large', the strong signals indicate a need for advanced modeling capabilities that AutoGluon provides.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\", \"CatBoost\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [\"RandomForest\", \"XGBoost\", \"LogisticRegression\"],\n  \"dask_models\": [\"Dask-XGBoost\"]\n}\n```"
+    },
+    "training_results": {
+      "best_model": "CatBoost_BAG_L1",
+      "best_score": 0.8089780324737345,
+      "feature_importance": {
+        "Sex": 0.11079274116523394,
+        "Pclass": 0.06914995224450808,
+        "Age": 0.03381088825214897,
+        "Embarked": 0.01795606494746893,
+        "Fare": 0.013180515759312273,
+        "sibsp": 0.011270296084049636,
+        "Parch": 0.009933142311365795
+      },
+      "models_trained": 4,
+      "all_models": [
+        "CatBoost_BAG_L1",
+        "WeightedEnsemble_L2",
+        "XGBoost_BAG_L1",
+        "LightGBM_BAG_L1"
+      ],
+      "all_scores": [
+        0.8089780324737345,
+        0.8089780324737345,
+        0.8042024832855779,
+        0.8032473734479465
+      ],
+      "training_method": "AutoGluon",
+      "f1_score": 0.7627513169536903,
+      "confusion_matrix": [
+        [
+          171,
+          20
+        ],
+        [
+          39,
+          32
+        ]
+      ]
+    },
+    "agent_messages": [
+      {
+        "agent": "training",
+        "message": "Training complete. The AutoGluon model achieved a \"good\" performance with a best score of 0.8090. The confusion matrix indicates more False Negatives (39) than False Positives (20), suggesting the model is more prone to misclassifying positive instances as negative. To improve, consider collecting more data, especially for the minority class, or exploring feature engineering to better distinguish between classes."
+      }
+    ],
+    "workflow": {
+      "final_step": "model_trained",
+      "error": null
+    }
+  }
+}

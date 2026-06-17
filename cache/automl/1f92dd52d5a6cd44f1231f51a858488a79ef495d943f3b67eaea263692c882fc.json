@@ -1,0 +1,122 @@
+{
+  "final_metrics": {
+    "best_model": "WeightedEnsemble_L2",
+    "best_score": -3.0842971774591574,
+    "feature_importance": {
+      "max_salary": 39.65107990892945,
+      "min_salary": 12.025078762050828,
+      "Salary Estimate": 3.855440920473389,
+      "Job Title": 0.15623322260332978,
+      "Job Description": 0.0982397192000523,
+      "Sector": 0.030828763221442346,
+      "Competitors": 0.030735032616353287,
+      "Company Name": 0.02917684002671326,
+      "job_state": 0.02753483592970831,
+      "Size": 0.025707092294406774,
+      "Location": 0.02538594442417057,
+      "Rating": 0.02313111644603516,
+      "Founded": 0.02234502463999346,
+      "Headquarters": 0.02226748312269298,
+      "age": 0.01921944717134736,
+      "Industry": 0.011056686628646163,
+      "Revenue": 0.01017235061277506,
+      "python_yn": 0.007867438593997656,
+      "spark": 0.005391571513719384,
+      "Type of ownership": 0.002598705542478008
+    },
+    "models_trained": 5,
+    "all_models": [
+      "WeightedEnsemble_L2",
+      "XGBoost_BAG_L1",
+      "RandomForest_BAG_L1",
+      "LightGBM_BAG_L1",
+      "CatBoost_BAG_L1"
+    ],
+    "all_scores": [
+      -3.0842971774591574,
+      -3.1884751896576247,
+      -3.588579462562791,
+      -4.880857235159972,
+      -6.715648502862034
+    ],
+    "training_method": "AutoGluon"
+  },
+  "saved_files": {
+    "json": "output\\automl\\results_20260618_014418.json",
+    "markdown": "output\\automl\\report_20260618_014418.md",
+    "pickle": "output\\automl\\best_model_20260618_014418.pkl"
+  },
+  "agent_output": {
+    "run_timestamp": null,
+    "data_path": "Output\\Preprocessing\\1781736053099\\full_preprocessed.csv",
+    "target_column": "avg_salary",
+    "problem_type": "regression",
+    "model_selection": {
+      "use_automl": true,
+      "automl_config": {
+        "models": [
+          "GBM",
+          "XGB",
+          "RandomForest",
+          "CatBoost"
+        ],
+        "time_limit": 300,
+        "preset": "best_quality"
+      },
+      "selected_models": [],
+      "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The target variable 'avg_salary' has a moderate skew, suggesting that a simple linear model might not capture the full distribution. The 'Signal Analysis' reveals several features with strong linear signal strengths, particularly 'min_salary' (0.979) and 'max_salary' (0.99), and also 'hourly' (0.301) and 'python_yn' (0.284). However, the presence of 'non_linear_candidates' and the moderate skew of the target indicate that non-linear relationships are likely present and important. AutoGluon is well-suited to handle such complexities by automatically exploring various models, including those that can capture non-linear patterns, and optimizing them. The multicollinearity risk between 'Company Name' and 'company_txt', and 'min_salary' and 'max_salary' also suggests that an ensemble approach like AutoGluon, which can handle feature interactions and potential redundancy, would be beneficial.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\n      \"GBM\",\n      \"XGB\",\n      \"RandomForest\",\n      \"CatBoost\"\n    ],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [\n    \"RandomForestRegressor\",\n    \"GradientBoostingRegressor\",\n    \"XGBoostRegressor\"\n  ],\n  \"dask_models\": [\n    \"Dask-XGBoost\"\n  ]\n}\n```"
+    },
+    "training_results": {
+      "best_model": "WeightedEnsemble_L2",
+      "best_score": -3.0842971774591574,
+      "feature_importance": {
+        "max_salary": 39.65107990892945,
+        "min_salary": 12.025078762050828,
+        "Salary Estimate": 3.855440920473389,
+        "Job Title": 0.15623322260332978,
+        "Job Description": 0.0982397192000523,
+        "Sector": 0.030828763221442346,
+        "Competitors": 0.030735032616353287,
+        "Company Name": 0.02917684002671326,
+        "job_state": 0.02753483592970831,
+        "Size": 0.025707092294406774,
+        "Location": 0.02538594442417057,
+        "Rating": 0.02313111644603516,
+        "Founded": 0.02234502463999346,
+        "Headquarters": 0.02226748312269298,
+        "age": 0.01921944717134736,
+        "Industry": 0.011056686628646163,
+        "Revenue": 0.01017235061277506,
+        "python_yn": 0.007867438593997656,
+        "spark": 0.005391571513719384,
+        "Type of ownership": 0.002598705542478008
+      },
+      "models_trained": 5,
+      "all_models": [
+        "WeightedEnsemble_L2",
+        "XGBoost_BAG_L1",
+        "RandomForest_BAG_L1",
+        "LightGBM_BAG_L1",
+        "CatBoost_BAG_L1"
+      ],
+      "all_scores": [
+        -3.0842971774591574,
+        -3.1884751896576247,
+        -3.588579462562791,
+        -4.880857235159972,
+        -6.715648502862034
+      ],
+      "training_method": "AutoGluon"
+    },
+    "agent_messages": [
+      {
+        "agent": "training",
+        "message": "Training complete. Here's an analysis of your AutoGluon training results:\n\n1.  **Performance Assessment:** The \"Best Score\" of -3.0843 suggests a **fair to good** performance, depending on the specific metric and its typical range. Without knowing the exact metric (e.g., negative log-likelihood, AUC), it's hard to definitively label it excellent, but it's not poor.\n2.  **Confusion Matrix:** The provided output does not include a confusion matrix, so it's impossible to determine if there are more False Positives or False Negatives.\n3.  **Recommendations:** To improve, consider feature engineering or gathering more data. If the metric is sensitive to class imbalance, explore techniques like oversampling or undersampling. Further analysis of the individual model performances and their errors could also reveal specific areas for optimization."
+      }
+    ],
+    "workflow": {
+      "final_step": "model_trained",
+      "error": null
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "task_type": "regression",
+  "X_train_path": "Output\\Preprocessing\\1781736053099\\X_train.csv",
+  "X_test_path": "Output\\Preprocessing\\1781736053099\\X_test.csv",
+  "y_train_path": "Output\\Preprocessing\\1781736053099\\y_train.csv",
+  "y_test_path": "Output\\Preprocessing\\1781736053099\\y_test.csv",
+  "clean_data_path": "Output\\Preprocessing\\1781736053099\\full_preprocessed.csv",
+  "summary_path": "Output\\Preprocessing\\1781736053099\\preprocessing_summary.json",
+  "column_actions_frontend_path": "Output\\Preprocessing\\1781736053099\\column_actions_frontend.json"
+}

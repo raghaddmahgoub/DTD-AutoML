@@ -84,12 +84,13 @@ async def run_pipeline(
     file_path = UPLOAD_DIR / file.filename
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-
+    cached_data = pipeline_instance.load_dataset_cache(str(file_path))
     inputs = {
         "data_path": str(file_path),
         "target_column": target_column,
         "dataset_id": dataset_id,
         "report_id": report_id,
+        "dataset_cache": cached_data["dataset_cache"],
     }
 
     async def event_generator():
@@ -175,13 +176,14 @@ async def run_custom_pipeline(
     file_path = UPLOAD_DIR / file.filename
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
-
+    cached_data = pipeline_instance.load_dataset_cache(str(file_path))
     inputs = {
         "data_path": str(file_path),
         "target_column": target_column,
         "dataset_id": dataset_id,
         "report_id": report_id,
         "prompt": prompt,
+        "dataset_cache": cached_data["dataset_cache"],
     }
     print("Received inputs for custom pipeline:", inputs)
     
