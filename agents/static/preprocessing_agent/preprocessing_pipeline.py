@@ -121,7 +121,7 @@ class PreprocessingPipelineAgent:
         # ---------------------------
         # IMPORT YOUR SEARCH FUNCTION
         # ---------------------------
-        from agents.preprocessing_agent.automl_preprocessing_search import automl_preprocessing_search
+        from static.preprocessing_agent.automl_preprocessing_search import automl_preprocessing_search
 
         print("🔍 Running preprocessing + model search...")
 

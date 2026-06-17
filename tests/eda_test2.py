@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import os
-from agents.eda_agent.eda_agent import EDAAgent
+from static.eda_agent.eda_agent import EDAAgent
 
 # ===========================================================================
 # CONFIG  

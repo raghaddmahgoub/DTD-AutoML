@@ -16,7 +16,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, f1_score, r2_score, mean_squared_error
 import joblib
 
-from automl_preprocessing_search import automl_preprocessing_search  # local import
+from static.preprocessing_agent.automl_preprocessing_search import automl_preprocessing_search  # local import
 
 
 # ================== CONFIG ==================

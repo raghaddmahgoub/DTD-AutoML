@@ -1,5 +1,5 @@
 import pandas as pd
-from agents.eda_agent.eda_agent import TargetSuggestionAgent
+from static.eda_agent.eda_agent import TargetSuggestionAgent
 
 # Load your dataset
 df = pd.read_csv('R:/GP/assets/data/Classification Datasets/Titanic-Dataset.csv')
