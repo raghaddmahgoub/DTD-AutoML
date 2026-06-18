@@ -21,6 +21,31 @@ from src.utils.logger import Logger
 
 logger = Logger()
 
+# Legacy preset names the LLM may suggest but AutoGluon 1.5 no longer registers.
+_LEGACY_PRESET_ALIASES = {
+    "good_quality_faster_inference": "good_quality",
+    "high_quality_fast_inference": "high_quality",
+}
+
+
+def normalize_autogluon_preset(preset: str) -> str:
+    """Map LLM / legacy preset strings to a name AutoGluon 1.5 accepts."""
+    token = str(preset).strip()
+    if not token:
+        return "good_quality"
+    try:
+        from autogluon.tabular.configs.presets_configs import (
+            tabular_presets_alias,
+            tabular_presets_dict,
+        )
+
+        if token in tabular_presets_dict or token in tabular_presets_alias:
+            return token
+    except ImportError:
+        pass
+    return _LEGACY_PRESET_ALIASES.get(token, token)
+
+
 try:
     import xgboost as xgb
 except ImportError:
@@ -255,7 +280,9 @@ def train_autogluon(
         path=str(predictor_path),
     )
     time_limit = int(config.get("time_limit", config.get("time_limit_seconds", 120)))
-    preset = config.get("preset", config.get("preset_mode", "good_quality_faster_inference"))
+    preset = normalize_autogluon_preset(
+        config.get("preset", config.get("preset_mode", "good_quality"))
+    )
     models = config.get("models", config.get("models_to_prioritize", ["GBM", "XGB"]))
     hyperparameters = {m: {} for m in models}
 

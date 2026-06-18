@@ -1,7 +1,7 @@
 """
 Tool: AutoGluon AutoML training.
 
-Uses standalone tools/nodes/training_engines.py (NOT AutoMLAgent).
+Uses preprocessed train/test splits from PreprocessingAgent (no in-tool preprocessing).
 """
 from langchain_core.tools import tool
 
@@ -13,8 +13,6 @@ from tools.training_common import (
     complete_training,
     load_training_context,
     require_approved_plan,
-    run_dask_xgb_training,
-    train_test_split_xy,
 )
 
 
@@ -34,18 +32,15 @@ def train_autogluon(task, tool_input, prompt, data_path, llm, state=None):
     if ctx_err:
         return {"status": "error", "error": ctx_err}, pipeline_state
 
-    if ctx["use_dask"]:
-        print("[train_autogluon] Large dataset → Dask-XGBoost")
-        return run_dask_xgb_training(pipeline_state, ctx)
-
     automl_config = dict(ctx["plan"].get("automl_config") or {})
     if cfg.get("time_limit"):
         automl_config["time_limit"] = int(cfg["time_limit"])
     if cfg.get("preset"):
         automl_config["preset"] = cfg["preset"]
 
-    X_train, X_test, y_train, y_test = train_test_split_xy(ctx["X"], ctx["y"])
-    model, metrics = run_autogluon(X_train, y_train, ctx["problem_type"], automl_config)
+    model, metrics = run_autogluon(
+        ctx["X_train"], ctx["y_train"], ctx["problem_type"], automl_config
+    )
 
     if not metrics.get("autogluon_used", True):
         print("\n" + "!" * 70)
@@ -54,15 +49,14 @@ def train_autogluon(task, tool_input, prompt, data_path, llm, state=None):
         print(f"[train_autogluon] Actual trainer: {metrics.get('training_method')}")
         print("!" * 70 + "\n")
 
-    preds = model.predict(X_test)
-    metrics = apply_test_metrics(metrics, y_test, preds, ctx["problem_type"])
+    preds = model.predict(ctx["X_test"])
+    metrics = apply_test_metrics(metrics, ctx["y_test"], preds, ctx["problem_type"])
 
     return complete_training(
         pipeline_state,
         model=model,
         metrics=metrics,
         training_method=metrics.get("training_method", "AutoGluon"),
-        used_dask=False,
         n_rows=ctx["n_rows"],
         subfolder="training_autogluon",
     )

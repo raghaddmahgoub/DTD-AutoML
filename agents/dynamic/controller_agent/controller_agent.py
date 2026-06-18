@@ -24,21 +24,21 @@ Available tools:
 {self.registry.list_tools_with_schema()}
 
 PIPELINE ORDER (follow when possible):
-1) data_understanding
-2) data_cleaning / feature_engineering (optional)
+1) preprocessing_execution  (required — produces train/test splits)
+2) feature_engineering_execution  (runs inside PreprocessingAgent graph; adds engineered features)
 3) plan_training  (builds plan + user approval; does NOT train)
 4) exactly ONE training tool from plan:
    - train_simple         → default sklearn hyperparameters
    - train_simple_optuna  → sklearn + Optuna HPO
    - train_autogluon      → AutoGluon AutoML
-   Large datasets (>700k rows) automatically use Dask-XGBoost inside training tools.
+   Training tools require preprocessed splits in pipeline_state (no raw-data preprocessing).
 5) evaluate
 
 RULES:
 - Return ONLY valid JSON
 - Choose one tool per step
+- Do not call train_* before preprocessing and plan_training are complete
 - After plan_training, call the train tool named in result.train_tool
-- Do not call a train tool before plan_training is approved
 - Stop when evaluation is done
 
 FORMAT:

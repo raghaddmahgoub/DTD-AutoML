@@ -10,8 +10,9 @@ from tools.pipeline_state import empty_state
 
 class ModelAgent:
     """
-    LangGraph agent that runs the training workflow by calling the tools layer:
-      plan_training → train_* → evaluate
+    LangGraph agent that runs the training workflow by calling the tools layer.
+    Expects preprocessed train/test splits in pipeline_state (from PreprocessingAgent).
+    Flow: plan_training → train_* → evaluate
     """
 
     def __init__(self, logger: Any, llm: Any, registry: Any):

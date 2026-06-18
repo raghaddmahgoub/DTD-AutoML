@@ -165,8 +165,7 @@ Each training path is its **own tool file** (as requested). All use `training_co
 | File | Purpose |
 |------|---------|
 | **`evaluate.py`** | Reads `pipeline_state.model_metrics` (metrics computed during training). |
-| **`training_common.py`** | Plan approval checks, train/test split, metrics, save `model.pkl`. |
-| **`training_data.py`** | Load CSV/Excel; Dask if >700k rows; `prepare_training_xy`; `pipeline_to_graph_state`. |
+| **`training_common.py`** | Load preprocessed splits, plan graph bridge, plan approval, metrics, save `model.pkl`. |
 | **`nodes/training_engines.py`** | Core ML: sklearn defaults, Optuna HPO (with LLM search space), AutoGluon, Dask-XGBoost. |
 | **`pipeline_state.py`** | `empty_state`, `merge_state`, `ensure_state` — shared dict between agent and tools. |
 | **`registry.py`** | `ToolRegistry` — register/get tools for ModelAgent and ControllerAgent. |

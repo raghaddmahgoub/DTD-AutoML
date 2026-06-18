@@ -1,7 +1,7 @@
 """
 Tool: simple sklearn training with default hyperparameters (no Optuna).
 
-Uses standalone tools/nodes/training_engines.py (NOT AutoMLAgent).
+Uses preprocessed train/test splits from PreprocessingAgent (no in-tool preprocessing).
 """
 from langchain_core.tools import tool
 
@@ -13,8 +13,6 @@ from tools.training_common import (
     complete_training,
     load_training_context,
     require_approved_plan,
-    run_dask_xgb_training,
-    train_test_split_xy,
 )
 
 
@@ -34,27 +32,23 @@ def train_simple(task, tool_input, prompt, data_path, llm, state=None):
     if ctx_err:
         return {"status": "error", "error": ctx_err}, pipeline_state
 
-    if ctx["use_dask"]:
-        print("[train_simple] Large dataset → Dask-XGBoost")
-        return run_dask_xgb_training(pipeline_state, ctx)
-
     models = ctx["plan"].get("selected_models") or ["RandomForest", "GradientBoosting"]
     if cfg.get("models"):
         models = cfg["models"] if isinstance(cfg["models"], list) else [
             m.strip() for m in str(cfg["models"]).split(",") if m.strip()
         ]
 
-    X_train, X_test, y_train, y_test = train_test_split_xy(ctx["X"], ctx["y"])
-    model, metrics = train_simple_defaults(X_train, y_train, ctx["problem_type"], models)
-    preds = model.predict(X_test)
-    metrics = apply_test_metrics(metrics, y_test, preds, ctx["problem_type"])
+    model, metrics = train_simple_defaults(
+        ctx["X_train"], ctx["y_train"], ctx["problem_type"], models
+    )
+    preds = model.predict(ctx["X_test"])
+    metrics = apply_test_metrics(metrics, ctx["y_test"], preds, ctx["problem_type"])
 
     return complete_training(
         pipeline_state,
         model=model,
         metrics=metrics,
         training_method="Simple+Defaults",
-        used_dask=False,
         n_rows=ctx["n_rows"],
         subfolder="training_simple",
     )

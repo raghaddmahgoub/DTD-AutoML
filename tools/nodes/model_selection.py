@@ -10,7 +10,7 @@ import pandas as pd
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from tools.graph_state import TrainingGraphState
-from tools.training_data import LARGE_DATA_ROW_THRESHOLD
+from tools.training_common import LARGE_DATA_ROW_THRESHOLD
 from src.utils.logger import Logger
 
 logger = Logger()
@@ -23,9 +23,13 @@ SKLEARN_MODELS = {
     "regression": ["RandomForest", "GradientBoosting", "LinearRegression", "XGBoost"],
 }
 
+# AutoGluon 1.5 presets (+ legacy aliases the LLM may still emit).
 AUTOGLUON_PRESETS = [
+    "medium_quality",
     "medium_quality_faster_train",
+    "good_quality",
     "good_quality_faster_inference",
+    "high_quality",
     "best_quality",
     "optimize_for_deployment",
 ]
@@ -169,13 +173,15 @@ def _filter_ag_models(names: list) -> list[str]:
 
 
 def _filter_preset(raw: str) -> str:
+    from tools.nodes.training_engines import normalize_autogluon_preset
+
     token = str(raw).strip()
     if token in AUTOGLUON_PRESETS:
-        return token
+        return normalize_autogluon_preset(token)
     for p in AUTOGLUON_PRESETS:
         if p in token:
-            return p
-    return "good_quality_faster_inference"
+            return normalize_autogluon_preset(p)
+    return normalize_autogluon_preset("good_quality")
 
 
 def _sanitize_search_space(raw: dict, model_names: list[str]) -> dict:

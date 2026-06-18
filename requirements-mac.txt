@@ -20,7 +20,8 @@ lightgbm>=4.0.0
 catboost>=1.2.0
 
 # --- AutoGluon (tabular — used by train_autogluon) ---
-autogluon.tabular>=1.1.0
+autogluon.tabular[fastai]>=1.5.0
+torch>=2.6
 
 # --- Large-dataset path (Dask + XGBoost) ---
 dask[complete]>=2024.1.0

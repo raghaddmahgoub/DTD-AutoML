@@ -2,11 +2,9 @@ from tools.evaluate import evaluate
 from tools.train_autogluon import train_autogluon
 from tools.train_simple_optuna import train_simple_optuna
 from tools.train_simple import train_simple
-from tools.plan_training import plan_training
 from tools.preprocessing_execution import preprocessing_execution
-from tools.feature_engineering import feature_engineering
-from tools.data_cleaning import data_cleaning
-from tools.data_understanding import data_understanding
+from tools.feature_engineering_execution import feature_engineering_execution
+from tools.plan_training import plan_training
 from tools.registry import ToolRegistry
 from langchain_google_genai import ChatGoogleGenerativeAI
 from src.utils.logger import Logger
@@ -24,10 +22,8 @@ load_dotenv(PROJECT_ROOT / ".env")
 
 
 tool_registry = ToolRegistry()
-tool_registry.register("data_understanding", data_understanding)
-tool_registry.register("data_cleaning", data_cleaning)
-tool_registry.register("feature_engineering", feature_engineering)
 tool_registry.register("preprocessing_execution", preprocessing_execution)
+tool_registry.register("feature_engineering_execution", feature_engineering_execution)
 tool_registry.register("plan_training", plan_training)
 tool_registry.register("train_simple", train_simple)
 tool_registry.register("train_simple_optuna", train_simple_optuna)

@@ -8,7 +8,14 @@ from langchain_core.tools import tool
 
 from tools.plan_graph import build_plan_graph
 from tools.pipeline_state import ensure_state, merge_state, parse_tool_input
-from tools.training_data import LARGE_DATA_ROW_THRESHOLD, load_dataframe, load_training_data, pipeline_to_graph_state
+from tools.training_common import (
+    LARGE_DATA_ROW_THRESHOLD,
+    load_planning_dataframe,
+    load_preprocessed_splits,
+    pipeline_to_graph_state,
+    require_preprocessed_splits,
+    resolve_problem_type,
+)
 
 
 def _is_yes(text: str) -> bool:
@@ -67,9 +74,9 @@ def _apply_user_overrides(plan: dict[str, Any], prefs: dict[str, Any]) -> dict[s
 
     cfg = dict(out.get("automl_config") or {})
     if time_pref == "fast":
-        cfg.update({"preset_mode": "medium_quality_faster_train", "time_limit_seconds": 90})
+        cfg.update({"preset_mode": "medium_quality", "time_limit_seconds": 90})
     elif time_pref == "balanced":
-        cfg.update({"preset_mode": "good_quality_faster_inference", "time_limit_seconds": 180})
+        cfg.update({"preset_mode": "good_quality", "time_limit_seconds": 180})
     elif time_pref == "best":
         cfg.update({"preset_mode": "best_quality", "time_limit_seconds": 600})
     if hw == "low":
@@ -90,12 +97,22 @@ def plan_training(task, tool_input, prompt, data_path, llm, state=None):
 
     pipeline_state = ensure_state(state, data_path, prompt)
     cfg = parse_tool_input(tool_input)
+
+    if prep_err := require_preprocessed_splits(pipeline_state):
+        return {"status": "error", "error": prep_err}, merge_state(
+            pipeline_state, {"status": "error", "step": "plan_failed"}
+        )
+
     prefs = dict(pipeline_state.get("user_preferences") or {})
     ask_user = bool(cfg.get("ask_before_training", prefs.get("ask_before_training", True)))
 
-    df = load_dataframe(pipeline_state["data_path"])
-    target_column = cfg.get("target_column") or pipeline_state.get("target_column") or df.columns[-1]
-    problem_type = cfg.get("problem_type") or pipeline_state.get("problem_type")
+    load_planning_dataframe(pipeline_state)  # validate preprocessed splits
+    target_column = cfg.get("target_column") or pipeline_state.get("target_column")
+    if not target_column:
+        return {"status": "error", "error": "target_column missing after preprocessing."}, merge_state(
+            pipeline_state, {"status": "error", "step": "plan_failed"}
+        )
+    problem_type = cfg.get("problem_type") or resolve_problem_type(pipeline_state)
     user_note = prefs.get("user_training_prompt", "")
     preferred_models = list(prefs.get("preferred_models") or [])
     time_preference = prefs.get("time_preference", "")
@@ -140,7 +157,11 @@ def plan_training(task, tool_input, prompt, data_path, llm, state=None):
 
     pipeline_state = merge_state(
         pipeline_state,
-        {"target_column": target_column, "problem_type": problem_type, "user_preferences": prefs},
+        {
+            "target_column": target_column,
+            "problem_type": problem_type,
+            "user_preferences": prefs,
+        },
     )
     if isinstance(cfg.get("report"), dict):
         pipeline_state = merge_state(pipeline_state, {"report": cfg["report"]})
@@ -172,11 +193,12 @@ def plan_training(task, tool_input, prompt, data_path, llm, state=None):
         training_approach or prefs.get("training_approach", ""),
         llm_approach,
     )
-    _, use_dask, n_rows = load_training_data(pipeline_state["data_path"], pipeline_state)
+    _, _, _, _, n_rows = load_preprocessed_splits(pipeline_state)
+    use_dask = n_rows > LARGE_DATA_ROW_THRESHOLD
     dask_note = (
-        f"Large dataset ({n_rows:,} rows): Dask-XGBoost will be used (>{LARGE_DATA_ROW_THRESHOLD:,})."
+        f"Large dataset ({n_rows:,} rows): note — training uses preprocessed splits from PreprocessingAgent."
         if use_dask
-        else f"Dataset size {n_rows:,} rows — in-memory training."
+        else f"Dataset size {n_rows:,} rows — preprocessed train/test splits."
     )
 
     plan = {

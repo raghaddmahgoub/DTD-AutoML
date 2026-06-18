@@ -1,38 +1,15 @@
 """
-Test the dynamic tools pipeline (data_understanding → plan_training → train_* → evaluate).
+Test the dynamic tools pipeline (preprocess → plan_training → train_* → evaluate).
 
 Examples (from repo root):
 
-  # LLM picks approach + models, you approve the plan interactively
-  python src/test_tools_pipeline.py --mode manual
-
-  # With Iris (built-in sklearn sample if CSV not in repo)
-  python src/test_tools_pipeline.py --mode manual --data iris
-
-  # Or explicit path when you have downloaded datasets:
-  python src/test_tools_pipeline.py --mode manual \\
-    --data "assets/data/Datasets/Classification Datasets/Iris.csv"
-
-  # Custom prompt (influences EDA + model selection)
-  python src/test_tools_pipeline.py --mode manual --data iris \\
-    --prompt "Predict iris species. Prefer fast sklearn models, no AutoGluon."
-
-  # Full pipeline via ModelAgent LangGraph (EDA + plan → train → evaluate)
-  python src/test_tools_pipeline.py --mode model_agent --data iris
-
-  # Non-interactive
+  # Full pipeline: PreprocessingAgent → ModelAgent
   python src/test_tools_pipeline.py --mode model_agent --data iris --no-prompts
 
-  # Legacy manual mode (same flow, step-by-step prints)
-  python src/test_tools_pipeline.py --mode manual --no-prompts
+  # Skip preprocessing if splits already exist under Output/Preprocessing/
+  python src/test_tools_pipeline.py --mode model_agent --data iris --skip-preprocess --no-prompts
 
-  # Force a specific approach (overrides LLM)
-  python src/test_tools_pipeline.py --mode manual --approach 2 --no-prompts
-
-  # Full controller (LLM picks tools each step)
-  python src/test_tools_pipeline.py --mode controller
-
-Requires: GOOGLE_API_KEY in .env for LLM steps (EDA, plan_training, controller).
+Requires: GOOGLE_API_KEY in .env for LLM steps.
 """
 from __future__ import annotations
 
@@ -53,17 +30,17 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 from agents.dynamic.controller_agent.controller_agent import ControllerAgent
 from agents.dynamic.model_agent import ModelAgent
+from agents.dynamic.preprocessing_agent.preprocessing_agent import PreprocessingAgent
 from src.utils.logger import Logger
 from tools.registry import ToolRegistry
-from tools.data_understanding import data_understanding
-from tools.data_cleaning import data_cleaning
-from tools.feature_engineering import feature_engineering
+from tools.preprocessing_execution import preprocessing_execution
 from tools.plan_training import plan_training
 from tools.train_simple import train_simple
 from tools.train_simple_optuna import train_simple_optuna
 from tools.train_autogluon import train_autogluon
 from tools.evaluate import evaluate
-from tools.pipeline_state import empty_state
+from tools.pipeline_state import empty_state, merge_state
+from tools.training_common import resolve_problem_type
 
 
 DEFAULT_DATA_CANDIDATES = [
@@ -141,16 +118,18 @@ def resolve_data_path(user_path: str | None) -> str:
     return ensure_iris_fallback()
 
 
-def build_registry() -> ToolRegistry:
+def build_registry(*, include_controller_stubs: bool = False) -> ToolRegistry:
     reg = ToolRegistry()
-    reg.register("data_understanding", data_understanding)
-    reg.register("data_cleaning", data_cleaning)
-    reg.register("feature_engineering", feature_engineering)
+    reg.register("preprocessing_execution", preprocessing_execution)
     reg.register("plan_training", plan_training)
     reg.register("train_simple", train_simple)
     reg.register("train_simple_optuna", train_simple_optuna)
     reg.register("train_autogluon", train_autogluon)
     reg.register("evaluate", evaluate)
+    if include_controller_stubs:
+        from tools.data_understanding import data_understanding
+
+        reg.register("data_understanding", data_understanding)
     return reg
 
 
@@ -201,25 +180,49 @@ def run_model_agent(
     approach: str | None,
     target: str | None,
     no_prompts: bool,
-    skip_eda: bool = False,
+    skip_preprocess: bool = False,
 ) -> dict:
-    """EDA (optional) then ModelAgent LangGraph: plan → train → evaluate."""
+    """PreprocessingAgent then ModelAgent LangGraph: plan → train → evaluate."""
     logger = Logger()
     state = empty_state(data_path, prompt)
 
-    if not skip_eda:
-        eda_result, state = invoke_tool(
-            data_understanding,
-            task="Run EDA for training",
-            tool_input={},
-            prompt=prompt,
-            data_path=data_path,
-            llm=llm,
-            state=state,
+    if not skip_preprocess:
+        prep_agent = PreprocessingAgent(logger, llm, registry)
+        prep_kwargs: dict = {}
+        if target:
+            prep_kwargs["target_column"] = target
+        state = prep_agent.run(data_path, prompt, pipeline_state=state, **prep_kwargs)
+        print_step(
+            "preprocessing_agent",
+            {
+                "status": state.get("status"),
+                "step": state.get("step"),
+                "X_train_path": state.get("X_train_engineered_path") or state.get("X_train_path"),
+            },
+            state,
         )
-        print_step("data_understanding", eda_result, state)
-        if eda_result.get("status") == "error":
+        if state.get("error") or state.get("step") in ("preprocessing_failed",):
             return state
+    else:
+        stem = Path(data_path).stem
+        prep_dir = PROJECT_ROOT / "Output" / "Preprocessing" / stem
+        if prep_dir.exists():
+            paths = {
+                "X_train_path": str(prep_dir / "X_train.csv"),
+                "X_test_path": str(prep_dir / "X_test.csv"),
+                "y_train_path": str(prep_dir / "y_train.csv"),
+                "y_test_path": str(prep_dir / "y_test.csv"),
+            }
+            eng_train = prep_dir / "X_train_engineered.csv"
+            eng_test = prep_dir / "X_test_engineered.csv"
+            if eng_train.exists() and eng_test.exists():
+                paths["X_train_engineered_path"] = str(eng_train)
+                paths["X_test_engineered_path"] = str(eng_test)
+            state = merge_state(state, paths)
+
+    problem_type = resolve_problem_type(state)
+    if problem_type:
+        state = merge_state(state, {"problem_type": problem_type})
 
     agent = ModelAgent(logger, llm, registry)
     kwargs = {
@@ -230,7 +233,8 @@ def run_model_agent(
         kwargs["training_approach"] = approach
     if target:
         kwargs["target_column"] = target
-        kwargs["problem_type"] = "classification"
+    if state.get("problem_type"):
+        kwargs["problem_type"] = state["problem_type"]
 
     state = agent.run(data_path, prompt, pipeline_state=state, **kwargs)
 
@@ -342,6 +346,11 @@ def main() -> None:
         help="Tool name when --mode tool (e.g. plan_training, train_simple_optuna)",
     )
     parser.add_argument(
+        "--skip-preprocess",
+        action="store_true",
+        help="Skip PreprocessingAgent (use existing splits in pipeline_state / Output/Preprocessing/)",
+    )
+    parser.add_argument(
         "--no-prompts",
         action="store_true",
         help="Skip interactive input; auto-approve the LLM training plan",
@@ -354,7 +363,7 @@ def main() -> None:
 
     data_path = resolve_data_path(args.data_path)
     llm = make_llm()
-    registry = build_registry()
+    registry = build_registry(include_controller_stubs=args.mode == "controller")
 
     print(f"[test] mode={args.mode}")
     print(f"[test] data={data_path}")
@@ -370,6 +379,7 @@ def main() -> None:
             approach=args.approach,
             target=args.target,
             no_prompts=args.no_prompts,
+            skip_preprocess=args.skip_preprocess,
         )
     elif args.mode == "tool":
         run_single_tool(

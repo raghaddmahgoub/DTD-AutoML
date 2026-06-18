@@ -1,6 +1,7 @@
-"""Small shared utilities used by training tool files."""
+"""Shared training workflow: load preprocessed splits, train helpers, metrics."""
 from __future__ import annotations
 
+import json
 import os
 import pickle
 from datetime import datetime
@@ -8,16 +9,170 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pandas as pd
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, r2_score, root_mean_squared_error
-from sklearn.model_selection import train_test_split
 
-from tools.nodes.training_engines import train_dask_xgb
 from tools.pipeline_state import merge_state
-from tools.training_data import load_training_data, prepare_training_xy
+
+LARGE_DATA_ROW_THRESHOLD = 700_000
 
 APPROACH_SIMPLE = "simple"
 APPROACH_SIMPLE_OPTUNA = "simple_optuna"
 APPROACH_AUTOGLUON = "autogluon"
+
+
+def resolve_preprocessed_paths(pipeline_state: dict[str, Any]) -> dict[str, str] | None:
+    """Return train/test CSV paths from preprocessing agent output (engineered preferred)."""
+    fe_out = pipeline_state.get("feature_engineering_output") or {}
+    prep_out = pipeline_state.get("preprocessing_output") or {}
+
+    eng_train = (
+        pipeline_state.get("X_train_engineered_path")
+        or fe_out.get("X_train_engineered_path")
+    )
+    eng_test = (
+        pipeline_state.get("X_test_engineered_path")
+        or fe_out.get("X_test_engineered_path")
+    )
+    if eng_train and eng_test and Path(eng_train).exists() and Path(eng_test).exists():
+        x_train_path, x_test_path = eng_train, eng_test
+    else:
+        x_train_path = pipeline_state.get("X_train_path") or prep_out.get("X_train_path")
+        x_test_path = pipeline_state.get("X_test_path") or prep_out.get("X_test_path")
+
+    y_train_path = pipeline_state.get("y_train_path") or prep_out.get("y_train_path")
+    y_test_path = pipeline_state.get("y_test_path") or prep_out.get("y_test_path")
+
+    paths = {
+        "X_train_path": x_train_path,
+        "X_test_path": x_test_path,
+        "y_train_path": y_train_path,
+        "y_test_path": y_test_path,
+    }
+    if not all(paths.values()) or not all(Path(p).exists() for p in paths.values()):
+        return None
+    return paths
+
+
+def require_preprocessed_splits(pipeline_state: dict[str, Any]) -> str | None:
+    if resolve_preprocessed_paths(pipeline_state):
+        return None
+    return (
+        "Preprocessed train/test splits not found. "
+        "Run PreprocessingAgent (preprocessing_execution + feature_engineering_execution) "
+        "before plan_training or train_* tools."
+    )
+
+
+def load_preprocessed_splits(
+    pipeline_state: dict[str, Any],
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, int]:
+    paths = resolve_preprocessed_paths(pipeline_state)
+    if not paths:
+        raise FileNotFoundError(require_preprocessed_splits(pipeline_state))
+
+    X_train = pd.read_csv(paths["X_train_path"])
+    X_test = pd.read_csv(paths["X_test_path"])
+    y_train = pd.read_csv(paths["y_train_path"]).iloc[:, 0]
+    y_test = pd.read_csv(paths["y_test_path"]).iloc[:, 0]
+    n_rows = len(X_train) + len(X_test)
+    return X_train, X_test, y_train, y_test, n_rows
+
+
+def resolve_problem_type(pipeline_state: dict[str, Any]) -> str | None:
+    if pipeline_state.get("problem_type"):
+        return pipeline_state["problem_type"]
+
+    summary_path = (pipeline_state.get("preprocessing_output") or {}).get("summary_path")
+    if summary_path and Path(summary_path).exists():
+        with open(summary_path, encoding="utf-8") as f:
+            summary = json.load(f)
+        task_type = summary.get("task_type")
+        if task_type in ("classification", "regression"):
+            return task_type
+    return None
+
+
+def load_planning_dataframe(pipeline_state: dict[str, Any]) -> pd.DataFrame:
+    """Build a train-set frame (features + target) for plan subgraph profiling."""
+    paths = resolve_preprocessed_paths(pipeline_state)
+    if not paths:
+        raise FileNotFoundError(require_preprocessed_splits(pipeline_state))
+
+    target_column = pipeline_state.get("target_column")
+    if not target_column:
+        raise ValueError("target_column missing from pipeline_state after preprocessing.")
+
+    X_train = pd.read_csv(paths["X_train_path"])
+    y_train = pd.read_csv(paths["y_train_path"]).iloc[:, 0]
+    df = X_train.copy()
+    df[target_column] = y_train.values
+    return df
+
+
+def pipeline_to_graph_state(pipeline_state: dict[str, Any]) -> dict[str, Any]:
+    err = require_preprocessed_splits(pipeline_state)
+    if err:
+        raise ValueError(err)
+
+    report = pipeline_state.get("report") or {}
+    if isinstance(report, dict) and "report" in report:
+        report = report["report"]
+    report = {
+        **report,
+        "dataset_summary": report.get("dataset_summary") or {},
+        "target_analysis": report.get("target_analysis") or {},
+        "data_quality_report": report.get("data_quality_report")
+        or {"duplicates": {"duplicate_ratio": 0.0}},
+        "multicollinearity": report.get("multicollinearity") or {"pairs": []},
+        "encoding_hints": report.get("encoding_hints") or {},
+        "signal_analysis": report.get("signal_analysis") or {},
+    }
+
+    data = load_planning_dataframe(pipeline_state)
+    n_rows = len(data)
+    if not report.get("dataset_summary"):
+        report["dataset_summary"] = {
+            "n_rows": n_rows,
+            "n_columns": len(data.columns),
+        }
+
+    problem_type = resolve_problem_type(pipeline_state)
+
+    return {
+        "data_path": pipeline_state["data_path"],
+        "target_column": pipeline_state.get("target_column"),
+        "problem_type": problem_type,
+        "data": data,
+        "use_dask": False,
+        "use_automl": False,
+        "automl_config": {},
+        "selected_models": [],
+        "optuna_config": {},
+        "llm_approach": "",
+        "model_selection_reasoning": "",
+        "report": report,
+        "automl_directives": {
+            "report": report,
+            "task_type": problem_type,
+            "user": {
+                "task_prompt": str(pipeline_state.get("prompt", ""))[:500],
+                "training_note": (pipeline_state.get("user_preferences") or {}).get(
+                    "user_training_prompt", ""
+                )[:300],
+                "time_preference": (pipeline_state.get("user_preferences") or {}).get(
+                    "time_preference", ""
+                ),
+                "hw_complexity": (pipeline_state.get("user_preferences") or {}).get(
+                    "hw_complexity", ""
+                ),
+                "preferred_models": (pipeline_state.get("user_preferences") or {}).get(
+                    "preferred_models", []
+                ),
+            },
+        },
+        "step": "initialized",
+    }
 
 
 def require_approved_plan(pipeline_state: dict[str, Any], expected: str) -> str | None:
@@ -33,31 +188,32 @@ def require_approved_plan(pipeline_state: dict[str, Any], expected: str) -> str 
 
 
 def load_training_context(pipeline_state: dict[str, Any]) -> tuple[dict[str, Any] | None, str | None]:
+    if err := require_preprocessed_splits(pipeline_state):
+        return None, err
+
     target = pipeline_state.get("target_column")
-    problem_type = pipeline_state.get("problem_type")
-    if not target or not problem_type:
-        return None, "Missing target_column/problem_type. Run plan_training first."
+    problem_type = resolve_problem_type(pipeline_state)
+    if not target:
+        return None, "Missing target_column. Run preprocessing first."
+    if not problem_type:
+        return None, "Missing problem_type. Set it in plan_training or ensure preprocessing_summary has task_type."
+
+    try:
+        X_train, X_test, y_train, y_test, n_rows = load_preprocessed_splits(pipeline_state)
+    except FileNotFoundError as exc:
+        return None, str(exc)
 
     plan = pipeline_state.get("training_plan") or {}
-    data, use_dask, n_rows = load_training_data(
-        pipeline_state["data_path"], pipeline_state
-    )
-    X, y, is_dask = prepare_training_xy(data, target)
-    use_dask = bool(use_dask or is_dask)
-
     return {
         "target": target,
         "problem_type": problem_type,
         "plan": plan,
-        "X": X,
-        "y": y,
-        "use_dask": use_dask,
+        "X_train": X_train,
+        "X_test": X_test,
+        "y_train": y_train,
+        "y_test": y_test,
         "n_rows": n_rows,
     }, None
-
-
-def train_test_split_xy(X, y):
-    return train_test_split(X, y, test_size=0.2, random_state=42)
 
 
 def _prediction_labels(y_true_np: np.ndarray, y_pred_np: np.ndarray) -> np.ndarray:
@@ -119,14 +275,14 @@ def complete_training(
     model: Any,
     metrics: dict,
     training_method: str,
-    used_dask: bool,
     n_rows: int,
     subfolder: str = "training",
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     metrics = dict(metrics or {})
     metrics["training_method"] = training_method
-    metrics["used_dask"] = used_dask
+    metrics["used_dask"] = False
     metrics["n_rows"] = n_rows
+    metrics["data_source"] = "preprocessed_splits"
     saved_files = save_model_artifact(model, subfolder)
 
     pipeline_state = merge_state(
@@ -140,7 +296,7 @@ def complete_training(
         "training_method": metrics.get("training_method"),
         "best_model": metrics.get("best_model"),
         "best_score": metrics.get("best_score"),
-        "used_dask": used_dask,
+        "used_dask": False,
         "saved_files": saved_files,
     }
     if "autogluon_used" in metrics:
@@ -150,20 +306,3 @@ def complete_training(
         result["fallback_reason"] = metrics["fallback_reason"]
         result["warning"] = metrics["fallback_reason"]
     return result, pipeline_state
-
-
-def run_dask_xgb_training(
-    pipeline_state: dict[str, Any], ctx: dict[str, Any]
-) -> tuple[dict[str, Any], dict[str, Any]]:
-    problem_type = ctx["problem_type"]
-    model, y_test, y_pred, metrics = train_dask_xgb(ctx["X"], ctx["y"], problem_type)
-    metrics = apply_test_metrics(metrics, y_test, y_pred, problem_type)
-    return complete_training(
-        pipeline_state,
-        model=model,
-        metrics=metrics,
-        training_method="Dask-XGBoost (large dataset)",
-        used_dask=True,
-        n_rows=ctx["n_rows"],
-        subfolder="training_dask",
-    )
