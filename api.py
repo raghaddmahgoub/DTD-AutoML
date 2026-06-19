@@ -172,11 +172,13 @@ async def run_custom_pipeline(
     target_column: str = Form(...),
     prompt: str = Form(...),
 ):
-    # Save uploaded file
     file_path = UPLOAD_DIR / file.filename
+
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
+
     cached_data = pipeline_instance.load_dataset_cache(str(file_path))
+
     inputs = {
         "data_path": str(file_path),
         "target_column": target_column,
@@ -185,7 +187,19 @@ async def run_custom_pipeline(
         "prompt": prompt,
         "dataset_cache": cached_data["dataset_cache"],
     }
-    print("Received inputs for custom pipeline:", inputs)
+
+    controller = ControllerAgent(
+        logger=logger,
+        llm=llm,
+        registry=registry,
+    )
+
+    result = controller.run(inputs)
+
+    return {
+        "status": "success",
+        "result": result,
+    }
     
 if __name__ == "__main__":
     import uvicorn

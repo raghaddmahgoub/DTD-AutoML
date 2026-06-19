@@ -10,7 +10,10 @@ class ControllerAgent:
         self.llm = llm
         self.registry = registry
 
-    def run(self, data_path: str, prompt: str):
+    def run(self, inputs:dict):
+        data_path = inputs.get("data_path")
+        prompt = inputs.get("prompt")
+
         print("Plan Started")
 
         self.logger.info("\n" + "=" * 50)
