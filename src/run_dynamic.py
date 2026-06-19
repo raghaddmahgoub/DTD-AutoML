@@ -6,20 +6,15 @@ from tools.preprocessing_execution import preprocessing_execution
 from tools.feature_engineering_execution import feature_engineering_execution
 from tools.plan_training import plan_training
 from tools.registry import ToolRegistry
+
 from langchain_google_genai import ChatGoogleGenerativeAI
 from src.utils.logger import Logger
 from agents.dynamic.controller_agent.controller_agent import ControllerAgent
+
 import os
-import sys
-from pathlib import Path
 from dotenv import load_dotenv
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
 
-load_dotenv(PROJECT_ROOT / ".env")
-
-# tools
-
+load_dotenv()
 
 tool_registry = ToolRegistry()
 tool_registry.register("preprocessing_execution", preprocessing_execution)
@@ -31,19 +26,19 @@ tool_registry.register("train_autogluon", train_autogluon)
 tool_registry.register("evaluate", evaluate)
 
 
-def run():
+def run_dynamic(inputs: dict):
     logger = Logger()
+
     llm = ChatGoogleGenerativeAI(
         model="gemini-2.5-flash-lite",
         google_api_key=os.getenv("GOOGLE_API_KEY"),
         temperature=0.3,
     )
-    data = str(PROJECT_ROOT /
-               "assets/data/Classification Datasets/Titanic-Dataset.csv")
-    controller = ControllerAgent(logger, llm, tool_registry)
-    controller.run(
-        data, "Analyze the dataset and train a model to predict the target variable.")
 
+    controller = ControllerAgent(
+        logger=logger,
+        llm=llm,
+        registry=tool_registry,
+    )
 
-if __name__ == "__main__":
-    run()
+    return controller.run(inputs)

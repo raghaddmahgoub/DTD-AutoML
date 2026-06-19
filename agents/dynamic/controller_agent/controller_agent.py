@@ -9,6 +9,7 @@ class ControllerAgent:
         self.logger = logger
         self.llm = llm
         self.registry = registry
+        print("ControllerAgent initialized with tools:", self.registry.list_tools())
 
     def run(self, inputs:dict):
         data_path = inputs.get("data_path")

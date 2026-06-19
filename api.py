@@ -2,6 +2,7 @@ import os
 import json
 import asyncio
 import shutil
+from src.run_dynamic import run_dynamic
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import StreamingResponse
@@ -187,14 +188,8 @@ async def run_custom_pipeline(
         "prompt": prompt,
         "dataset_cache": cached_data["dataset_cache"],
     }
-
-    controller = ControllerAgent(
-        logger=logger,
-        llm=llm,
-        registry=registry,
-    )
-
-    result = controller.run(inputs)
+   
+    result = run_dynamic(inputs)
 
     return {
         "status": "success",
