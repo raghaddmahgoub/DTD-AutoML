@@ -13,6 +13,7 @@ class ControllerAgent:
 
     def run(self, inputs:dict):
         data_path = inputs.get("data_path")
+        target_column = inputs.get("target_column")
         prompt = inputs.get("prompt")
 
         print("Plan Started")
@@ -63,6 +64,7 @@ FINAL STEP:
 """
 
         pipeline_state = empty_state(data_path, prompt)
+        pipeline_state["target_column"] = target_column
         memory = f"Task: {prompt}\nPipeline state step: {pipeline_state.get('step')}"
 
         while True:
@@ -103,6 +105,7 @@ FINAL STEP:
             result, pipeline_state = tool.invoke({
                 "task": task,
                 "tool_input": tool_input,
+                "target_column": pipeline_state.get("target_column", target_column),
                 "prompt": prompt,
                 "data_path": pipeline_state.get("data_path", data_path),
                 "llm": self.llm,

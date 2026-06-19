@@ -174,7 +174,8 @@ async def run_custom_pipeline(
     prompt: str = Form(...),
 ):
     file_path = UPLOAD_DIR / file.filename
-
+    print("Inputs received api.py:", dataset_id, report_id, file.filename, target_column, prompt)
+    print("Target column:", target_column)
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
