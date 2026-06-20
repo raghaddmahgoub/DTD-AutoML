@@ -138,7 +138,7 @@ def make_llm():
     if not api_key:
         raise RuntimeError("GOOGLE_API_KEY missing. Add it to .env")
     return ChatGoogleGenerativeAI(
-        model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite"),
+        model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
         google_api_key=api_key,
         temperature=0.3,
     )

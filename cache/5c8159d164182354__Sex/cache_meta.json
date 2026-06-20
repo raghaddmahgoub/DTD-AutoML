@@ -1,0 +1,13 @@
+{
+  "cache_version": "1.0",
+  "cache_key": "5c8159d164182354ac087f13c20417aa6ce56dc920716ffdf1f6076a7b622277",
+  "file_hash": "5c3c684032fa169dcc8b4853e06a9a5296fbb2f1b8061a5527710c418f5feac4",
+  "target_column": "Sex",
+  "original_path": "E:\\Work\\GitHub\\GP\\uploads\\1781913101138.csv",
+  "dataset_shape": {
+    "rows": 1309,
+    "cols": 27
+  },
+  "created_at": "2026-06-19T23:52:56Z",
+  "task_type": "classification"
+}

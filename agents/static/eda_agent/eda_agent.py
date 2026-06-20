@@ -40,13 +40,11 @@ class EDAAgent:
         df: pd.DataFrame,
         target_column: Optional[str] = None,
         df_name: str = "dataset",
-        dataset_cache= None,
         top_k: int = 5,
     ):
         self.df = df
         self.target = target_column
         self.df_name = df_name
-        self.dataset_cache = dataset_cache
         self.top_k = top_k
         self.report: Dict[str, Any] = {}
 

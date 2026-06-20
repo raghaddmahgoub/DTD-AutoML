@@ -1,0 +1,126 @@
+{
+  "stage": "preprocessing",
+  "task_type": "classification",
+  "column_actions": [
+    {
+      "column": "AccountWeeks",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "ContractRenewal",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "CustServCalls",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "DataPlan",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "DataUsage",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "DayCalls",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "DayMins",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "MonthlyCharge",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "OverageFee",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "RoamMins",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    }
+  ]
+}
