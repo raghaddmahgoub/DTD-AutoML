@@ -156,10 +156,8 @@ def pipeline_to_graph_state(pipeline_state: dict[str, Any]) -> dict[str, Any]:
             "report": report,
             "task_type": problem_type,
             "user": {
-                "task_prompt": str(pipeline_state.get("prompt", ""))[:500],
-                "training_note": (pipeline_state.get("user_preferences") or {}).get(
-                    "user_training_prompt", ""
-                )[:300],
+                "task_prompt": str(pipeline_state.get("prompt", ""))[:1200],
+                "controller_task": str(pipeline_state.get("controller_task") or "")[:1200],
                 "time_preference": (pipeline_state.get("user_preferences") or {}).get(
                     "time_preference", ""
                 ),
@@ -291,6 +289,12 @@ def complete_training(
     )
     pipeline_state["model_metrics"] = metrics
     pipeline_state["saved_files"] = saved_files
+
+    results_paths = save_automl_results_json(pipeline_state)
+    saved_files = {**saved_files, **results_paths}
+    pipeline_state["saved_files"] = saved_files
+    pipeline_state["results_json"] = results_paths.get("json")
+
     result = {
         "status": "success",
         "training_method": metrics.get("training_method"),
@@ -298,6 +302,7 @@ def complete_training(
         "best_score": metrics.get("best_score"),
         "used_dask": False,
         "saved_files": saved_files,
+        "results_json": results_paths.get("json"),
     }
     if "autogluon_used" in metrics:
         result["autogluon_used"] = metrics["autogluon_used"]
@@ -306,3 +311,102 @@ def complete_training(
         result["fallback_reason"] = metrics["fallback_reason"]
         result["warning"] = metrics["fallback_reason"]
     return result, pipeline_state
+
+
+def build_automl_results_payload(pipeline_state: dict[str, Any], *, timestamp: str | None = None) -> dict[str, Any]:
+    """Build results JSON payload matching static AutoMLAgent._save_outputs structure."""
+    stamp = timestamp or datetime.now().strftime("%Y%m%d_%H%M%S")
+    metrics = dict(pipeline_state.get("model_metrics") or {})
+    plan = pipeline_state.get("training_plan") or {}
+    approach = plan.get("approach")
+    use_automl = approach == APPROACH_AUTOGLUON
+
+    automl_config = plan.get("automl_config") or {}
+    optuna_config = plan.get("optuna_config") or {}
+    optuna_refined = None
+    if use_automl and automl_config:
+        optuna_refined = {
+            "models": automl_config.get("models") or automl_config.get("models_to_prioritize"),
+            "time_limit": automl_config.get("time_limit") or automl_config.get("time_limit_seconds"),
+            "preset": automl_config.get("preset") or automl_config.get("preset_mode"),
+        }
+
+    agent_messages = list(pipeline_state.get("agent_messages") or [])
+    reasoning = plan.get("reasoning")
+    if not agent_messages and reasoning:
+        agent_messages = [{"agent": "model_selection", "message": reasoning}]
+
+    training_results = {
+        "training_method": metrics.get("training_method"),
+        "best_model": metrics.get("best_model"),
+        "best_score": metrics.get("best_score"),
+        "metric_name": metrics.get("metric_name", "score"),
+        "models_trained": metrics.get("models_trained"),
+        "all_models": metrics.get("all_models", []),
+        "all_scores": metrics.get("all_scores", []),
+        "confusion_matrix": metrics.get("confusion_matrix"),
+        "best_params_per_model": metrics.get("best_params_per_model", {}),
+        "optuna_refined_config": optuna_refined,
+        "test_accuracy": metrics.get("test_accuracy"),
+        "test_f1_score": metrics.get("test_f1_score"),
+        "test_r2_score": metrics.get("test_r2_score"),
+        "rmse": metrics.get("rmse"),
+        "tuning_best_score": metrics.get("tuning_best_score"),
+        "optuna_trials": metrics.get("optuna_trials") or optuna_config.get("n_trials"),
+        "optuna_search_space": metrics.get("optuna_search_space") or optuna_config.get("search_space"),
+        "data_source": metrics.get("data_source"),
+        "n_rows": metrics.get("n_rows"),
+    }
+
+    return {
+        "run_timestamp": stamp,
+        "data_path": pipeline_state.get("data_path"),
+        "target_column": pipeline_state.get("target_column"),
+        "problem_type": pipeline_state.get("problem_type"),
+        "model_selection": {
+            "use_automl": use_automl,
+            "approach": approach,
+            "automl_config": automl_config,
+            "selected_models": plan.get("selected_models") or [],
+            "optuna_config": optuna_config,
+            "model_selection_reasoning": reasoning,
+            "train_tool": plan.get("train_tool"),
+        },
+        "training_results": training_results,
+        "agent_messages": agent_messages,
+        "workflow": {
+            "final_step": pipeline_state.get("step"),
+            "status": pipeline_state.get("status"),
+            "error": pipeline_state.get("error"),
+            "saved_model": (pipeline_state.get("saved_files") or {}).get("pickle"),
+        },
+    }
+
+
+def save_automl_results_json(
+    pipeline_state: dict[str, Any],
+    output_dir: str = "output/automl",
+) -> dict[str, str]:
+    """
+    Save training outputs in the same JSON layout as static AutoMLAgent:
+    output/automl/results_{timestamp}.json
+    """
+    out_dir = Path(output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    payload = build_automl_results_payload(pipeline_state, timestamp=timestamp)
+
+    json_path = out_dir / f"results_{timestamp}.json"
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, default=str)
+
+    saved = {"json": str(json_path), "output_dir": str(out_dir)}
+
+    model_path = (pipeline_state.get("saved_files") or {}).get("pickle")
+    if model_path and Path(model_path).exists():
+        dest = out_dir / f"best_model_{timestamp}.pkl"
+        dest.write_bytes(Path(model_path).read_bytes())
+        saved["pickle"] = str(dest)
+
+    print(f"[save_automl_results] JSON → {json_path}")
+    return saved

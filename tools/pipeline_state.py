@@ -13,12 +13,11 @@ def empty_state(data_path: str, prompt: str = "") -> dict[str, Any]:
         "target_column": None,
         "problem_type": None,
         "report": {},
+        "controller_task": "",
         "user_preferences": {
             "preferred_models": [],
             "time_preference": "",
             "hw_complexity": "",
-            "user_training_prompt": "",
-            "ask_before_training": True,
         },
         "training_plan": {
             "approved": False,

@@ -5,7 +5,7 @@ from typing import Any
 
 from agents.dynamic.model_agent.graph import build_model_graph
 from agents.dynamic.model_agent.state import ModelAgentState
-from tools.pipeline_state import empty_state
+from tools.pipeline_state import empty_state, merge_state
 
 
 class ModelAgent:
@@ -27,8 +27,6 @@ class ModelAgent:
         pipeline_state: dict | None = None,
         *,
         task: str = "Train model",
-        ask_before_training: bool = True,
-        auto_approve_plan: bool = False,
         training_approach: str = "",
         target_column: str = "",
         problem_type: str = "",
@@ -38,8 +36,6 @@ class ModelAgent:
         evaluate_input: dict | None = None,
     ) -> dict:
         config = {
-            "ask_before_training": ask_before_training,
-            "auto_approve_plan": auto_approve_plan,
             "training_approach": training_approach,
             "target_column": target_column,
             "problem_type": problem_type,
@@ -51,11 +47,15 @@ class ModelAgent:
             config["optuna_trials"] = str(optuna_trials)
 
         graph = build_model_graph(self.llm, self.registry, config)
+        pipeline_state = pipeline_state or empty_state(data_path, prompt)
+        if task:
+            pipeline_state = merge_state(pipeline_state, {"controller_task": task})
+
         initial: ModelAgentState = {
             "data_path": data_path,
             "prompt": prompt,
             "task": task,
-            "pipeline_state": pipeline_state or empty_state(data_path, prompt),
+            "pipeline_state": pipeline_state,
             "step": "model_agent_start",
         }
 

@@ -15,8 +15,13 @@ def make_plan_node(llm: Any, registry: Any, config: dict) -> Callable[[ModelAgen
     def plan_node(state: ModelAgentState) -> ModelAgentState:
         pipeline_state = state.get("pipeline_state") or {}
         tool_input = dict(config.get("plan_input") or {})
-        tool_input.setdefault("ask_before_training", config.get("ask_before_training", True))
-        tool_input.setdefault("auto_approve_plan", config.get("auto_approve_plan", False))
+
+        controller_task = (
+            state.get("task")
+            or pipeline_state.get("controller_task")
+            or "Build training plan"
+        )
+        tool_input.setdefault("controller_task", controller_task)
 
         if config.get("training_approach"):
             tool_input["training_approach"] = config["training_approach"]
@@ -27,7 +32,7 @@ def make_plan_node(llm: Any, registry: Any, config: dict) -> Callable[[ModelAgen
 
         result, pipeline_state = invoke_tool(
             plan_tool,
-            task=state.get("task") or "Build training plan",
+            task=controller_task,
             tool_input=tool_input,
             prompt=state.get("prompt", ""),
             data_path=state.get("data_path", pipeline_state.get("data_path", "")),

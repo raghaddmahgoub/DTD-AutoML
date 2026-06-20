@@ -1,7 +1,7 @@
 import json
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from tools.pipeline_state import empty_state, ensure_state
+from tools.pipeline_state import empty_state, ensure_state, merge_state
 
 
 class ControllerAgent:
@@ -42,6 +42,10 @@ PIPELINE ORDER (follow when possible):
 RULES:
 - Return ONLY valid JSON
 - Choose one tool per step
+- Set "task" to a concrete instruction for the tool you call (passed to its LLM like dynamic EDA)
+- When choosing plan_training for model training, include training-critical details from the user prompt in "task":
+  target, metric, speed/quality, preferred or excluded models, AutoGluon/Optuna requests,
+  interpretability, hardware, and deployment constraints.
 - Do not call train_* before preprocessing and plan_training are complete
 - After plan_training, call the train tool named in result.train_tool
 - Stop when evaluation is done
@@ -102,6 +106,9 @@ FINAL STEP:
 
             self.logger.info(f"\n[AGENT] Executing tool: {tool_name}")
 
+            if task:
+                pipeline_state = merge_state(pipeline_state, {"controller_task": task})
+
             result, pipeline_state = tool.invoke({
                 "task": task,
                 "tool_input": tool_input,
@@ -119,15 +126,16 @@ FINAL STEP:
             self.logger.info(f"[RESULT] {result}")
 
             memory = f"""
-Task: {prompt}
+User prompt: {prompt}
 
 Last tool: {tool_name}
+Last controller task: {task or '(none)'}
 Last result: {json.dumps(result, default=str)[:2500]}
 Pipeline step: {pipeline_state.get('step')}
 Training plan approved: {(pipeline_state.get('training_plan') or {}).get('approved')}
 Next train tool (if planned): {(pipeline_state.get('training_plan') or {}).get('train_tool')}
 
-Choose the NEXT single tool.
+Choose the NEXT single tool. Include a specific "task" string for that tool.
 """
 
         return pipeline_state

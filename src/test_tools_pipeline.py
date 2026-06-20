@@ -179,7 +179,6 @@ def run_model_agent(
     *,
     approach: str | None,
     target: str | None,
-    no_prompts: bool,
     skip_preprocess: bool = False,
 ) -> dict:
     """PreprocessingAgent then ModelAgent LangGraph: plan → train → evaluate."""
@@ -191,7 +190,9 @@ def run_model_agent(
         prep_kwargs: dict = {}
         if target:
             prep_kwargs["target_column"] = target
-        state = prep_agent.run(data_path, prompt, pipeline_state=state, **prep_kwargs)
+        state = prep_agent.run(
+            data_path, prompt, pipeline_state=state, task=prompt, **prep_kwargs
+        )
         print_step(
             "preprocessing_agent",
             {
@@ -225,10 +226,7 @@ def run_model_agent(
         state = merge_state(state, {"problem_type": problem_type})
 
     agent = ModelAgent(logger, llm, registry)
-    kwargs = {
-        "ask_before_training": not no_prompts,
-        "auto_approve_plan": no_prompts,
-    }
+    kwargs: dict = {}
     if approach:
         kwargs["training_approach"] = approach
     if target:
@@ -236,7 +234,13 @@ def run_model_agent(
     if state.get("problem_type"):
         kwargs["problem_type"] = state["problem_type"]
 
-    state = agent.run(data_path, prompt, pipeline_state=state, **kwargs)
+    state = agent.run(
+        data_path,
+        prompt,
+        pipeline_state=state,
+        task=prompt,
+        **kwargs,
+    )
 
     plan = state.get("training_plan") or {}
     print_step(
@@ -267,7 +271,6 @@ def run_manual(
     *,
     approach: str | None,
     target: str | None,
-    no_prompts: bool,
 ) -> dict:
     """Alias for run_model_agent (EDA + ModelAgent LangGraph)."""
     return run_model_agent(
@@ -277,7 +280,6 @@ def run_manual(
         registry,
         approach=approach,
         target=target,
-        no_prompts=no_prompts,
     )
 
 
@@ -289,7 +291,6 @@ def run_single_tool(
     registry: ToolRegistry,
     *,
     approach: str | None,
-    no_prompts: bool,
 ) -> dict:
     tool = registry.get(tool_name)
     if tool is None:
@@ -298,10 +299,7 @@ def run_single_tool(
     state = empty_state(data_path, prompt)
     tool_input: dict = {}
     if tool_name == "plan_training":
-        tool_input = {
-            "ask_before_training": not no_prompts,
-            "auto_approve_plan": no_prompts,
-        }
+        tool_input = {}
         if approach:
             tool_input["training_approach"] = approach
 
@@ -351,11 +349,6 @@ def main() -> None:
         help="Skip PreprocessingAgent (use existing splits in pipeline_state / Output/Preprocessing/)",
     )
     parser.add_argument(
-        "--no-prompts",
-        action="store_true",
-        help="Skip interactive input; auto-approve the LLM training plan",
-    )
-    parser.add_argument(
         "--prompt",
         default="Analyze the dataset and train a model to predict the target.",
     )
@@ -368,7 +361,6 @@ def main() -> None:
     print(f"[test] mode={args.mode}")
     print(f"[test] data={data_path}")
     print(f"[test] approach={'LLM decides' if not args.approach else args.approach}")
-    print(f"[test] prompts={'off (auto-approve)' if args.no_prompts else 'on (interactive)'}")
 
     if args.mode in ("manual", "model_agent"):
         run_model_agent(
@@ -378,7 +370,6 @@ def main() -> None:
             registry,
             approach=args.approach,
             target=args.target,
-            no_prompts=args.no_prompts,
             skip_preprocess=args.skip_preprocess,
         )
     elif args.mode == "tool":
@@ -389,14 +380,8 @@ def main() -> None:
             llm,
             registry,
             approach=args.approach,
-            no_prompts=args.no_prompts,
         )
     else:
-        if not args.no_prompts:
-            print(
-                "[test] controller mode uses plan_training prompts inside the loop. "
-                "Use --no-prompts for non-interactive runs."
-            )
         run_controller(data_path, args.prompt, llm, registry)
 
 

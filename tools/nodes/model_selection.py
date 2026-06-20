@@ -48,7 +48,7 @@ Per-model tunable params (use in optuna_settings.search_space):
 
 _SYSTEM = """You are a tabular ML planner. Reply with ONE JSON object only (no markdown).
 You MUST pick exactly one approach from: Simple | Simple+Optuna | AutoGluon (no other values).
-Base the choice on DATA PROFILE and USER PROMPT when provided.
+Base the choice on DATA PROFILE and the Task / User prompt when provided.
 Only use model names and presets from the allowed lists in the user message."""
 
 
@@ -118,12 +118,12 @@ def _compact_data_profile(
 def _user_requirements_block(directives: dict) -> str:
     user = directives.get("user") or {}
     lines = []
-    task = (user.get("task_prompt") or "").strip()
-    note = (user.get("training_note") or "").strip()
-    if task:
-        lines.append(f"Task: {task[:450]}")
-    if note:
-        lines.append(f"User note: {note[:300]}")
+    controller_task = (user.get("controller_task") or "").strip()
+    user_prompt = (user.get("task_prompt") or "").strip()
+    if controller_task:
+        lines.append(f"Task: {controller_task[:450]}")
+    if user_prompt:
+        lines.append(f"User prompt: {user_prompt[:400]}")
     time_pref = (user.get("time_preference") or "").strip()
     hw = (user.get("hw_complexity") or "").strip()
     models = user.get("preferred_models") or []
