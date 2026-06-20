@@ -1,0 +1,321 @@
+{
+  "stage": "preprocessing",
+  "task_type": "classification",
+  "column_actions": [
+    {
+      "column": "Age",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "Embarked",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "onehot"
+      }
+    },
+    {
+      "column": "Fare",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "Parch",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "Passengerid",
+      "action": "drop",
+      "reason": "high_cardinality_drop",
+      "policy_source": "llm_policy"
+    },
+    {
+      "column": "Pclass",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "median",
+        "encoding": "onehot"
+      }
+    },
+    {
+      "column": "Sex",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "median",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "sibsp",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.1",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.10",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.11",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.12",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.13",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.14",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.15",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.16",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.17",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.18",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.2",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.3",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.4",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.5",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.6",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.7",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.8",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "zero.9",
+      "action": "transform",
+      "reason": "policy",
+      "policy_source": "llm_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    }
+  ]
+}

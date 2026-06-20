@@ -1,0 +1,49 @@
+{
+  "run_timestamp": "20260620_031010",
+  "data_path": "Output\\Preprocessing\\1781914051380\\full_preprocessed.csv",
+  "target_column": "avg_salary",
+  "problem_type": "regression",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The dataset exhibits a combination of strong linear signals (e.g., min_salary, max_salary, hourly, python_yn) and a significant number of features identified as 'non-linear candidates' (almost all features). This indicates that a simple linear model would likely underperform by missing complex relationships, while a purely non-linear model might not fully leverage the strong linear components. AutoGluon is ideal for this scenario as it automatically explores a wide range of models (including linear models, tree-based models like GBM and XGBoost, and neural networks), handles feature engineering (like categorical encoding and multicollinearity management through regularization or model selection), and ensembles them to capture both linear and non-linear patterns effectively. The 'moderate' target skew is also better handled by AutoGluon's robust ensemble approach. The multicollinearity risk, particularly between 'min_salary' and 'max_salary', can be managed by AutoGluon's ensemble and regularization techniques, or by pre-processing (e.g., dropping one or creating a new feature). For 'Company Name' and 'company_txt' (correlation 1.0), one should be dropped during pre-processing. Given the complexity and mixed signal types, AutoGluon offers the best balance of performance and automation.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [],\n  \"dask_models\": []\n}\n```"
+  },
+  "training_results": {
+    "training_method": "AutoGluon",
+    "best_model": "WeightedEnsemble_L2",
+    "best_score": -3.112207330726516,
+    "metric_name": "score",
+    "models_trained": 3,
+    "all_models": [
+      "WeightedEnsemble_L2",
+      "XGBoost_BAG_L1",
+      "LightGBM_BAG_L1"
+    ],
+    "all_scores": [
+      -3.112207330726516,
+      -3.1884751896576247,
+      -4.880857235159972
+    ],
+    "confusion_matrix": null,
+    "best_params_per_model": {},
+    "optuna_refined_config": null
+  },
+  "agent_messages": [
+    {
+      "agent": "training",
+      "message": "Training complete. Training completed. Best score: -3.1122"
+    }
+  ],
+  "workflow": {
+    "final_step": "model_trained",
+    "error": null
+  }
+}

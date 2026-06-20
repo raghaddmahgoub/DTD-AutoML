@@ -1,0 +1,316 @@
+{
+  "stage": "preprocessing",
+  "task_type": "regression",
+  "column_actions": [
+    {
+      "column": "Company Name",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "Competitors",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "Founded",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "Headquarters",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "Industry",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "Job Description",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "Job Title",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "Location",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "R_yn",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "Rating",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "Revenue",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "Salary Estimate",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "Sector",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "Size",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "Type of ownership",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "age",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "aws",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "company_txt",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "employer_provided",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "excel",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "hourly",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "job_state",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "categorical",
+        "missing": "mode",
+        "encoding": "label"
+      }
+    },
+    {
+      "column": "max_salary",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "min_salary",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "python_yn",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "same_state",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    },
+    {
+      "column": "spark",
+      "action": "transform",
+      "reason": "default_policy",
+      "policy_source": "default_policy",
+      "details": {
+        "type": "numeric",
+        "missing": "median",
+        "outlier": "keep",
+        "encoding": "none"
+      }
+    }
+  ]
+}

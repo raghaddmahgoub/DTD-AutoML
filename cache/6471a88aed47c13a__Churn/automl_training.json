@@ -1,0 +1,68 @@
+{
+  "run_timestamp": null,
+  "data_path": "Output\\Preprocessing\\1781913308227\\full_preprocessed.csv",
+  "target_column": "Churn",
+  "problem_type": "classification",
+  "model_selection": {
+    "use_automl": true,
+    "automl_config": {
+      "models": [
+        "GBM",
+        "XGB"
+      ],
+      "time_limit": 300,
+      "preset": "best_quality"
+    },
+    "selected_models": [],
+    "model_selection_reasoning": "```json\n{\n  \"approach\": \"AutoGluon\",\n  \"reasoning\": \"The dataset presents a classification task with several features exhibiting strong univariate signals, some of which are highly correlated (e.g., DataPlan, DataUsage, MonthlyCharge). High multicollinearity can be challenging for simple linear models, but tree-based models (like Gradient Boosting Machines and XGBoost, which AutoGluon leverages) are generally more robust to it and can capture complex, non-linear interactions. AutoGluon is designed for 'high complexity or non-linear signals' and automatically handles model selection, hyperparameter tuning, and ensembling, making it an excellent choice for exploring these potentially complex relationships and achieving strong performance without manual intervention. Without explicit information about a 'very large dataset', Dask-XGBoost is not the primary choice, and 'Simple Training' might struggle with the multicollinearity and potentially non-linear signals.\",\n  \"autogluon_settings\": {\n    \"models_to_prioritize\": [\"GBM\", \"XGB\"],\n    \"time_limit_seconds\": 300,\n    \"preset_mode\": \"best_quality\"\n  },\n  \"simple_models\": [\"RandomForest\", \"XGBoost\", \"LogisticRegression\"],\n  \"dask_models\": [\"Dask-XGBoost\"]\n}\n```"
+  },
+  "training_results": {
+    "best_model": "LightGBM_BAG_L1",
+    "best_score": 0.9384846211552889,
+    "feature_importance": {
+      "DayMins": 0.07216804201050261,
+      "CustServCalls": 0.057764441110277544,
+      "MonthlyCharge": 0.041185296324081036,
+      "ContractRenewal": 0.030607651912978227,
+      "OverageFee": 0.02445611402850716,
+      "RoamMins": 0.021905476369092215,
+      "DataUsage": 0.018304576144035977,
+      "DayCalls": 0.004651162790697638,
+      "AccountWeeks": 0.0039009752438109225,
+      "DataPlan": 0.002700675168792177
+    },
+    "models_trained": 3,
+    "all_models": [
+      "LightGBM_BAG_L1",
+      "WeightedEnsemble_L2",
+      "XGBoost_BAG_L1"
+    ],
+    "all_scores": [
+      0.9384846211552889,
+      0.9384846211552889,
+      0.9373593398349588
+    ],
+    "training_method": "AutoGluon",
+    "f1_score": 0.9428220514955469,
+    "confusion_matrix": [
+      [
+        569,
+        7
+      ],
+      [
+        29,
+        62
+      ]
+    ]
+  },
+  "agent_messages": [
+    {
+      "agent": "training",
+      "message": "Training complete. Training completed. Best score: 0.9385"
+    }
+  ],
+  "workflow": {
+    "final_step": "model_trained",
+    "error": null
+  }
+}

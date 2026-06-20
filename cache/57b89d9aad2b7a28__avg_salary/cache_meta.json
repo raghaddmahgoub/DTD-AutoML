@@ -1,0 +1,13 @@
+{
+  "cache_version": "1.0",
+  "cache_key": "57b89d9aad2b7a2807fced0c47846956689489ba3bff1794d92c6fdf9b204b63",
+  "file_hash": "1f92dd52d5a6cd44f1231f51a858488a79ef495d943f3b67eaea263692c882fc",
+  "target_column": "avg_salary",
+  "original_path": "E:\\Work\\GitHub\\GP\\uploads\\1781914051380.csv",
+  "dataset_shape": {
+    "rows": 467,
+    "cols": 28
+  },
+  "created_at": "2026-06-20T00:10:11Z",
+  "task_type": "regression"
+}
