@@ -1,8 +1,5 @@
 """
-agents/controller_agent.py
 D.T.D (Data To Deployment) — Multi-Agent AutoML Pipeline
-
-ControllerAgent — replaces the old while-True LLM tool-calling loop.
 
 What changed vs the old version:
     OLD: while True → LLM picks a tool → tool.invoke() → repeat
@@ -64,19 +61,6 @@ import sys
 import uuid
 from pathlib import Path
 from typing import Optional
-# ── Path bootstrap ────────────────────────────────────────────────────────────
-# This file lives at:  <project_root>/agents/dynamic/controller_agent/controller_agent.py
-# state/ and graph/   live at: <project_root>/
-#
-# When you run:
-#   python controller_agent.py ...          (from inside the controller_agent/ folder)
-#   python agents/.../controller_agent.py  (from project root)
-# both cases need <project_root> on sys.path so that
-# "from state.pipeline_state import ..." resolves correctly.
-#
-# We walk up from this file's location until we find the folder that
-# contains BOTH a "state" directory and a "graph" directory — that is
-# the project root — and insert it at the front of sys.path.
 
 def _find_project_root() -> Path:
     """
@@ -94,15 +78,12 @@ def _find_project_root() -> Path:
             break
         current = parent
 
-    # Fallback: assume project root is 3 levels above this file
-    # controller_agent.py → controller_agent/ → dynamic/ → agents/ → <root>
     return Path(__file__).resolve().parents[3]
 
 _PROJECT_ROOT = _find_project_root()
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-# ── Project imports (now resolvable from any working directory) ───────────────
 from state.pipeline_state import make_initial_state
 from graph.graph_builder  import build_graph
 from tools.knowledge_graph_builder import build_knowledge_graph
@@ -115,7 +96,7 @@ try:
     else:
         load_dotenv()                         # fallback: searches parent dirs
 except ImportError:
-    pass  # python-dotenv not installed
+    pass
 
 class ControllerAgent:
     """
@@ -127,9 +108,6 @@ class ControllerAgent:
         3. Invoke the graph — LangGraph drives all agent execution
         4. Handle interrupt() pauses — surface them to the caller
         5. Accept resume() calls to continue after human feedback
-
-    The old tool-registry loop is fully replaced by LangGraph's
-    StateGraph execution model.
     """
 
     def __init__(self, logger=None, llm=None, registry=None):
@@ -144,7 +122,6 @@ class ControllerAgent:
         self.logger = logger or logging.getLogger(__name__)
 
         # llm and registry are kept in signature so existing call sites
-        # (e.g. main.py instantiating ControllerAgent) don't need changing.
         if llm is not None:
             self.logger.info(
                 "[ControllerAgent] Note: llm argument is no longer used. "
@@ -174,8 +151,7 @@ class ControllerAgent:
         Args:
             inputs: dict with keys:
                 data_path     (str)  — path to the dataset file
-                target_column (str)  — target/label column name (optional;
-                                       Intent Detector will try to infer it)
+                target_column (str)  — target/label column name (optional; Intent Detector will try to infer it)
                 prompt        (str)  — natural-language request
                                        e.g. "run full pipeline"
                                             "just preprocess my data"
@@ -240,9 +216,11 @@ class ControllerAgent:
             May contain another "__interrupted__" if the next checkpoint fires.
 
         How it works internally:
-            LangGraph's interrupt() left the graph suspended at a checkpoint node.
-            Calling app.invoke(Command(resume=...), config) injects the human
-            response into the interrupted node and continues execution.
+            LangGraph's MemorySaver checkpointer has saved the full state at the
+            interrupted checkpoint. We load that state and inject the human response
+            via app.invoke(None, config) — passing None tells LangGraph to load
+            the saved state instead of creating a fresh one. The resume payload is
+            passed via the checkpoint node's interrupt response mechanism.
         """
         from langgraph.types import Command
 
@@ -256,7 +234,7 @@ class ControllerAgent:
 
         config = {"configurable": {"thread_id": run_id}}
 
-        # Inject human response into the interrupted checkpoint node
+        # Create resume command with human response
         resume_payload = {"decision": decision, "text": feedback_text}
         return self._invoke(Command(resume=resume_payload), config, run_id)
 
@@ -280,6 +258,49 @@ class ControllerAgent:
             final_state["knowledge_graph"] = build_knowledge_graph(final_state)
             with open("final_state.json", "w") as f:
                 json.dump(final_state, f, indent=2, default=str)
+            # Check if execution paused on an interrupt (newer LangGraph returns interrupt state directly)
+            if isinstance(final_state, dict) and final_state.get("__interrupt__"):
+                raw = final_state["__interrupt__"]
+                interrupt_data = {}
+                if isinstance(raw, list) and len(raw) > 0:
+                    if hasattr(raw[0], "value"):
+                        interrupt_data = raw[0].value
+                    else:
+                        # try dict or object access
+                        try:
+                            interrupt_data = raw[0].get("value", raw[0])
+                        except Exception:
+                            interrupt_data = raw[0]
+                elif isinstance(raw, dict):
+                    interrupt_data = raw
+
+                agent_name = "unknown"
+                agent_output = {}
+                if isinstance(interrupt_data, dict):
+                    agent_name    = interrupt_data.get("agent", "unknown")
+                    agent_output  = interrupt_data.get("agent_output", {})
+
+                self.logger.info("\n" + "─" * 60)
+                self.logger.info("[HITL CHECKPOINT] Pipeline paused at: %s", agent_name)
+                self.logger.info("run_id: %s  (use this to resume)", run_id)
+                self.logger.info("─" * 60)
+                self.logger.info("[AGENT OUTPUT PREVIEW]")
+                self.logger.info(json.dumps(agent_output, indent=2, default=str)[:1000])
+                self.logger.info("─" * 60)
+                self.logger.info(
+                    "To resume, call:\n"
+                    "  agent.resume(run_id='%s', decision='accept')\n"
+                    "  agent.resume(run_id='%s', decision='feedback', "
+                    "feedback_text='your note here')",
+                    run_id, run_id,
+                )
+
+                partial_state = dict(final_state)
+                partial_state["__interrupted__"] = True
+                partial_state["__paused_at__"]   = agent_name
+                partial_state["__run_id__"]       = run_id
+                return partial_state
+
             self.logger.info("\n[ControllerAgent] Pipeline completed successfully.")
             self._log_summary(final_state)
             return final_state
@@ -482,12 +503,30 @@ def main():
         #     "target_column": args.target,
         #     "run_id":        args.run_id,
         # })
-        result = agent.run({
-            "data_path":     r"R:\Data Analysis Hackathon '26\car_task\car_prices.csv",
-            # "target_column": "Survived",
-            "prompt":        "Perform a full end-to-end machine learning pipeline for this dataset, including EDA, preprocessing, feature engineering, model selection, training, and evaluation.",
-        })
+        data_path = args.data
+        prompt = args.query
+        target_column = args.target
 
+        if not data_path:
+            default_path = _PROJECT_ROOT / "assets/data/Classification Datasets/Titanic-Dataset.csv"
+            if default_path.exists():
+                data_path = str(default_path)
+            else:
+                default_path_alt = _PROJECT_ROOT / "assets/data/Datasets/Classification Datasets/Iris.csv"
+                if default_path_alt.exists():
+                    data_path = str(default_path_alt)
+                else:
+                    data_path = "assets/data/Classification Datasets/Titanic-Dataset.csv"
+        
+        if not prompt:
+            prompt = "analyze this data and train a model"
+
+        result = agent.run({
+            "data_path":     data_path,
+            "prompt":        prompt,
+            "target_column": target_column,
+            "run_id":        args.run_id,
+        })
 
     # ── Output ────────────────────────────────────────────────────────────────
     if result.get("__interrupted__"):

@@ -1,7 +1,4 @@
 """
-state/pipeline_state.py
-D.T.D (Data To Deployment) — Multi-Agent AutoML Pipeline
-
 Single source of truth for the LangGraph StateGraph state.
 
 Rules:
@@ -75,6 +72,9 @@ class PipelineState(TypedDict):
     # ── Model Selection outputs (written by Agent 4) ──────────────────────────
     automl_config:             Optional[dict]
     model_selection_reasoning: Optional[str]
+    training_plan:             Optional[dict]
+    user_preferences:          Optional[dict]
+    prompt:                    Optional[str]
 
     # ── Training outputs (written by Agent 5) ─────────────────────────────────
     trained_model_path: Optional[str]
@@ -168,6 +168,23 @@ def make_initial_state(data_path: str, nl_query: str) -> PipelineState:
         # Model Selection
         automl_config=None,
         model_selection_reasoning=None,
+        training_plan={
+            "approved": False,
+            "approach": None,
+            "training_method": None,
+            "train_tool": None,
+            "use_dask_training": False,
+            "selected_models": [],
+            "automl_config": {},
+            "reasoning": "",
+        },
+        user_preferences={
+            "preferred_models": [],
+            "time_preference": "",
+            "hw_complexity": "",
+            "training_approach": "",
+        },
+        prompt=nl_query,
 
         # Training
         trained_model_path=None,
