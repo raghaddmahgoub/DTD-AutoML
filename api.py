@@ -36,6 +36,83 @@ print("Connected to MongoDB database:", MONGO_DB)
 
 executor = ThreadPoolExecutor(max_workers=5)
 
+# ── Dynamic pipeline (LangGraph + HITL) ──────────────────────────────────────
+# Single shared instance so MemorySaver persists state across HTTP requests.
+# run_id (== report_id) is the thread_id key inside MemorySaver.
+_dynamic_controller = ControllerAgent()
+
+
+def _dynamic_state_to_response(state: dict, run_id: str) -> dict:
+    """
+    Normalise the raw PipelineState / ControllerAgent return value into a
+    clean JSON response the Node.js backend can parse.
+
+    Possible shapes:
+        status="paused"    — HITL checkpoint fired; frontend should show agent
+                             output and call /dynamic/resume/{run_id}
+        status="completed" — pipeline finished successfully
+        status="error"     — unhandled exception inside the graph
+    """
+    if state.get("__error__"):
+        return {
+            "run_id": run_id,
+            "status": "error",
+            "error":  state["__error__"],
+        }
+
+    if state.get("__interrupted__"):
+        paused_at   = state.get("__paused_at__", "unknown")
+        agent_out   = state.get("agent_outputs", {}).get(paused_at, {})
+        return {
+            "run_id":       run_id,
+            "status":       "paused",
+            "paused_at":    paused_at,
+            # The full output of the just-completed agent, ready for rendering
+            "agent_output": agent_out,
+        }
+
+    return {
+        "run_id": run_id,
+        "status": "completed",
+        "result": {
+            "target_column":      state.get("target_column"),
+            "task_type":          state.get("task_type"),
+            "trained_model_path": state.get("trained_model_path"),
+            "model_metrics":      state.get("model_metrics"),
+            "endpoint_url":       state.get("endpoint_url"),
+            # All per-agent outputs for the frontend panels
+            "agent_outputs":      state.get("agent_outputs", {}),
+        },
+    }
+
+
+def _dynamic_persist_to_mongo(report_id: str, state: dict) -> None:
+    """Mirror dynamic pipeline state fields into the existing MongoDB document."""
+    try:
+        agent_outputs = state.get("agent_outputs", {})
+        status = (
+            "paused"    if state.get("__interrupted__") else
+            "error"     if state.get("__error__")       else
+            "completed"
+        )
+        update = {
+            "updated_at":    datetime.utcnow(),
+            "target_column": state.get("target_column"),
+            "task_type":     state.get("task_type"),
+            "dynamic_status": status,
+        }
+        # Store each agent's output under report.<agent_name>
+        for agent_name, output in agent_outputs.items():
+            update[f"report.{agent_name}"] = output
+
+        reports_collection.update_one(
+            {"_id": ObjectId(report_id)},
+            {"$set": update},
+            upsert=True,
+        )
+    except Exception as exc:
+        print(f"[API][dynamic] MongoDB persist error: {exc}")
+
 @app.post("/suggest-target")
 async def suggest_target(file: UploadFile = File(...)):
     print("Received file:", file.filename if file else "NO FILE")
@@ -201,9 +278,134 @@ async def run_custom_pipeline(
 @app.post('/run-custom-pipeline/pause')
 async def pause_pipeline():
     pass
+
 @app.post('/run-custom-pipeline/resume')
-async def resume_pipeline():
+async def resume_pipeline_legacy():
+    """Legacy stub kept for backward compatibility. Use /dynamic/resume/{run_id} instead."""
     pass
+
+
+# =============================================================================
+# DYNAMIC PIPELINE ENDPOINTS  (LangGraph + HITL)
+# =============================================================================
+# Prefix: /dynamic/*
+# These endpoints power the new dynamic agent pipeline.
+# The Node.js backend calls them in this order:
+#
+#   1. POST /dynamic/run/{report_id}        — start the pipeline
+#   2. GET  /dynamic/status/{run_id}        — poll until paused or completed
+#      (or read the immediate JSON response from step 1)
+#   3. POST /dynamic/resume/{run_id}        — send HITL decision (loop with step 2)
+#
+# response shape (all three endpoints return the same structure):
+#   { run_id, status: "paused"|"completed"|"error",
+#     paused_at?, agent_output?,          ← only when status=="paused"
+#     result?: { target_column, task_type, trained_model_path,
+#                model_metrics, endpoint_url, agent_outputs },
+#     error? }                            ← only when status=="error"
+# =============================================================================
+
+
+@app.post("/dynamic/run/{report_id}")
+async def dynamic_run_pipeline(
+    report_id:     str,
+    file:          UploadFile = File(...),
+    prompt:        str        = Form(...),
+    target_column: str        = Form(None),  # optional — Intent Detector infers if absent
+):
+    """
+    Start a new dynamic LangGraph pipeline run.
+
+    - report_id is used as the LangGraph thread_id (MemorySaver key).
+    - target_column is optional; the Intent Detector will suggest one if omitted.
+    - Returns immediately: status is "paused" (HITL checkpoint) or "completed".
+
+    Frontend flow after receiving status=="paused":
+        1. Render agent_output to the user
+        2. Collect decision ("accept" / "feedback") + optional feedback_text
+        3. POST /dynamic/resume/{run_id}
+    """
+    file_path = UPLOAD_DIR / file.filename
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    # Record run start in Mongo
+    reports_collection.update_one(
+        {"_id": ObjectId(report_id)},
+        {"$set": {"start_time": datetime.utcnow(), "dynamic_status": "running"}},
+        upsert=True,
+    )
+
+    loop = asyncio.get_event_loop()
+
+    def _run():
+        return _dynamic_controller.run({
+            "data_path":     str(file_path),
+            "prompt":        prompt,
+            "target_column": target_column,   # None → Intent Detector will infer
+            "report_id":     report_id,        # doubles as thread_id in MemorySaver
+        })
+
+    state = await loop.run_in_executor(executor, _run)
+
+    _dynamic_persist_to_mongo(report_id, state)
+    return JSONResponse(content=_dynamic_state_to_response(state, run_id=report_id))
+
+
+@app.post("/dynamic/resume/{run_id}")
+async def dynamic_resume_pipeline(
+    run_id:        str,
+    decision:      str = Form(...),   # "accept" | "feedback"
+    feedback_text: str = Form(""),    # only used when decision == "feedback"
+):
+    """
+    Resume a paused HITL checkpoint.
+
+    Form fields:
+        decision      — "accept" (approve and continue) | "feedback" (re-run agent)
+        feedback_text — free-text note for the agent (required when decision=="feedback")
+
+    Returns the same JSON shape as /dynamic/run — may pause again at the next
+    checkpoint, or complete if this was the last one.
+    """
+    loop = asyncio.get_event_loop()
+
+    def _resume():
+        return _dynamic_controller.resume(
+            run_id=run_id,
+            decision=decision,
+            feedback_text=feedback_text,
+        )
+
+    state = await loop.run_in_executor(executor, _resume)
+
+    _dynamic_persist_to_mongo(run_id, state)
+    return JSONResponse(content=_dynamic_state_to_response(state, run_id=run_id))
+
+
+@app.get("/dynamic/status/{run_id}")
+async def dynamic_pipeline_status(run_id: str):
+    """
+    Poll the current PipelineState snapshot from MemorySaver.
+
+    Useful if the frontend loses the response from /run or /resume,
+    or wants to confirm the latest agent output before rendering.
+    """
+    try:
+        snapshot = _dynamic_controller.app.get_state(
+            {"configurable": {"thread_id": run_id}}
+        )
+        if snapshot is None:
+            return JSONResponse(
+                status_code=404,
+                content={"error": f"run_id '{run_id}' not found in memory"}
+            )
+        state = dict(snapshot.values) if snapshot else {}
+        return JSONResponse(content=_dynamic_state_to_response(state, run_id=run_id))
+    except Exception as exc:
+        return JSONResponse(status_code=500, content={"error": str(exc)})
+
+
 if __name__ == "__main__":
     import uvicorn
     print("Starting API server...")
