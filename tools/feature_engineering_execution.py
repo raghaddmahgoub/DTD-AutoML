@@ -29,6 +29,8 @@ OPERATION_ALIASES = {
     "difference": "subtract",
     "product": "multiply",
     "interaction": "multiply",
+    "x": "multiply",
+    "*": "multiply",
     "ratio": "divide",
     "average": "mean",
     "abs_difference": "absolute_difference",
@@ -47,7 +49,7 @@ def feature_engineering_execution(task, tool_input, prompt, data_path, llm, stat
     - X_train_path: path to the preprocessed training features
     - X_test_path: path to the preprocessed test features
     - y_train_path: path to the training target
-    - top_k: number of new features to append (clamped to 3-4, default 4)
+    - top_k: number of new features to append (1-20, default 4)
     - use_llm: whether to ask the LLM for feature recipes (default True)
     - max_candidates: maximum valid generated candidates to evaluate (default 12)
     - output_folder: optional output folder; defaults beside X_train.csv
@@ -62,18 +64,23 @@ def feature_engineering_execution(task, tool_input, prompt, data_path, llm, stat
 
     try:
         tool_input = tool_input if isinstance(tool_input, dict) else {}
-        X_train_path = tool_input.get("X_train_path") or pipeline_state.get("X_train_path")
-        X_test_path = tool_input.get("X_test_path") or pipeline_state.get("X_test_path")
-        y_train_path = tool_input.get("y_train_path") or pipeline_state.get("y_train_path")
+        X_train_path = tool_input.get(
+            "X_train_path") or pipeline_state.get("X_train_path")
+        X_test_path = tool_input.get(
+            "X_test_path") or pipeline_state.get("X_test_path")
+        y_train_path = tool_input.get(
+            "y_train_path") or pipeline_state.get("y_train_path")
 
         _validate_input_path(X_train_path, "X_train")
         _validate_input_path(X_test_path, "X_test")
         _validate_input_path(y_train_path, "y_train")
 
-        top_k = max(3, min(4, int(tool_input.get("top_k", 4))))
-        max_candidates = max(top_k, min(30, int(tool_input.get("max_candidates", 12))))
+        top_k = max(1, min(20, int(tool_input.get("top_k", 4))))
+        max_candidates = max(top_k, min(
+            30, int(tool_input.get("max_candidates", 12))))
         use_llm = _as_bool(tool_input.get("use_llm", True))
-        output_folder = tool_input.get("output_folder") or str(Path(X_train_path).parent)
+        output_folder = tool_input.get(
+            "output_folder") or str(Path(X_train_path).parent)
 
         X_train = pd.read_csv(X_train_path)
         X_test = pd.read_csv(X_test_path)
@@ -81,7 +88,14 @@ def feature_engineering_execution(task, tool_input, prompt, data_path, llm, stat
         if y_train_frame.empty or y_train_frame.shape[1] == 0:
             raise ValueError("y_train file does not contain a target column")
 
-        y_train = pd.to_numeric(y_train_frame.iloc[:, 0], errors="coerce").reset_index(drop=True)
+        raw_y_train = y_train_frame.iloc[:, 0].reset_index(drop=True)
+        y_train = pd.to_numeric(raw_y_train, errors="coerce")
+        if y_train.notna().sum() < max(2, len(y_train) // 2):
+            y_train = pd.Series(
+                pd.factorize(raw_y_train.astype("string"), sort=True)[0],
+                name=raw_y_train.name,
+                dtype=float,
+            )
         X_train = X_train.reset_index(drop=True)
         X_test = X_test.reset_index(drop=True)
 
@@ -90,13 +104,17 @@ def feature_engineering_execution(task, tool_input, prompt, data_path, llm, stat
                 f"X_train and y_train row counts differ: {len(X_train)} != {len(y_train)}"
             )
         if list(X_train.columns) != list(X_test.columns):
-            raise ValueError("X_train and X_test must have the same columns in the same order")
+            raise ValueError(
+                "X_train and X_test must have the same columns in the same order")
 
-        numeric_columns = X_train.select_dtypes(include=[np.number]).columns.tolist()
+        numeric_columns = X_train.select_dtypes(
+            include=[np.number]).columns.tolist()
         if not numeric_columns:
-            raise ValueError("No numeric preprocessed columns are available for feature combinations")
+            raise ValueError(
+                "No numeric preprocessed columns are available for feature combinations")
 
-        original_correlations = _calculate_correlations(X_train[numeric_columns], y_train)
+        original_correlations = _calculate_correlations(
+            X_train[numeric_columns], y_train)
         recipes = []
         llm_reasoning = ""
         suggestion_source = "deterministic_fallback"
@@ -104,7 +122,8 @@ def feature_engineering_execution(task, tool_input, prompt, data_path, llm, stat
         if use_llm and llm is not None:
             recipes, llm_reasoning = _get_llm_feature_recipes(
                 numeric_columns=numeric_columns,
-                dtypes={column: str(X_train[column].dtype) for column in numeric_columns},
+                dtypes={column: str(X_train[column].dtype)
+                        for column in numeric_columns},
                 correlations=original_correlations,
                 target_name=str(y_train_frame.columns[0]),
                 llm=llm,
@@ -177,7 +196,8 @@ def feature_engineering_execution(task, tool_input, prompt, data_path, llm, stat
                 f"Rejected recipes: {rejected_features}"
             )
 
-        generated_correlations = _calculate_correlations(generated_train, y_train)
+        generated_correlations = _calculate_correlations(
+            generated_train, y_train)
         ranked_features = sorted(
             generated_train.columns,
             key=lambda column: (-abs(generated_correlations.get(column, 0.0)), column),
@@ -323,7 +343,8 @@ def _calculate_correlations(X: pd.DataFrame, y: pd.Series) -> dict[str, float]:
             correlations[column] = 0.0
             continue
         correlation = numeric_x[valid].corr(numeric_y[valid])
-        correlations[column] = float(correlation) if pd.notna(correlation) else 0.0
+        correlations[column] = float(
+            correlation) if pd.notna(correlation) else 0.0
     return correlations
 
 
@@ -406,7 +427,7 @@ def _extract_json_object(content: Any) -> dict[str, Any]:
     end = text.rfind("}")
     if start == -1 or end == -1 or end < start:
         raise ValueError("LLM response did not contain a JSON object")
-    parsed = json.loads(text[start : end + 1])
+    parsed = json.loads(text[start: end + 1])
     if not isinstance(parsed, dict):
         raise ValueError("LLM response JSON must be an object")
     return parsed
@@ -469,12 +490,20 @@ def _materialize_recipes(
     rejected: list[dict[str, Any]] = []
     used_names = set(X_train.columns)
     used_names.update(reserved_names or set())
+    used_signatures: set[tuple[str, tuple[str, ...]]] = set()
 
     for raw_recipe in recipes:
         if len(generated) >= max_candidates:
             break
         try:
-            recipe = _normalize_recipe(raw_recipe, X_train.columns.tolist(), used_names)
+            recipe = _normalize_recipe(
+                raw_recipe, X_train.columns.tolist(), used_names)
+            signature = _recipe_signature(recipe)
+            if signature in used_signatures:
+                raise ValueError(
+                    "duplicate feature recipe; reordered commutative operations "
+                    "are treated as the same feature"
+                )
             train_series = _apply_recipe(X_train, recipe)
             test_series = _apply_recipe(X_test, recipe)
 
@@ -509,6 +538,7 @@ def _materialize_recipes(
             train_features[name] = train_series
             test_features[name] = test_series
             used_names.add(name)
+            used_signatures.add(signature)
             generated.append({**recipe, "fill_value": float(fill_value)})
         except Exception as exc:
             rejected.append({"recipe": raw_recipe, "reason": str(exc)})
@@ -544,7 +574,8 @@ def _normalize_recipe(
     columns = [str(column) for column in columns]
     required_count = 1 if operation == "square" else 2
     if len(columns) != required_count:
-        raise ValueError(f"{operation} requires exactly {required_count} source column(s)")
+        raise ValueError(
+            f"{operation} requires exactly {required_count} source column(s)")
     missing = [column for column in columns if column not in available_columns]
     if missing:
         raise ValueError(f"unknown source columns: {missing}")
@@ -595,6 +626,15 @@ def _apply_recipe(frame: pd.DataFrame, recipe: dict[str, Any]) -> pd.Series:
     if operation == "absolute_difference":
         return (left - right).abs()
     raise ValueError(f"unsupported operation: {operation}")
+
+
+def _recipe_signature(recipe: dict[str, Any]) -> tuple[str, tuple[str, ...]]:
+    """Canonicalize recipes so A*B and B*A cannot both be generated."""
+    operation = recipe["operation"]
+    columns = tuple(recipe["columns"])
+    if operation in {"add", "multiply", "mean", "absolute_difference"}:
+        columns = tuple(sorted(columns))
+    return operation, columns
 
 
 def _safe_name(value: str) -> str:
