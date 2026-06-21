@@ -128,6 +128,8 @@ def feature_engineering_execution(task, tool_input, prompt, data_path, llm, stat
                 target_name=str(y_train_frame.columns[0]),
                 llm=llm,
                 max_candidates=max_candidates,
+                task=str(task or ""),
+                prompt=str(prompt or pipeline_state.get("prompt", "")),
             )
             if recipes:
                 recipes = [
@@ -356,6 +358,8 @@ def _get_llm_feature_recipes(
     target_name: str,
     llm: Any,
     max_candidates: int,
+    task: str = "",
+    prompt: str = "",
 ) -> tuple[list[dict[str, Any]], str]:
     """Ask the LLM for structured, executable feature-combination recipes."""
     column_info = [
@@ -384,6 +388,11 @@ Allowed operations:
 
 Available columns:
 {json.dumps(column_info, indent=2)}
+
+Respect the user task when choosing feature combinations.
+
+Task: {(task or "")[:400]}
+User prompt: {(prompt or "")[:400]}
 
 Return only one JSON object with this exact shape:
 {{

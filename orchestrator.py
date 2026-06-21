@@ -2,18 +2,19 @@ from importlib.resources import path
 import os
 import time
 import pandas as pd
-from typing import TypedDict, Optional, Dict, Any
+from typing import TypedDict, Optional, Generator
 from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv
 import json
-
-from ray import state
+from pathlib import Path
 from agents.static.preprocessing_agent.preprocessing_pipeline import PreprocessingPipelineAgent
 
 # Import modular agents from your folders
 from agents.static.eda_agent.eda_agent import EDAAgent
 from agents.static.automl_agent.automl_agent import AutoMLAgent
 from agents.static.preprocessing_agent.preprocessing_node import preprocessing_node
+
+from cache.cache_manager import PipelineCacheManager
 
 load_dotenv()
 
@@ -27,7 +28,8 @@ ORCHESTRATOR_CONFIG = {
 class AgentState(TypedDict, total=False):
     """Shared pipeline memory."""
     data_path: str
-    dataset_cache: Dict[str, Any]
+    cache_key: str
+    dataset_snapshot: dict
     clean_data_path: str
     X_train_path: Optional[str]
     X_test_path: Optional[str]
@@ -41,22 +43,16 @@ class AgentState(TypedDict, total=False):
     saved_files: Optional[dict]
     agent_output: Optional[dict]
     error: Optional[str]
-
+    _cache_hit: Optional[bool]
+    _cached_stages: Optional[dict]
 
 class DTDPipeline:
     def __init__(self):
+        self.cache = PipelineCacheManager()
         self.workflow = self._build_graph()
 
     def _get_dataset_name(self, path: str) -> str:
         return os.path.splitext(os.path.basename(path))[0]
-
-    def load_dataset_cache(self, data_path):
-        from cache.dataset_cache import get_cached_dataset
-        cache_contents  = get_cached_dataset(data_path)
-
-        print("📦 Dataset cache loaded:")
-        print(cache_contents ["dataset_cache"])
-        return cache_contents
 
     def _get_preprocessing_output_folder(self, data_path: str) -> str:
         dataset_name = self._get_dataset_name(data_path)
@@ -90,6 +86,7 @@ class DTDPipeline:
     def _build_graph(self):
         builder = StateGraph(AgentState)
 
+        builder.add_node("cache_check",     self.stage_cache_check)
         # 1. Define Nodes (The 4 Stages)
         builder.add_node("raw_analysis",    self.stage_raw_analysis)
         builder.add_node("preprocessing",   self.stage_preprocessing)
@@ -97,7 +94,16 @@ class DTDPipeline:
         builder.add_node("automl_training", self.stage_automl)
 
         # 2. Define Flow
-        builder.set_entry_point("raw_analysis")
+        builder.set_entry_point("cache_check")
+        builder.add_conditional_edges(
+            "cache_check",
+            lambda s: "hit" if s.get("_cache_hit") else "miss",
+            {
+                "hit":  END,
+                "miss": "raw_analysis",
+            },
+        )
+
         builder.add_edge("raw_analysis",    "preprocessing")
         builder.add_edge("preprocessing",   "clean_analysis")
         builder.add_edge("clean_analysis",  "automl_training")
@@ -106,30 +112,107 @@ class DTDPipeline:
 
         return builder.compile()
 
+    def stream_stages(self, inputs: dict) -> Generator[dict, None, None]:
+        """
+        Runs the pipeline stage-by-stage and yields a dict the moment each
+        stage finishes.  The API converts each dict to an SSE event immediately
+        so the frontend sees results arriving one stage at a time.
+ 
+        Yielded shape:
+            {
+                "node_name":    str,
+                "agent_output": dict | None,
+                "error":        str  | None,
+                "cache_hit":    bool,
+                "_state":       dict,   # full state (internal — not forwarded to client)
+            }
+        """
+        state: AgentState = dict(inputs)
+        STAGE_ORDER = ["raw_analysis", "preprocessing", "clean_analysis", "automl_training"]
+        # ── cache check ───────────────────────────────────────────────────────
+        print("\n🔎 [Cache] Checking for cached results…")
+        hit, cached = self.cache.lookup(state["data_path"], state["target_column"])
+ 
+        if hit:
+            print("⚡ Cache HIT — replaying stages from disk.")
+            stages = cached["stages"]
+ 
+            # Banner event (no output — just signals a cache hit to the frontend)
+            yield {"node_name": "cache_check", "agent_output": None, "error": None,
+                   "cache_hit": True, "_state": state}
+ 
+            # One event per stage, same shape as a live run
+            for stage in STAGE_ORDER:
+                stage_output = stages.get(stage)
+                if stage_output is None:
+                    continue
+                print(f"  ↳ replaying: {stage}")
+                yield {"node_name": stage, "agent_output": stage_output, "error": None,
+                       "cache_hit": True, "_state": state}
+            return
+ 
+        # ── live pipeline ─────────────────────────────────────────────────────
+        print("📭 Cache MISS — running full pipeline.")
+ 
+        for stage_fn, stage_name in [
+            (self.stage_raw_analysis,   "raw_analysis"),
+            (self.stage_preprocessing,  "preprocessing"),
+            (self.stage_clean_analysis, "clean_analysis"),
+            (self.stage_automl,         "automl_training"),
+        ]:
+            state = stage_fn(state)
+            yield {
+                "node_name":    stage_name,
+                "agent_output": state.get("agent_output"),
+                "error":        state.get("error"),
+                "cache_hit":    False,
+                "_state":       state,
+            }
+            if state.get("error"):
+                return 
+
+    def stage_cache_check(self, state: AgentState) -> AgentState:
+        """
+        Strict content-based cache lookup.
+        Hashes the raw CSV bytes + target_column — filename is never used.
+        """
+        print("\n🔎 [Cache] Checking for cached results…")
+ 
+        hit, cached = self.cache.lookup(state["data_path"], state["target_column"])
+ 
+        if hit:
+            print("⚡ Returning cached pipeline results — skipping all stages.")
+            stages = cached["stages"]
+ 
+            # Restore the pieces of state the downstream caller may need
+            automl_out = stages.get("automl_training", {})
+            state["_cache_hit"]     = True
+            state["_cached_stages"] = stages
+            state["task_type"]      = cached["meta"].get("task_type")
+            state["final_metrics"]  = (
+                automl_out.get("training_results")
+                or automl_out.get("final_metrics")
+            )
+            state["agent_output"] = {
+                "source":         "cache",
+                "cache_meta":     cached["meta"],
+                "artifacts_dir":  cached["artifacts_dir"],
+                "stages":         stages,
+            }
+        else:
+            print("📭 No valid cache entry found — running full pipeline.")
+            state["_cache_hit"] = False
+ 
+        return state
+
     # --- Node Implementations ---
 
     def stage_raw_analysis(self, state: AgentState):
         """First Analysis: Identify issues for the Preprocessor."""
         print("\n🔍 [Stage 1] Running Raw Data Analysis...")
-        eda_cache_file = os.path.join(
-            "cache",
-            "eda",
-            f"{state.get('dataset_cache', None)}_raw.json"
-        )
-        if os.path.exists(eda_cache_file):
-            print("✅ Loading cached EDA results")
-
-            with open(eda_cache_file, "r") as f:
-                analysis_data = json.load(f)
-            state["agent_output"] = {
-                "stage": "raw_analysis",
-                "raw_analysis": analysis_data,
-            }
-            return state
         
         df = pd.read_csv(state['data_path'])
-        agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(
-            state['data_path']),dataset_cache=state["dataset_cache"],)
+        agent = EDAAgent(df,target_column=state['target_column'],df_name=self._get_dataset_name(state['data_path']))
         agent.run(run_type="raw")
         results = agent.export(output_dir="output/orchestrator")
 
@@ -137,53 +220,23 @@ class DTDPipeline:
         with open(frontend_json_path, 'r', encoding='utf-8') as f:
             analysis_data = json.load(f)
 
-        print("Dataset Cache:", state["dataset_cache"])
-        print("EDA cache file:", eda_cache_file)
-        os.makedirs("cache/eda", exist_ok=True)
-        with open(eda_cache_file, "w", encoding="utf-8") as f:
-            json.dump(analysis_data, f, indent=2)
-        print(f"Saving cache -> {eda_cache_file}")
-
-        state["agent_output"] = {
+        agent_output = {
             "stage":        "raw_analysis",
             "raw_analysis": analysis_data,
         }
+        state["agent_output"] = agent_output
+
+
+        self.cache.save_stage(
+            state["data_path"], state["target_column"],
+            "raw_analysis", agent_output,
+        )
 
         return state
 
     def stage_preprocessing(self, state: AgentState):
         """Preprocessing using PreprocessingNode."""
         print("\n🛠️ [Stage 2] Running Preprocessing Node...")
-
-        preprocessing_cache_file = os.path.join(
-            "cache",
-            "preprocessing",
-            f"{state.get('dataset_cache', None)}.json"
-        )
-        if os.path.exists(preprocessing_cache_file):
-            print("✅ Loading cached preprocessing results")
-
-            with open(preprocessing_cache_file, "r") as f:
-                cached = json.load(f)
-            state["task_type"] = cached["task_type"]
-            state["X_train_path"] = cached["X_train_path"]
-            state["X_test_path"] = cached["X_test_path"]
-            state["y_train_path"] = cached["y_train_path"]
-            state["y_test_path"] = cached["y_test_path"]
-            state["clean_data_path"] = cached["clean_data_path"]
-
-            column_actions_frontend = None
-            if os.path.exists(cached["column_actions_frontend_path"]):
-                with open(cached["column_actions_frontend_path"], "r") as f:
-                    column_actions_frontend = json.load(f)
-
-            state["agent_output"] = {
-                "stage": "preprocessing",
-                "task_type": state["task_type"],
-                "column_actions": column_actions_frontend,
-            }
-            return state
-
         
         output_folder = self._get_preprocessing_output_folder(
             state["data_path"])
@@ -239,55 +292,30 @@ class DTDPipeline:
                     column_actions_frontend = json.load(f)
             except Exception as e:
                 column_actions_frontend = {"error": f"Failed to load JSON: {str(e)}"}
-        state["agent_output"] = {
-            "stage":"preprocessing", 
-            "task_type": state.get("task_type"),  
+
+        agent_output = {
+            "stage":          "preprocessing",
+            "task_type":      state.get("task_type"),
             "column_actions": column_actions_frontend,
         }
+        state["agent_output"] = agent_output
+ 
+        self.cache.save_stage(
+            state["data_path"], state["target_column"],
+            "preprocessing", agent_output,
+        )
+
         # print(column_actions_frontend)
         print(f"✅ Preprocessing complete.")
         print(f"📊 Problem Type: {state['task_type']}")
         print(f"📂 Output folder: {result_state['output_folder']}")
         print(f"📄 Rebuilt full dataset: {state['clean_data_path']}")
 
-        os.makedirs("cache/preprocessing", exist_ok=True)
-
-        cache_data = {
-            "task_type": state["task_type"],
-            "X_train_path": state["X_train_path"],
-            "X_test_path": state["X_test_path"],
-            "y_train_path": state["y_train_path"],
-            "y_test_path": state["y_test_path"],
-            "clean_data_path": state["clean_data_path"],
-            "summary_path": result_state.get("summary_path"),
-            "column_actions_frontend_path": result_state.get("column_actions_frontend_path"),
-        }
-        with open(preprocessing_cache_file, "w") as f:
-            json.dump(cache_data, f, indent=2)
-        print(f"Saving cache -> {preprocessing_cache_file}")
-
         return state
 
     def stage_clean_analysis(self, state: AgentState):
         """Second Analysis: Generate Directives for AutoML."""
         print("\n📊 [Stage 3] Running Post-Prep Analysis...")
-
-        clean_eda_cache_file = os.path.join(
-            "cache",
-            "eda",
-            f"{state.get('dataset_cache', None)}_clean.json"
-        )
-        if os.path.exists(clean_eda_cache_file):
-            print("✅ Loading cached clean EDA")
-
-            with open(clean_eda_cache_file, "r") as f:
-                cached = json.load(f)
-            state["automl_directives"] = cached["automl_directives"]
-            state["agent_output"] = {
-                "stage": "clean_analysis",
-                "clean_analysis": cached["analysis_data"],
-            }
-            return state
         
         df = pd.read_csv(state['clean_data_path'], low_memory=False)
         agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(
@@ -318,38 +346,23 @@ class DTDPipeline:
         with open(frontend_json_path, 'r', encoding='utf-8') as f:
             analysis_data = json.load(f)
 
-        os.makedirs("cache/eda", exist_ok=True)
-        cache_data = {
-            "automl_directives": state["automl_directives"],
-            "analysis_data": analysis_data,
-        }
-        with open(clean_eda_cache_file, "w") as f:
-            json.dump(cache_data, f, indent=2)
-            print(f"Saving cache -> {clean_eda_cache_file}")
-        state["agent_output"] = {
+        agent_output = {
             "stage":          "clean_analysis",
             "clean_analysis": analysis_data,
         }
+        state["agent_output"] = agent_output
+ 
+        self.cache.save_stage(
+            state["data_path"], state["target_column"],
+            "clean_analysis", agent_output,
+        )
+
 
         return state
 
     def stage_automl(self, state: AgentState):
         """Final Stage: Model Selection & Training."""
         print("\n🤖 [Stage 4] Running AutoML Training...")
-        automl_cache_file = os.path.join(
-            "cache",
-            "automl",
-            f"{state.get('dataset_cache', None)}.json"
-        )
-        if os.path.exists(automl_cache_file):
-            print("✅ Loading cached AutoML results")
-            with open(automl_cache_file, "r") as f:
-                cached = json.load(f)
-
-            state["final_metrics"] = cached["final_metrics"]
-            state["saved_files"] = cached["saved_files"]
-            state["agent_output"] = cached["agent_output"]
-            return state
         
         # 1. Extract directives generated by Stage 3
         directives = state.get('automl_directives')
@@ -407,24 +420,38 @@ class DTDPipeline:
                 state['final_metrics'] = metrics
                 state['saved_files'] = final_subagent_state.get(
                     'saved_files', {})
-                state["agent_output"] = {
-                    "run_timestamp": final_subagent_state.get("run_timestamp"),
-                    "data_path": final_subagent_state.get("data_path"),
-                    "target_column": target_col,
-                    "problem_type": task_type,
-                     "model_selection": {
-                        "use_automl": final_subagent_state.get("use_automl"),
-                        "automl_config": final_subagent_state.get("automl_config"),
-                        "selected_models": final_subagent_state.get("selected_models"),
+                
+                agent_output = {
+                    "run_timestamp":  final_subagent_state.get("run_timestamp"),
+                    "data_path":      final_subagent_state.get("data_path"),
+                    "target_column":  target_col,
+                    "problem_type":   task_type,
+                    "model_selection": {
+                        "use_automl":               final_subagent_state.get("use_automl"),
+                        "automl_config":            final_subagent_state.get("automl_config"),
+                        "selected_models":          final_subagent_state.get("selected_models"),
                         "model_selection_reasoning": final_subagent_state.get("model_selection_reasoning"),
                     },
-                    "training_results": metrics, # metrics is final_subagent_state['model_metrics']
-                    "agent_messages": final_subagent_state.get("agent_messages",[]),
-                    "workflow":  {
+                    "training_results": metrics,
+                    "agent_messages":   final_subagent_state.get("agent_messages", []),
+                    "workflow": {
                         "final_step": final_subagent_state.get("step"),
-                        "error": final_subagent_state.get("error")
-                    }
+                        "error":      final_subagent_state.get("error"),
+                    },
                 }
+
+                state["agent_output"] = agent_output
+ 
+                self.cache.save_stage(
+                    state["data_path"], state["target_column"],
+                    "automl_training", agent_output,
+                )
+ 
+                self.cache.finalize(
+                    state["data_path"],
+                    state["target_column"],
+                    state,
+                )
 
                 print(
                     f"✅ Training complete. Best Model: {state['final_metrics'].get('best_model')}")
@@ -441,16 +468,6 @@ class DTDPipeline:
                 "stage": "automl_training",
                 "error": state["error"]
             }
-        if not state.get("error"):
-            os.makedirs("cache/automl", exist_ok=True)
-            cache_data = {
-                "final_metrics": state["final_metrics"],
-                "saved_files": state["saved_files"],
-                "agent_output": state["agent_output"],
-            }
-            with open(automl_cache_file, "w") as f:
-                json.dump(cache_data, f, indent=2)
-            print(f"Saving cache -> {automl_cache_file}")
 
         return state
 
@@ -472,18 +489,14 @@ if __name__ == "__main__":
     runtime_start=time.time()
     pipeline = DTDPipeline()
 
-    print("Loading dataset cache...")
-    cached_data = pipeline.load_dataset_cache(
-        ORCHESTRATOR_CONFIG["data_path"]
-    )
-    print("Loaded dataset cache", cached_data["dataset_cache"])
     inputs = {
         "data_path": ORCHESTRATOR_CONFIG["data_path"],
         "target_column": ORCHESTRATOR_CONFIG["target_column"],
-        "dataset_cache": cached_data["dataset_cache"],
     }
-    print("INPUTS:", inputs)
-    result = pipeline.workflow.invoke(inputs)
+    final_state = inputs
+    for event in pipeline.stream_stages(inputs):
+        print(f"[{event['node_name']}] done — error={event['error']}")
+        final_state = event["_state"]
 
     runtime_end=time.time()
     runtime_duration = runtime_end - runtime_start
@@ -492,7 +505,12 @@ if __name__ == "__main__":
 
     print(f"\n🏁 Pipeline Finished in {minutes} min {seconds:.2f} sec.")
     
-    if result.get('error'):
-        print(f"⚠️  Completed with error: {result['error']}")
+    if final_state.get("error"):
+        print(f"⚠️  Completed with error: {final_state['error']}")
     else:
-        print(f"Best Model Metrics: {result.get('final_metrics')}")
+        print(f"Best Model Metrics: {final_state.get('final_metrics')}")
+
+    # if result.get('error'):
+    #     print(f"⚠️  Completed with error: {result['error']}")
+    # else:
+    #     print(f"Best Model Metrics: {result.get('final_metrics')}")

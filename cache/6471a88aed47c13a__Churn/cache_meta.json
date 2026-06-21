@@ -1,0 +1,13 @@
+{
+  "cache_version": "1.0",
+  "cache_key": "6471a88aed47c13a50ca0ffca64b896b59edef84392fb0e1c83313a5a9efa15f",
+  "file_hash": "9ba8203038355a2a414e67f3d6b203eff4c44992f4c60ec5cc0470db8c3ae7bf",
+  "target_column": "Churn",
+  "original_path": "E:\\Work\\GitHub\\GP\\uploads\\1781913308227.csv",
+  "dataset_shape": {
+    "rows": 3333,
+    "cols": 11
+  },
+  "created_at": "2026-06-19T23:56:57Z",
+  "task_type": "classification"
+}
