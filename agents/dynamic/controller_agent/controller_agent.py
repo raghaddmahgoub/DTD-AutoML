@@ -64,7 +64,6 @@ import sys
 import uuid
 from pathlib import Path
 from typing import Optional
-
 # ── Path bootstrap ────────────────────────────────────────────────────────────
 # This file lives at:  <project_root>/agents/dynamic/controller_agent/controller_agent.py
 # state/ and graph/   live at: <project_root>/
@@ -106,7 +105,7 @@ if str(_PROJECT_ROOT) not in sys.path:
 # ── Project imports (now resolvable from any working directory) ───────────────
 from state.pipeline_state import make_initial_state
 from graph.graph_builder  import build_graph
-
+from tools.knowledge_graph_builder import build_knowledge_graph
 logger = logging.getLogger(__name__)
 try:
     from dotenv import load_dotenv
@@ -278,7 +277,9 @@ class ControllerAgent:
 
         try:
             final_state = self.app.invoke(input_or_command, config)
-
+            final_state["knowledge_graph"] = build_knowledge_graph(final_state)
+            with open("final_state.json", "w") as f:
+                json.dump(final_state, f, indent=2, default=str)
             self.logger.info("\n[ControllerAgent] Pipeline completed successfully.")
             self._log_summary(final_state)
             return final_state
@@ -482,9 +483,9 @@ def main():
         #     "run_id":        args.run_id,
         # })
         result = agent.run({
-            "data_path":     r"D:\Codes\GP\GP code\assets\data\Classification Datasets\Titanic-Dataset.csv",
+            "data_path":     r"R:\Data Analysis Hackathon '26\car_task\car_prices.csv",
             # "target_column": "Survived",
-            "prompt":        "make model for this data",
+            "prompt":        "Perform a full end-to-end machine learning pipeline for this dataset, including EDA, preprocessing, feature engineering, model selection, training, and evaluation.",
         })
 
 

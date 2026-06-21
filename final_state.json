@@ -1,0 +1,142 @@
+{
+  "data_path": "R:\\Data Analysis Hackathon '26\\car_task\\car_prices.csv",
+  "nl_query": "Perform a full end-to-end machine learning pipeline for this dataset, including EDA, preprocessing, feature engineering, model selection, training, and evaluation.",
+  "intent_flags": {
+    "run_eda": true,
+    "run_preprocessing": true,
+    "run_feature_engineering": true,
+    "run_model_selection": true,
+    "run_training": true,
+    "run_evaluation": true,
+    "target_column": "sellingprice",
+    "task_type": "regression"
+  },
+  "target_column": "sellingprice",
+  "task_type": "regression",
+  "analysis_report_path": null,
+  "visualization_paths": null,
+  "preprocessing_context": null,
+  "automl_directives": null,
+  "clean_data_path": null,
+  "X_train_path": null,
+  "X_test_path": null,
+  "y_train_path": null,
+  "y_test_path": null,
+  "preprocessing_summary": null,
+  "X_train_engineered_path": null,
+  "X_test_engineered_path": null,
+  "feature_report": null,
+  "automl_config": null,
+  "model_selection_reasoning": null,
+  "trained_model_path": null,
+  "training_log": null,
+  "model_leaderboard": null,
+  "model_metrics": null,
+  "shap_plot_path": null,
+  "diagnostic_report": null,
+  "confusion_matrix_path": null,
+  "roc_curve_path": null,
+  "deployment_package_path": null,
+  "mlflow_run_id": null,
+  "endpoint_url": null,
+  "user_decision": null,
+  "feedback_text": null,
+  "feedback_history": [],
+  "error": null,
+  "agent_outputs": {
+    "eda_agent": {
+      "status": "stub \u2014 not yet implemented"
+    }
+  },
+  "__interrupt__": [
+    "Interrupt(value={'agent': 'eda', 'agent_output': {}}, id='646415576e3d459d031acfbfa7d8879c')"
+  ],
+  "knowledge_graph": {
+    "nodes": [
+      {
+        "id": "intent",
+        "title": "Intent Detection",
+        "type": "agent",
+        "status": "completed",
+        "details": {
+          "target_column": "sellingprice",
+          "task_type": "regression"
+        }
+      },
+      {
+        "id": "eda",
+        "title": "EDA",
+        "type": "agent",
+        "status": "waiting",
+        "details": {}
+      },
+      {
+        "id": "preprocessing",
+        "title": "Preprocessing",
+        "type": "agent",
+        "status": "waiting",
+        "details": {}
+      },
+      {
+        "id": "feature_engineering",
+        "title": "Feature Engineering",
+        "type": "agent",
+        "status": "waiting",
+        "details": {}
+      },
+      {
+        "id": "model_selection",
+        "title": "Model Selection",
+        "type": "agent",
+        "status": "waiting",
+        "details": {}
+      },
+      {
+        "id": "training",
+        "title": "Training",
+        "type": "agent",
+        "status": "waiting",
+        "details": {}
+      },
+      {
+        "id": "evaluation",
+        "title": "Evaluation",
+        "type": "agent",
+        "status": "waiting",
+        "details": {}
+      }
+    ],
+    "edges": [
+      {
+        "id": "intent-eda",
+        "source": "intent",
+        "target": "eda"
+      },
+      {
+        "id": "eda-preprocessing",
+        "source": "eda",
+        "target": "preprocessing"
+      },
+      {
+        "id": "preprocessing-feature_engineering",
+        "source": "preprocessing",
+        "target": "feature_engineering"
+      },
+      {
+        "id": "feature_engineering-model_selection",
+        "source": "feature_engineering",
+        "target": "model_selection"
+      },
+      {
+        "id": "model_selection-training",
+        "source": "model_selection",
+        "target": "training"
+      },
+      {
+        "id": "training-evaluation",
+        "source": "training",
+        "target": "evaluation"
+      }
+    ]
+  }
+}
