@@ -1,7 +1,4 @@
 """
-graph/graph_builder.py
-D.T.D (Data To Deployment) — Multi-Agent AutoML Pipeline
-
 THE single file that assembles the full LangGraph StateGraph.
 
 Rules enforced here:
@@ -53,14 +50,20 @@ from agents.dynamic.intent_detector.intent_detector import (
     route_after_intent,
 )
 
+from agents.dynamic.eda_agent.eda_agent import (
+    eda_node,
+    eda_checkpoint_node,
+    route_after_eda,
+)
+
 # Stubs — replace with real imports as each agent is implemented:
-# from agents.eda_agent              import eda_node, eda_checkpoint_node, route_after_eda
-# from agents.preprocessing_agent   import preprocessing_node, preprocessing_checkpoint_node, route_after_preprocessing
-# from agents.feature_engineering_agent import feature_engineering_node, feature_engineering_checkpoint_node, route_after_feature_engineering
-# from agents.model_selection_agent  import model_selection_node, model_selection_checkpoint_node, route_after_model_selection
-# from agents.training_agent         import training_node, training_checkpoint_node, route_after_training
-# from agents.evaluation_agent       import evaluation_node, evaluation_checkpoint_node, route_after_evaluation
-# from agents.deployment_agent       import deployment_node, deployment_checkpoint_node, route_after_deployment
+# from agents.dynamic.eda_agent.eda_agent                                   import eda_node, route_after_eda
+# from agents.dynamic.preprocessing_agent.preprocessing_agent               import preprocessing_node, route_after_preprocessing
+# from agents.dynamic.feature_engineering_agent.feature_engineering_agent   import feature_engineering_node, route_after_feature_engineering
+# from agents.dynamic.model_selection_agent.model_selection_agent           import model_selection_node, route_after_model_selection
+# from agents.dynamic.training_agent.training_agent                         import training_node, route_after_training
+# from agents.dynamic.evaluation_agent.evaluation_agent                     import evaluation_node, route_after_evaluation
+# from agents.dynamic.deployment_agent.deployment_agent                     import deployment_node, route_after_deployment
 
 logger = logging.getLogger(__name__)
 
@@ -237,19 +240,9 @@ def build_graph() -> any:
     graph.add_conditional_edges("intent_detector", route_after_intent)
 
     # ── Agent 1: EDA ──────────────────────────────────────────────────────────
-    # Replace stub with: from agents.eda_agent import eda_node, route_after_eda
-    eda_node            = _stub_node("eda_agent")
-    eda_checkpoint      = _make_checkpoint_node("eda")
-    route_after_eda     = _make_stub_router([
-        ("run_preprocessing",       "preprocessing_agent"),
-        ("run_feature_engineering", "feature_engineering_agent"),
-        ("run_model_selection",     "model_selection_agent"),
-        ("run_training",            "training_agent"),
-        ("run_evaluation",          "evaluation_agent"),
-        ("run_deployment",          "deployment_agent"),
-    ])
-    graph.add_node("eda_agent",       eda_node)
-    graph.add_node("eda_checkpoint",  eda_checkpoint)
+    # Real implementation — imported from agents.dynamic.eda_agent.eda_agent
+    graph.add_node("eda_agent",      eda_node)
+    graph.add_node("eda_checkpoint", eda_checkpoint_node)
     graph.add_edge("eda_agent", "eda_checkpoint")
     graph.add_conditional_edges(
         "eda_checkpoint",

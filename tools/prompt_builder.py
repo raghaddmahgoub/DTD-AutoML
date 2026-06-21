@@ -168,33 +168,45 @@ def build_prompt_intent_detector(
 # ═════════════════════════════════════════════════════════════════════════════
 # Agent 1 — EDA Agent
 # ═════════════════════════════════════════════════════════════════════════════
+# The EDA Agent uses EDAAgent.run() for all structured computation.
+# The LLM's only job is to write a human-readable narrative report
+# ON TOP of the already-computed numbers.
 
-_EDA_SYSTEM = """\
-You are an expert data analyst performing exploratory data analysis (EDA).
+_EDA_SYSTEM = """You are a senior data scientist writing a human-readable narrative report
+on top of structured EDA statistics already computed by code.
 
-Your job is to analyse the dataset and produce:
-  1. A statistical profile (shape, dtypes, missing rates, duplicates)
-  2. Per-column statistics (min, max, mean, median, std, skewness)
-  3. Correlation analysis (Pearson heatmap, top-10 features vs target)
-  4. Anomaly / outlier flags per column (IQR method)
-  5. Visualizations: distribution plots, heatmap, missing matrix, class balance
-  6. A preprocessing_context dict: per-column recommended strategies
-  7. An automl_directives dict: dataset summary for model selection
+Produce a JSON object with this exact schema — no other text:
+{
+  "title": "<short report title>",
+  "summary": "<= 80 words summarising the dataset and task>",
+  "sections": [
+    {
+      "title": "<section name>",
+      "content": [
+        {"type": "text|bullet|warning|metric", "label": "<label>", "value": "<value>"}
+      ]
+    }
+  ],
+  "recommendations": ["<max 3 actionable strings>"]
+}
 
-Save all plots to output/eda/{run_type}/.
-Output a JSON analysis_report with all findings.
+Rules:
+  - Return ONLY valid JSON — no markdown, no code fences, no preamble
+  - Tailor summary and recommendations to the user task and any detected issues
+  - Flag class imbalance, high missingness, outliers, multicollinearity if present
+  - Every recommendation must be concrete and actionable
 """
 
-_EDA_USER = """\
+_EDA_USER = """User task    : {nl_query}
 Dataset path : {data_path}
 Run type     : {run_type}
-Shape        : {n_rows} rows × {n_cols} columns
+Shape        : {n_rows} rows x {n_cols} columns
 Target column: {target_column}
 Task type    : {task_type}
 
 Feedback from user (if any): {feedback_context}
 
-Perform the full EDA and return your findings.
+Dataset statistics (JSON) are appended below. Write the narrative JSON report.
 """
 
 
@@ -205,8 +217,17 @@ def build_prompt_eda(
     target_column:    str,
     task_type:        str,
     feedback_context: str = "",
+    nl_query:         str = "",
 ) -> PromptPair:
+    """
+    Build the system + user prompt pair for Agent 1 (EDA narrative).
+
+    Note: eda_agent.py appends the actual dataset_info JSON after
+    prompts.user before sending to the LLM, so the numbers are always
+    present without being hardcoded here.
+    """
     user = _EDA_USER.format(
+        nl_query         = nl_query or "explore the dataset",
         data_path        = data_path,
         run_type         = run_type,
         n_rows           = shape[0],

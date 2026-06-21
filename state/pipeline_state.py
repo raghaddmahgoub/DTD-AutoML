@@ -1,7 +1,4 @@
 """
-state/pipeline_state.py
-D.T.D (Data To Deployment) — Multi-Agent AutoML Pipeline
-
 Single source of truth for the LangGraph StateGraph state.
 
 Rules:

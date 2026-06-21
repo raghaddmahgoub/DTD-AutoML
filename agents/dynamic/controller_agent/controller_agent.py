@@ -1,8 +1,5 @@
 """
-agents/controller_agent.py
 D.T.D (Data To Deployment) — Multi-Agent AutoML Pipeline
-
-ControllerAgent — replaces the old while-True LLM tool-calling loop.
 
 What changed vs the old version:
     OLD: while True → LLM picks a tool → tool.invoke() → repeat
@@ -65,20 +62,6 @@ import uuid
 from pathlib import Path
 from typing import Optional
 
-# ── Path bootstrap ────────────────────────────────────────────────────────────
-# This file lives at:  <project_root>/agents/dynamic/controller_agent/controller_agent.py
-# state/ and graph/   live at: <project_root>/
-#
-# When you run:
-#   python controller_agent.py ...          (from inside the controller_agent/ folder)
-#   python agents/.../controller_agent.py  (from project root)
-# both cases need <project_root> on sys.path so that
-# "from state.pipeline_state import ..." resolves correctly.
-#
-# We walk up from this file's location until we find the folder that
-# contains BOTH a "state" directory and a "graph" directory — that is
-# the project root — and insert it at the front of sys.path.
-
 def _find_project_root() -> Path:
     """
     Walk up the directory tree from this file until we find the folder
@@ -95,15 +78,12 @@ def _find_project_root() -> Path:
             break
         current = parent
 
-    # Fallback: assume project root is 3 levels above this file
-    # controller_agent.py → controller_agent/ → dynamic/ → agents/ → <root>
     return Path(__file__).resolve().parents[3]
 
 _PROJECT_ROOT = _find_project_root()
 if str(_PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(_PROJECT_ROOT))
 
-# ── Project imports (now resolvable from any working directory) ───────────────
 from state.pipeline_state import make_initial_state
 from graph.graph_builder  import build_graph
 
@@ -116,7 +96,7 @@ try:
     else:
         load_dotenv()                         # fallback: searches parent dirs
 except ImportError:
-    pass  # python-dotenv not installed
+    pass
 
 class ControllerAgent:
     """
@@ -128,9 +108,6 @@ class ControllerAgent:
         3. Invoke the graph — LangGraph drives all agent execution
         4. Handle interrupt() pauses — surface them to the caller
         5. Accept resume() calls to continue after human feedback
-
-    The old tool-registry loop is fully replaced by LangGraph's
-    StateGraph execution model.
     """
 
     def __init__(self, logger=None, llm=None, registry=None):
@@ -145,7 +122,6 @@ class ControllerAgent:
         self.logger = logger or logging.getLogger(__name__)
 
         # llm and registry are kept in signature so existing call sites
-        # (e.g. main.py instantiating ControllerAgent) don't need changing.
         if llm is not None:
             self.logger.info(
                 "[ControllerAgent] Note: llm argument is no longer used. "
@@ -175,8 +151,7 @@ class ControllerAgent:
         Args:
             inputs: dict with keys:
                 data_path     (str)  — path to the dataset file
-                target_column (str)  — target/label column name (optional;
-                                       Intent Detector will try to infer it)
+                target_column (str)  — target/label column name (optional; Intent Detector will try to infer it)
                 prompt        (str)  — natural-language request
                                        e.g. "run full pipeline"
                                             "just preprocess my data"
@@ -241,9 +216,11 @@ class ControllerAgent:
             May contain another "__interrupted__" if the next checkpoint fires.
 
         How it works internally:
-            LangGraph's interrupt() left the graph suspended at a checkpoint node.
-            Calling app.invoke(Command(resume=...), config) injects the human
-            response into the interrupted node and continues execution.
+            LangGraph's MemorySaver checkpointer has saved the full state at the
+            interrupted checkpoint. We load that state and inject the human response
+            via app.invoke(None, config) — passing None tells LangGraph to load
+            the saved state instead of creating a fresh one. The resume payload is
+            passed via the checkpoint node's interrupt response mechanism.
         """
         from langgraph.types import Command
 
@@ -257,7 +234,7 @@ class ControllerAgent:
 
         config = {"configurable": {"thread_id": run_id}}
 
-        # Inject human response into the interrupted checkpoint node
+        # Create resume command with human response
         resume_payload = {"decision": decision, "text": feedback_text}
         return self._invoke(Command(resume=resume_payload), config, run_id)
 
@@ -484,9 +461,8 @@ def main():
         result = agent.run({
             "data_path":     r"D:\Codes\GP\GP code\assets\data\Classification Datasets\Titanic-Dataset.csv",
             # "target_column": "Survived",
-            "prompt":        "make model for this data",
+            "prompt":        "analyze this data",
         })
-
 
     # ── Output ────────────────────────────────────────────────────────────────
     if result.get("__interrupted__"):
