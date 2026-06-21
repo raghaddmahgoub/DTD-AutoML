@@ -256,6 +256,49 @@ class ControllerAgent:
         try:
             final_state = self.app.invoke(input_or_command, config)
 
+            # Check if execution paused on an interrupt (newer LangGraph returns interrupt state directly)
+            if isinstance(final_state, dict) and final_state.get("__interrupt__"):
+                raw = final_state["__interrupt__"]
+                interrupt_data = {}
+                if isinstance(raw, list) and len(raw) > 0:
+                    if hasattr(raw[0], "value"):
+                        interrupt_data = raw[0].value
+                    else:
+                        # try dict or object access
+                        try:
+                            interrupt_data = raw[0].get("value", raw[0])
+                        except Exception:
+                            interrupt_data = raw[0]
+                elif isinstance(raw, dict):
+                    interrupt_data = raw
+
+                agent_name = "unknown"
+                agent_output = {}
+                if isinstance(interrupt_data, dict):
+                    agent_name    = interrupt_data.get("agent", "unknown")
+                    agent_output  = interrupt_data.get("agent_output", {})
+
+                self.logger.info("\n" + "─" * 60)
+                self.logger.info("[HITL CHECKPOINT] Pipeline paused at: %s", agent_name)
+                self.logger.info("run_id: %s  (use this to resume)", run_id)
+                self.logger.info("─" * 60)
+                self.logger.info("[AGENT OUTPUT PREVIEW]")
+                self.logger.info(json.dumps(agent_output, indent=2, default=str)[:1000])
+                self.logger.info("─" * 60)
+                self.logger.info(
+                    "To resume, call:\n"
+                    "  agent.resume(run_id='%s', decision='accept')\n"
+                    "  agent.resume(run_id='%s', decision='feedback', "
+                    "feedback_text='your note here')",
+                    run_id, run_id,
+                )
+
+                partial_state = dict(final_state)
+                partial_state["__interrupted__"] = True
+                partial_state["__paused_at__"]   = agent_name
+                partial_state["__run_id__"]       = run_id
+                return partial_state
+
             self.logger.info("\n[ControllerAgent] Pipeline completed successfully.")
             self._log_summary(final_state)
             return final_state
@@ -458,10 +501,29 @@ def main():
         #     "target_column": args.target,
         #     "run_id":        args.run_id,
         # })
+        data_path = args.data
+        prompt = args.query
+        target_column = args.target
+
+        if not data_path:
+            default_path = _PROJECT_ROOT / "assets/data/Classification Datasets/Titanic-Dataset.csv"
+            if default_path.exists():
+                data_path = str(default_path)
+            else:
+                default_path_alt = _PROJECT_ROOT / "assets/data/Datasets/Classification Datasets/Iris.csv"
+                if default_path_alt.exists():
+                    data_path = str(default_path_alt)
+                else:
+                    data_path = "assets/data/Classification Datasets/Titanic-Dataset.csv"
+        
+        if not prompt:
+            prompt = "analyze this data and train a model"
+
         result = agent.run({
-            "data_path":     r"D:\Codes\GP\GP code\assets\data\Classification Datasets\Titanic-Dataset.csv",
-            # "target_column": "Survived",
-            "prompt":        "analyze this data",
+            "data_path":     data_path,
+            "prompt":        prompt,
+            "target_column": target_column,
+            "run_id":        args.run_id,
         })
 
     # ── Output ────────────────────────────────────────────────────────────────

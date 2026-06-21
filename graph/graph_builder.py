@@ -56,13 +56,27 @@ from agents.dynamic.eda_agent.eda_agent import (
     route_after_eda,
 )
 
+from agents.dynamic.model_selection_agent import (
+    model_selection_node,
+    model_selection_checkpoint_node,
+    route_after_model_selection,
+)
+
+from agents.dynamic.training_agent import (
+    training_node,
+    training_checkpoint_node,
+    route_after_training,
+)
+
+from agents.dynamic.evaluation_agent import (
+    evaluation_node,
+    evaluation_checkpoint_node,
+    route_after_evaluation,
+)
+
 # Stubs — replace with real imports as each agent is implemented:
-# from agents.dynamic.eda_agent.eda_agent                                   import eda_node, route_after_eda
 # from agents.dynamic.preprocessing_agent.preprocessing_agent               import preprocessing_node, route_after_preprocessing
 # from agents.dynamic.feature_engineering_agent.feature_engineering_agent   import feature_engineering_node, route_after_feature_engineering
-# from agents.dynamic.model_selection_agent.model_selection_agent           import model_selection_node, route_after_model_selection
-# from agents.dynamic.training_agent.training_agent                         import training_node, route_after_training
-# from agents.dynamic.evaluation_agent.evaluation_agent                     import evaluation_node, route_after_evaluation
 # from agents.dynamic.deployment_agent.deployment_agent                     import deployment_node, route_after_deployment
 
 logger = logging.getLogger(__name__)
@@ -109,7 +123,7 @@ def _make_checkpoint_node(agent_name: str):
             "feedback_text": feedback_text,
         }
 
-        # On feedback: record in history so the agent can read it on re-run
+        # On feedback: record in history so the agent can record it on re-run
         if decision == "feedback" and feedback_text:
             history = list(state.get("feedback_history", []))
             history.append({
@@ -285,15 +299,8 @@ def build_graph() -> any:
     )
 
     # ── Agent 4: Model Selection ───────────────────────────────────────────────
-    model_selection_node       = _stub_node("model_selection_agent")
-    model_selection_checkpoint = _make_checkpoint_node("model_selection")
-    route_after_model_selection = _make_stub_router([
-        ("run_training",   "training_agent"),
-        ("run_evaluation", "evaluation_agent"),
-        ("run_deployment", "deployment_agent"),
-    ])
     graph.add_node("model_selection_agent",      model_selection_node)
-    graph.add_node("model_selection_checkpoint", model_selection_checkpoint)
+    graph.add_node("model_selection_checkpoint", model_selection_checkpoint_node)
     graph.add_edge("model_selection_agent", "model_selection_checkpoint")
     graph.add_conditional_edges(
         "model_selection_checkpoint",
@@ -301,14 +308,8 @@ def build_graph() -> any:
     )
 
     # ── Agent 5: Training ──────────────────────────────────────────────────────
-    training_node       = _stub_node("training_agent")
-    training_checkpoint = _make_checkpoint_node("training")
-    route_after_training = _make_stub_router([
-        ("run_evaluation", "evaluation_agent"),
-        ("run_deployment", "deployment_agent"),
-    ])
     graph.add_node("training_agent",      training_node)
-    graph.add_node("training_checkpoint", training_checkpoint)
+    graph.add_node("training_checkpoint", training_checkpoint_node)
     graph.add_edge("training_agent", "training_checkpoint")
     graph.add_conditional_edges(
         "training_checkpoint",
@@ -316,13 +317,8 @@ def build_graph() -> any:
     )
 
     # ── Agent 6: Evaluation ────────────────────────────────────────────────────
-    evaluation_node       = _stub_node("evaluation_agent")
-    evaluation_checkpoint = _make_checkpoint_node("evaluation")
-    route_after_evaluation = _make_stub_router([
-        ("run_deployment", "deployment_agent"),
-    ])
     graph.add_node("evaluation_agent",      evaluation_node)
-    graph.add_node("evaluation_checkpoint", evaluation_checkpoint)
+    graph.add_node("evaluation_checkpoint", evaluation_checkpoint_node)
     graph.add_edge("evaluation_agent", "evaluation_checkpoint")
     graph.add_conditional_edges(
         "evaluation_checkpoint",

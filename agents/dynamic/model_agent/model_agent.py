@@ -1,18 +1,36 @@
-"""ModelAgent — LangGraph orchestrator for plan → train → evaluate."""
+"""Backward compatible ModelAgent wrapper importing from separate agents."""
 from __future__ import annotations
 
+import logging
 from typing import Any
 
-from agents.dynamic.model_agent.graph import build_model_graph
-from agents.dynamic.model_agent.state import ModelAgentState
-from tools.pipeline_state import empty_state, merge_state
+from state.pipeline_state import PipelineState
+from tools.llm_client import get_llm
+
+# Import nodes from their new locations to preserve backward compatibility
+from agents.dynamic.model_selection_agent import (
+    model_selection_node,
+    model_selection_checkpoint_node,
+    route_after_model_selection,
+)
+from agents.dynamic.training_agent import (
+    training_node,
+    training_checkpoint_node,
+    route_after_training,
+)
+from agents.dynamic.evaluation_agent import (
+    evaluation_node,
+    evaluation_checkpoint_node,
+    route_after_evaluation,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class ModelAgent:
     """
-    LangGraph agent that runs the training workflow by calling the tools layer.
-    Expects preprocessed train/test splits in pipeline_state (from PreprocessingAgent).
-    Flow: plan_training → train_* → evaluate
+    Backward-compatible wrapper executing selection, training, and evaluation
+    nodes sequentially without creating a standalone graph or state.
     """
 
     def __init__(self, logger: Any, llm: Any, registry: Any):
@@ -35,43 +53,57 @@ class ModelAgent:
         train_input: dict | None = None,
         evaluate_input: dict | None = None,
     ) -> dict:
-        config = {
-            "training_approach": training_approach,
-            "target_column": target_column,
-            "problem_type": problem_type,
-            "plan_input": plan_input or {},
-            "train_input": train_input or {},
-            "evaluate_input": evaluate_input or {},
-        }
-        if optuna_trials is not None:
-            config["optuna_trials"] = str(optuna_trials)
+        from tools.pipeline_state import ensure_state
 
-        graph = build_model_graph(self.llm, self.registry, config)
-        pipeline_state = pipeline_state or empty_state(data_path, prompt)
+        state = ensure_state(pipeline_state, data_path, prompt)
+
+        # Merge configuration inputs
+        user_prefs = dict(state.get("user_preferences") or {})
+        if training_approach:
+            user_prefs["training_approach"] = training_approach
+        if target_column:
+            state["target_column"] = target_column
+        if problem_type:
+            state["task_type"] = problem_type
+
+        state["user_preferences"] = user_prefs
         if task:
-            pipeline_state = merge_state(pipeline_state, {"controller_task": task})
-
-        initial: ModelAgentState = {
-            "data_path": data_path,
-            "prompt": prompt,
-            "task": task,
-            "pipeline_state": pipeline_state,
-            "step": "model_agent_start",
-        }
+            state["controller_task"] = task
+        if prompt:
+            state["prompt"] = prompt
+            state["nl_query"] = prompt
 
         self.logger.info("\n" + "=" * 50)
-        self.logger.info("MODEL AGENT (LangGraph)")
+        self.logger.info("MODEL AGENT (Sequential Execution)")
         self.logger.info("=" * 50)
 
-        final_state: ModelAgentState = graph.invoke(initial)
-        pipeline_state = final_state.get("pipeline_state") or initial["pipeline_state"]
+        # Execute Node 1: Model Selection
+        state = model_selection_node(state)
+        if state.get("error"):
+            self.logger.warning(f"ModelAgent finished with error: {state['error']}")
+            return state
 
-        if final_state.get("error"):
-            self.logger.warn(f"ModelAgent finished with error: {final_state['error']}")
-        else:
-            self.logger.info(
-                f"ModelAgent finished — step={pipeline_state.get('step')} "
-                f"status={pipeline_state.get('status')}"
-            )
+        # Execute Node 2: Training
+        if optuna_trials is not None:
+            plan = state.get("training_plan") or {}
+            optuna_cfg = plan.get("optuna_config") or {}
+            optuna_cfg["n_trials"] = int(optuna_trials)
+            plan["optuna_config"] = optuna_cfg
+            state["training_plan"] = plan
 
-        return pipeline_state
+        state = training_node(state)
+        if state.get("error"):
+            self.logger.warning(f"ModelAgent finished with error: {state['error']}")
+            return state
+
+        # Execute Node 3: Evaluation
+        state = evaluation_node(state)
+        if state.get("error"):
+            self.logger.warning(f"ModelAgent finished with error: {state['error']}")
+            return state
+
+        self.logger.info(
+            f"ModelAgent finished — step={state.get('step')} "
+            f"status={state.get('status')}"
+        )
+        return state
