@@ -172,13 +172,15 @@ class ControllerAgent:
         if not nl_query:
             raise ValueError("inputs['prompt'] or inputs['nl_query'] is required")
 
-        self.logger.info("\n" + "=" * 60)
-        self.logger.info("D.T.D PIPELINE — NEW RUN")
-        self.logger.info("=" * 60)
-        self.logger.info("run_id      : %s", run_id)
-        self.logger.info("data_path   : %s", data_path)
-        self.logger.info("nl_query    : %s", nl_query)
-        self.logger.info("target_col  : %s", target_column or "(will be inferred)")
+        self.logger.info(
+            "\n" + "=" * 60 + "\n"
+            "D.T.D PIPELINE — NEW RUN\n"
+            + "=" * 60 + "\n"
+            f"run_id      : {run_id}\n"
+            f"data_path   : {data_path}\n"
+            f"nl_query    : {nl_query}\n"
+            f"target_col  : {target_column or '(will be inferred)'}"
+        )
 
         # Build initial state
         # If target_column was explicitly provided, pre-populate it so

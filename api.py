@@ -2,7 +2,7 @@ import os
 import json
 import asyncio
 import shutil
-from src.run_dynamic import run_dynamic
+from agents.dynamic.controller_agent.controller_agent import ControllerAgent
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
@@ -10,10 +10,9 @@ from bson import ObjectId
 from pymongo import MongoClient
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-
 import pandas as pd
-
-from orchestrator import DTDPipeline
+from src.utils.logger import Logger
+from agents.static.orchestrator import DTDPipeline
 from dotenv import load_dotenv
 from agents.static.eda_agent.eda_agent import TargetSuggestionAgent
 
@@ -182,9 +181,16 @@ async def run_custom_pipeline(
         "report_id":     report_id,
         "prompt":        prompt,
     }
-   
+    
+    logger = Logger()
+
+    controller = ControllerAgent(
+        logger=logger,
+        
+    )
+
     print("Received inputs for custom pipeline:", inputs)
-    result = run_dynamic(inputs)
+    result = controller.run(inputs)
 
     return {
         "status": "success",

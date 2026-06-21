@@ -24,7 +24,7 @@ How to add a new agent:
     3. Add add_node() + add_edge() + add_conditional_edges() below
     4. Wire the checkpoint's conditional edge to the next agent or done
 
-Usage (from orchestrator.py):
+Usage (from agents.static.orchestrator.py):
     from graph.graph_builder import build_graph
     app = build_graph()
     result = app.invoke(initial_state, config={"configurable": {"thread_id": "run-001"}})
