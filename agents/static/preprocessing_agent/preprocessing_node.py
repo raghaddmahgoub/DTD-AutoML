@@ -248,7 +248,7 @@ class PreprocessingNode:
             return state
 
         except Exception as e:
-            logger.error("FAILED: %s", str(e), exc_info=True)
+            logger.error("FAILED: %s", str(e))
             state.update({"status": "failed", "error": str(e)})
             return state
 

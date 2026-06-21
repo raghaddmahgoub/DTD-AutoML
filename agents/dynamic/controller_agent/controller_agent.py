@@ -231,10 +231,10 @@ class ControllerAgent:
         self.logger.info("\n" + "=" * 60)
         self.logger.info("D.T.D PIPELINE — RESUME")
         self.logger.info("=" * 60)
-        self.logger.info("run_id   : %s", run_id)
-        self.logger.info("decision : %s", decision)
+        self.logger.info(f"run_id   : {run_id}")
+        self.logger.info(f"decision : {decision}")
         if feedback_text:
-            self.logger.info("feedback : %s", feedback_text)
+                self.logger.info(f"feedback : {feedback_text}")
         if decision == "feedback":
             self.logger.info("paused")
 
@@ -292,21 +292,20 @@ class ControllerAgent:
                     agent_name    = interrupt_data.get("agent", "unknown")
                     agent_output  = interrupt_data.get("agent_output", {})
                     if interrupt_data.get("decision") == "feedback" or interrupt_data.get("feedback_text"):
-                        self.logger.info("paused")
+                            self.logger.info("paused")
 
                 self.logger.info("\n" + "─" * 60)
-                self.logger.info("[HITL CHECKPOINT] Pipeline paused at: %s", agent_name)
-                self.logger.info("report_id: %s  (use this to resume)", run_id)
+                self.logger.info(f"[HITL CHECKPOINT] Pipeline paused at: {agent_name}")
+                self.logger.info(f"report_id: {run_id}  (use this to resume)")
                 self.logger.info("─" * 60)
                 self.logger.info("[AGENT OUTPUT PREVIEW]")
                 self.logger.info(json.dumps(agent_output, indent=2, default=str)[:1000])
                 self.logger.info("─" * 60)
                 self.logger.info(
                     "To resume, call:\n"
-                    "  agent.resume(run_id='%s', decision='accept')\n"
-                    "  agent.resume(run_id='%s', decision='feedback', "
-                    "feedback_text='your note here')",
-                    run_id, run_id,
+                    f"  agent.resume(run_id='{run_id}', decision='accept')\n"
+                    f"  agent.resume(run_id='{run_id}', decision='feedback', "
+                    "feedback_text='your note here')"
                 )
 
                 partial_state = dict(final_state)
@@ -337,18 +336,17 @@ class ControllerAgent:
                 self.logger.info("paused")
 
             self.logger.info("\n" + "─" * 60)
-            self.logger.info("[HITL CHECKPOINT] Pipeline paused at: %s", agent_name)
-            self.logger.info("report_id: %s  (use this to resume)", run_id)
+            self.logger.info(f"[HITL CHECKPOINT] Pipeline paused at: {agent_name}")
+            self.logger.info(f"report_id: {run_id}  (use this to resume)")
             self.logger.info("─" * 60)
             self.logger.info("[AGENT OUTPUT PREVIEW]")
             self.logger.info(json.dumps(agent_output, indent=2, default=str)[:1000])
             self.logger.info("─" * 60)
             self.logger.info(
                 "To resume, call:\n"
-                "  agent.resume(run_id='%s', decision='accept')\n"
-                "  agent.resume(run_id='%s', decision='feedback', "
-                "feedback_text='your note here')",
-                run_id, run_id,
+                f"  agent.resume(run_id='{run_id}', decision='accept')\n"
+                f"  agent.resume(run_id='{run_id}', decision='feedback', "
+                "feedback_text='your note here')"
             )
 
             # Return a partial state so callers can inspect what ran so far
@@ -368,7 +366,7 @@ class ControllerAgent:
             return partial_state
 
         except Exception as exc:
-            self.logger.error("[ControllerAgent] Pipeline error: %s", exc, exc_info=True)
+            self.logger.error(f"[ControllerAgent] Pipeline error: {exc}")
             return {
                 "__error__": str(exc),
                 "__report_id__": run_id,
@@ -385,12 +383,12 @@ class ControllerAgent:
         flags = state.get("intent_flags", {})
         ran   = [k.replace("run_", "") for k, v in flags.items()
                  if k.startswith("run_") and v]
-        self.logger.info("Agents activated : %s", ", ".join(ran) if ran else "none")
-        self.logger.info("Target column    : %s", state.get("target_column"))
-        self.logger.info("Task type        : %s", state.get("task_type"))
-        self.logger.info("Trained model    : %s", state.get("trained_model_path") or "—")
-        self.logger.info("Model metrics    : %s", state.get("model_metrics") or "—")
-        self.logger.info("Endpoint URL     : %s", state.get("endpoint_url") or "—")
+        self.logger.info(f"Agents activated : {', '.join(ran) if ran else 'none'}")
+        self.logger.info(f"Target column    : {state.get('target_column')}")
+        self.logger.info(f"Task type        : {state.get('task_type')}")
+        self.logger.info(f"Trained model    : {state.get('trained_model_path') or '—'}")
+        self.logger.info(f"Model metrics    : {state.get('model_metrics') or '—'}")
+        self.logger.info(f"Endpoint URL     : {state.get('endpoint_url') or '—'}")
         self.logger.info("─" * 54)
 
 
