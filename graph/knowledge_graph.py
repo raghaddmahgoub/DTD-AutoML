@@ -22,8 +22,7 @@ def store_initial_knowledge_graph( state: dict) -> list:
     ]
 
     # keep only the last selected flag
-    if knowledge_graph:
-        knowledge_graph = [knowledge_graph[-1]]
+    knowledge_graph = knowledge_graph[-1:]
 
     run_id = "6a395d519b0c281d5031ad4f"  # Replace with actual run_id if available
 
