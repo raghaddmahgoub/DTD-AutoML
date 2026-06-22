@@ -5,22 +5,19 @@ import logging
 from typing import Any
 
 from state.pipeline_state import PipelineState
-from tools.llm_client import get_llm
+from tools.shared import get_llm
 
 # Import nodes from their new locations to preserve backward compatibility
 from agents.dynamic.model_selection_agent import (
     model_selection_node,
-    model_selection_checkpoint_node,
     route_after_model_selection,
 )
 from agents.dynamic.training_agent import (
     training_node,
-    training_checkpoint_node,
     route_after_training,
 )
 from agents.dynamic.evaluation_agent import (
     evaluation_node,
-    evaluation_checkpoint_node,
     route_after_evaluation,
 )
 
@@ -53,7 +50,7 @@ class ModelAgent:
         train_input: dict | None = None,
         evaluate_input: dict | None = None,
     ) -> dict:
-        from tools.pipeline_state import ensure_state
+        from tools.shared import ensure_state
 
         state = ensure_state(pipeline_state, data_path, prompt)
 

@@ -15,7 +15,6 @@ Responsibility:
 
 What this file exports for graph_builder.py:
     eda_node(state)            — the LangGraph node function (Agent 1 execution)
-    eda_checkpoint_node(state) — the HITL interrupt node right after it
     route_after_eda(state)     — conditional edge: where to go after ACCEPT
 
 Imports only from tools/ and state/ (per project rule: no agent imports another agent):
@@ -36,7 +35,7 @@ from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage
 from langgraph.types import interrupt
 
-from tools.eda_tools import (
+from tools.eda import (
     load_dataframe,
     compute_dataset_summary,
     compute_column_profiles,
@@ -47,11 +46,10 @@ from tools.eda_tools import (
     compute_signal_analysis,
     build_preprocessing_context,
     save_eda_report,
+    generate_all_plots,
+    generate_llm_requested_plot,
 )
-from tools.eda_plots import generate_all_plots, generate_llm_requested_plot
-from tools.prompt_builder import build_prompt_eda
-from tools.llm_client import get_llm
-from tools.target_suggester import TargetSuggestionAgent
+from tools.shared import build_prompt_eda, get_llm, TargetSuggestionAgent
 from state.pipeline_state import PipelineState
 
 logger = logging.getLogger(__name__)
@@ -330,50 +328,6 @@ def eda_node(state: PipelineState) -> dict:
     result["agent_outputs"] = merged_outputs
 
     return result
-
-
-# ─────────────────────────────────────────────
-# HITL checkpoint node — Agent 1
-# ─────────────────────────────────────────────
-# Same shape as graph_builder._make_checkpoint_node("eda"), defined locally
-# so eda_agent.py is self-contained and graph_builder.py can import it
-# directly (per the import block already present in graph_builder.py).
-
-def eda_checkpoint_node(state: PipelineState) -> dict:
-    """
-    Pauses the graph after eda_node, surfaces agent_outputs["eda"] to the
-    frontend via interrupt(), and reads back the human decision on resume.
-
-    human_response arrives via the /resume endpoint:
-        {"decision": "accept" | "feedback", "text": "<optional feedback>"}
-    """
-    logger.info("[EDACheckpoint] Interrupting for human review")
-
-    human_response: dict = interrupt({
-        "agent":        _AGENT_NAME,
-        "agent_output": state["agent_outputs"].get(_AGENT_NAME, {}),
-    })
-
-    decision      = human_response.get("decision", "accept")
-    feedback_text = human_response.get("text", "")
-
-    updates: dict = {
-        "user_decision": decision,
-        "feedback_text":  feedback_text,
-    }
-
-    if decision == "feedback" and feedback_text:
-        history = list(state.get("feedback_history", []))
-        history.append({
-            "agent":         _AGENT_NAME,
-            "feedback_text": feedback_text,
-            "iteration":     len([h for h in history if h["agent"] == _AGENT_NAME]) + 1,
-        })
-        updates["feedback_history"] = history
-
-    logger.info("[EDACheckpoint] decision=%s", decision)
-    return updates
-
 
 # ─────────────────────────────────────────────
 # Conditional edge function — after ACCEPT

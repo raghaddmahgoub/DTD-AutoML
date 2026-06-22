@@ -5,8 +5,8 @@ import logging
 from langgraph.types import interrupt
 
 from state.pipeline_state import PipelineState
-from tools.llm_client import get_llm
-from tools.evaluate import evaluate
+from tools.shared import get_llm
+from tools.training import evaluate
 
 logger = logging.getLogger(__name__)
 
@@ -59,35 +59,6 @@ def evaluation_node(state: PipelineState) -> dict:
         updated_state["error"] = result.get("error", "evaluation failed")
 
     return updated_state
-
-
-def evaluation_checkpoint_node(state: PipelineState) -> dict:
-    logger.info("[EvaluationCheckpoint] Interrupting for human review")
-    human_response: dict = interrupt({
-        "agent":        "evaluation",
-        "agent_output": state["agent_outputs"].get("evaluation", {}),
-    })
-
-    decision      = human_response.get("decision", "accept")
-    feedback_text = human_response.get("text", "")
-
-    updates: dict = {
-        "user_decision": decision,
-        "feedback_text":  feedback_text,
-    }
-
-    if decision == "feedback" and feedback_text:
-        history = list(state.get("feedback_history", []))
-        history.append({
-            "agent":         "evaluation",
-            "feedback_text": feedback_text,
-            "iteration":     len([h for h in history if h["agent"] == "evaluation"]) + 1,
-        })
-        updates["feedback_history"] = history
-
-    logger.info("[EvaluationCheckpoint] decision=%s", decision)
-    return updates
-
 
 def route_after_evaluation(state: PipelineState) -> str:
     flags = state["intent_flags"]

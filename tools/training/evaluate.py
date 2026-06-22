@@ -1,6 +1,6 @@
 from langchain_core.tools import tool
 
-from tools.pipeline_state import ensure_state, merge_state
+from tools.shared import ensure_state, merge_state
 
 
 @tool

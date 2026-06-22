@@ -30,11 +30,11 @@ This document describes **how the system works today** (as of the PreprocessingA
 
 The pipeline is split into **three layers**:
 
-| Layer | Location | Responsibility |
-|-------|----------|----------------|
-| **Agents (orchestration)** | `agents/dynamic/` | LangGraph workflows that call tools in order. No ML math here. |
-| **Tools (execution API)** | `tools/` | LangChain `@tool` functions. Validate state, load data, call engines, update state. |
-| **Engines (ML logic)** | `tools/nodes/training_engines.py` | sklearn, Optuna, AutoGluon, Dask-XGBoost implementations. |
+| Layer                      | Location                          | Responsibility                                                                      |
+| -------------------------- | --------------------------------- | ----------------------------------------------------------------------------------- |
+| **Agents (orchestration)** | `agents/dynamic/`                 | LangGraph workflows that call tools in order. No ML math here.                      |
+| **Tools (execution API)**  | `tools/`                          | LangChain `@tool` functions. Validate state, load data, call engines, update state. |
+| **Engines (ML logic)**     | `tools/nodes/training_engines.py` | sklearn, Optuna, AutoGluon, Dask-XGBoost implementations.                           |
 
 **Key design rule:** Agents never train models directly. Every step is a tool invocation with a standard signature:
 
@@ -95,12 +95,12 @@ flowchart TB
 
 ### What changed from the old design
 
-| Old | Now |
-|-----|-----|
-| ModelAgent read raw CSV and split internally | **PreprocessingAgent** produces `X_train.csv`, `X_test.csv`, `y_train.csv`, `y_test.csv` first |
-| `tools/training_data.py` loaded & split data | **Deleted** — logic merged into `tools/training_common.py` |
-| EDA via `data_understanding` before training | **Optional** — not in default `model_agent` test path |
-| `data_cleaning` / `feature_engineering` stubs in tools | Replaced by **PreprocessingAgent** + `feature_engineering_execution` |
+| Old                                                    | Now                                                                                            |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| ModelAgent read raw CSV and split internally           | **PreprocessingAgent** produces `X_train.csv`, `X_test.csv`, `y_train.csv`, `y_test.csv` first |
+| `tools/training_data.py` loaded & split data           | **Deleted** — logic merged into `tools/training_common.py`                                     |
+| EDA via `data_understanding` before training           | **Optional** — not in default `model_agent` test path                                          |
+| `data_cleaning` / `feature_engineering` stubs in tools | Replaced by **PreprocessingAgent** + `feature_engineering_execution`                           |
 
 ---
 
@@ -112,11 +112,11 @@ This confuses people — they are **not** the same thing:
 
 LangGraph **adapter nodes** for the ModelAgent graph. Each node looks up one tool from `ToolRegistry` and calls it.
 
-| File | Graph node | Tool invoked |
-|------|------------|--------------|
-| `plan.py` | `plan` | `plan_training` |
-| `train.py` | `train` | `train_simple` / `train_simple_optuna` / `train_autogluon` (from plan) |
-| `evaluate.py` | `evaluate` | `evaluate` |
+| File          | Graph node | Tool invoked                                                           |
+| ------------- | ---------- | ---------------------------------------------------------------------- |
+| `plan.py`     | `plan`     | `plan_training`                                                        |
+| `train.py`    | `train`    | `train_simple` / `train_simple_optuna` / `train_autogluon` (from plan) |
+| `evaluate.py` | `evaluate` | `evaluate`                                                             |
 
 ~50 lines each. **No ML code.**
 
@@ -124,19 +124,19 @@ LangGraph **adapter nodes** for the ModelAgent graph. Each node looks up one too
 
 **Business logic nodes** used inside tools (especially the plan subgraph):
 
-| File | Used by | Purpose |
-|------|---------|---------|
-| `identify_target.py` | `plan_graph` | Confirm target column + problem type |
-| `model_selection.py` | `plan_graph` | **LLM call** — pick approach, models, Optuna space, AutoGluon config |
-| `training_engines.py` | `train_*` tools | Actual training implementations |
+| File                  | Used by         | Purpose                                                              |
+| --------------------- | --------------- | -------------------------------------------------------------------- |
+| `identify_target.py`  | `plan_graph`    | Confirm target column + problem type                                 |
+| `model_selection.py`  | `plan_graph`    | **LLM call** — pick approach, models, Optuna space, AutoGluon config |
+| `training_engines.py` | `train_*` tools | Actual training implementations                                      |
 
 ### `agents/dynamic/preprocessing_agent/nodes/`
 
 Same pattern as ModelAgent — adapters that call preprocessing tools:
 
-| File | Tool invoked |
-|------|--------------|
-| `preprocessing.py` | `preprocessing_execution` |
+| File                     | Tool invoked                    |
+| ------------------------ | ------------------------------- |
+| `preprocessing.py`       | `preprocessing_execution`       |
 | `feature_engineering.py` | `feature_engineering_execution` |
 
 ---
@@ -152,13 +152,13 @@ python src/test_tools_pipeline.py --mode model_agent --data iris --target specie
 
 ### Step-by-step
 
-| # | Agent / step | What happens |
-|---|--------------|--------------|
-| 1 | **PreprocessingAgent** | Runs `preprocessing_execution` → writes splits under `Output/Preprocessing/{dataset}/` |
-| 2 | **PreprocessingAgent** | Runs `feature_engineering_execution` → optional engineered CSVs (`X_train_engineered.csv`, etc.) |
-| 3 | **ModelAgent → plan** | `plan_training` tool runs inner graph: identify target → LLM model selection → user approves plan |
-| 4 | **ModelAgent → train** | One of `train_simple`, `train_simple_optuna`, `train_autogluon` based on `training_plan.train_tool` |
-| 5 | **ModelAgent → evaluate** | `evaluate` tool surfaces metrics already computed at train time |
+| #   | Agent / step              | What happens                                                                                        |
+| --- | ------------------------- | --------------------------------------------------------------------------------------------------- |
+| 1   | **PreprocessingAgent**    | Runs `preprocessing_execution` → writes splits under `Output/Preprocessing/{dataset}/`              |
+| 2   | **PreprocessingAgent**    | Runs `feature_engineering_execution` → optional engineered CSVs (`X_train_engineered.csv`, etc.)    |
+| 3   | **ModelAgent → plan**     | `plan_training` tool runs inner graph: identify target → LLM model selection → user approves plan   |
+| 4   | **ModelAgent → train**    | One of `train_simple`, `train_simple_optuna`, `train_autogluon` based on `training_plan.train_tool` |
+| 5   | **ModelAgent → evaluate** | `evaluate` tool surfaces metrics already computed at train time                                     |
 
 ```mermaid
 sequenceDiagram
@@ -267,16 +267,16 @@ Defined in `tools/pipeline_state.py`. Passed through every tool and agent. Tools
 
 ### `model_metrics` (after training)
 
-| Field | Meaning |
-|-------|---------|
-| `best_model` | Name of winning model (or AutoGluon leaderboard entry) |
-| `tuning_best_score` | Validation score during tuning / CV |
-| `test_accuracy` | Hold-out test accuracy (classification) |
-| `test_f1_score` | Weighted F1 on test set |
-| `best_score` | Main reported score (= `test_accuracy` or `test_r2_score`) |
-| `confusion_matrix` | Test set confusion matrix |
-| `training_method` | e.g. `Simple+Defaults`, `AutoGluon` |
-| `data_source` | Always `"preprocessed_splits"` now |
+| Field               | Meaning                                                    |
+| ------------------- | ---------------------------------------------------------- |
+| `best_model`        | Name of winning model (or AutoGluon leaderboard entry)     |
+| `tuning_best_score` | Validation score during tuning / CV                        |
+| `test_accuracy`     | Hold-out test accuracy (classification)                    |
+| `test_f1_score`     | Weighted F1 on test set                                    |
+| `best_score`        | Main reported score (= `test_accuracy` or `test_r2_score`) |
+| `confusion_matrix`  | Test set confusion matrix                                  |
+| `training_method`   | e.g. `Simple+Defaults`, `AutoGluon`                        |
+| `data_source`       | Always `"preprocessed_splits"` now                         |
 
 ---
 
@@ -286,18 +286,19 @@ Defined in `tools/pipeline_state.py`. Passed through every tool and agent. Tools
 
 ### Files
 
-| File | Role |
-|------|------|
-| `preprocessing_agent.py` | Public API — `PreprocessingAgent.run(...)` |
-| `graph.py` | LangGraph: `preprocessing` → `feature_engineering` → END |
-| `state.py` | `PreprocessingAgentState` TypedDict |
-| `tool_runner.py` | Same invoke helper as ModelAgent |
-| `nodes/preprocessing.py` | Adapter → `preprocessing_execution` |
-| `nodes/feature_engineering.py` | Adapter → `feature_engineering_execution` |
+| File                           | Role                                                     |
+| ------------------------------ | -------------------------------------------------------- |
+| `preprocessing_agent.py`       | Public API — `PreprocessingAgent.run(...)`               |
+| `graph.py`                     | LangGraph: `preprocessing` → `feature_engineering` → END |
+| `state.py`                     | `PreprocessingAgentState` TypedDict                      |
+| `tool_runner.py`               | Same invoke helper as ModelAgent                         |
+| `nodes/preprocessing.py`       | Adapter → `preprocessing_execution`                      |
+| `nodes/feature_engineering.py` | Adapter → `feature_engineering_execution`                |
 
 ### Graph routing
 
 After `preprocessing` node:
+
 - If `pipeline_state.status != "success"` or error → **END**
 - Else → `feature_engineering`
 
@@ -306,12 +307,14 @@ After `preprocessing` node:
 Wraps the static `PreprocessingNode` from `agents/static/preprocessing_agent/preprocessing_node.py`.
 
 **Inputs** (`tool_input`):
+
 - `target_column` — required for supervised learning
 - `test_size` (default 0.2)
 - `use_llm` (default True) — LLM-driven column policies
 - `output_folder` (default `Output/Preprocessing/{dataset_stem}/`)
 
 **Outputs** written to disk:
+
 - `X_train.csv`, `X_test.csv`, `y_train.csv`, `y_test.csv`
 - `preprocessing_summary.json` (includes `task_type`)
 - `column_actions.json`, `llm_policy.json`, etc.
@@ -323,6 +326,7 @@ Updates `pipeline_state` with paths and `preprocessing_output`.
 Runs LLM-guided feature engineering on the preprocessed splits. Appends top-K new columns to copies of train/test features.
 
 **Outputs:**
+
 - `X_train_engineered.csv`, `X_test_engineered.csv`
 - Feature report JSON
 
@@ -336,15 +340,15 @@ Model training **prefers engineered paths** when they exist (`training_common.re
 
 ### Files
 
-| File | Role |
-|------|------|
-| `model_agent.py` | `ModelAgent.run()` — builds graph, invokes, returns `pipeline_state` |
-| `graph.py` | Compiles LangGraph workflow |
-| `state.py` | `ModelAgentState` — wraps `pipeline_state` + `last_tool`, `last_result`, `error` |
-| `tool_runner.py` | Standard `tool.invoke(...)` wrapper |
-| `nodes/plan.py` | Plan node factory |
-| `nodes/train.py` | Train node factory |
-| `nodes/evaluate.py` | Evaluate node factory |
+| File                | Role                                                                             |
+| ------------------- | -------------------------------------------------------------------------------- |
+| `model_agent.py`    | `ModelAgent.run()` — builds graph, invokes, returns `pipeline_state`             |
+| `graph.py`          | Compiles LangGraph workflow                                                      |
+| `state.py`          | `ModelAgentState` — wraps `pipeline_state` + `last_tool`, `last_result`, `error` |
+| `tool_runner.py`    | Standard `tool.invoke(...)` wrapper                                              |
+| `nodes/plan.py`     | Plan node factory                                                                |
+| `nodes/train.py`    | Train node factory                                                               |
+| `nodes/evaluate.py` | Evaluate node factory                                                            |
 
 ### LangGraph flow
 
@@ -356,23 +360,23 @@ START → plan → [approved?] → train → [success?] → evaluate → END
 
 ### Routing conditions (`graph.py`)
 
-| After node | Proceed if | Else |
-|------------|------------|------|
-| `plan` | `last_result.status == "planned"` AND `training_plan.approved` AND `train_tool` set | END |
-| `train` | `last_result.status == "success"` | END |
-| `evaluate` | always | END |
+| After node | Proceed if                                                                          | Else |
+| ---------- | ----------------------------------------------------------------------------------- | ---- |
+| `plan`     | `last_result.status == "planned"` AND `training_plan.approved` AND `train_tool` set | END  |
+| `train`    | `last_result.status == "success"`                                                   | END  |
+| `evaluate` | always                                                                              | END  |
 
 ### `ModelAgent.run()` config
 
 Passed into node factories:
 
-| Config key | Effect |
-|------------|--------|
-| `ask_before_training` | Interactive prompts in `plan_training` |
-| `auto_approve_plan` | Skip y/N approval (used with `--no-prompts`) |
-| `training_approach` | Force `1`/`2`/`3` or `simple`/`simple_optuna`/`autogluon` |
-| `target_column` / `problem_type` | Override for planning |
-| `plan_input` / `train_input` / `evaluate_input` | Extra `tool_input` dicts per step |
+| Config key                                      | Effect                                                    |
+| ----------------------------------------------- | --------------------------------------------------------- |
+| `ask_before_training`                           | Interactive prompts in `plan_training`                    |
+| `auto_approve_plan`                             | Skip y/N approval (used with `--no-prompts`)              |
+| `training_approach`                             | Force `1`/`2`/`3` or `simple`/`simple_optuna`/`autogluon` |
+| `target_column` / `problem_type`                | Override for planning                                     |
+| `plan_input` / `train_input` / `evaluate_input` | Extra `tool_input` dicts per step                         |
 
 ### Train node logic (`nodes/train.py`)
 
@@ -446,50 +450,50 @@ All three train tools share the same pattern:
 
 ### Tool files
 
-| File | Tool name | Engine | Subfolder for artifact |
-|------|-----------|--------|------------------------|
-| `train_simple.py` | `train_simple` | `train_simple_defaults` | `training_simple/` |
-| `train_simple_optuna.py` | `train_simple_optuna` | `train_simple_optuna` | `training_optuna/` |
-| `train_autogluon.py` | `train_autogluon` | `train_autogluon` | `training_autogluon/` |
+| File                     | Tool name             | Engine                  | Subfolder for artifact |
+| ------------------------ | --------------------- | ----------------------- | ---------------------- |
+| `train_simple.py`        | `train_simple`        | `train_simple_defaults` | `training_simple/`     |
+| `train_simple_optuna.py` | `train_simple_optuna` | `train_simple_optuna`   | `training_optuna/`     |
+| `train_autogluon.py`     | `train_autogluon`     | `train_autogluon`       | `training_autogluon/`  |
 
 ### `training_common.py` — shared helpers
 
-| Function | Purpose |
-|----------|---------|
-| `resolve_preprocessed_paths` | Pick engineered or base split paths |
-| `require_preprocessed_splits` | Error message if splits missing |
-| `load_preprocessed_splits` | Read 4 CSVs into DataFrames/Series |
-| `resolve_problem_type` | From state or `preprocessing_summary.json` |
-| `load_planning_dataframe` | X_train + target column for plan profiling |
-| `pipeline_to_graph_state` | Bridge `pipeline_state` → `TrainingGraphState` |
-| `load_training_context` | Bundle everything train tools need |
-| `apply_test_metrics` | Accuracy/F1 or R²/RMSE on **test** split |
-| `complete_training` | Save pickle, update state |
-| `require_approved_plan` | Gate train tools |
+| Function                      | Purpose                                        |
+| ----------------------------- | ---------------------------------------------- |
+| `resolve_preprocessed_paths`  | Pick engineered or base split paths            |
+| `require_preprocessed_splits` | Error message if splits missing                |
+| `load_preprocessed_splits`    | Read 4 CSVs into DataFrames/Series             |
+| `resolve_problem_type`        | From state or `preprocessing_summary.json`     |
+| `load_planning_dataframe`     | X_train + target column for plan profiling     |
+| `pipeline_to_graph_state`     | Bridge `pipeline_state` → `TrainingGraphState` |
+| `load_training_context`       | Bundle everything train tools need             |
+| `apply_test_metrics`          | Accuracy/F1 or R²/RMSE on **test** split       |
+| `complete_training`           | Save pickle, update state                      |
+| `require_approved_plan`       | Gate train tools                               |
 
 **Important:** Training uses the **preprocessed test split** from PreprocessingAgent. Train tools do **not** call `train_test_split` themselves.
 
 ### `training_engines.py` — ML implementations
 
-| Function | What it does |
-|----------|--------------|
-| `train_simple_defaults` | Loop whitelisted sklearn models, pick best by CV score |
-| `train_simple_optuna` | Optuna HPO per model using LLM `search_space`; fallback to defaults |
-| `train_autogluon` | `TabularPredictor.fit` with preset + model hyperparameters |
-| `train_dask_xgb` | Dask + XGBoost for very large data (>700k rows) |
-| `normalize_autogluon_preset` | Maps legacy preset names to AutoGluon 1.5 names |
+| Function                     | What it does                                                        |
+| ---------------------------- | ------------------------------------------------------------------- |
+| `train_simple_defaults`      | Loop whitelisted sklearn models, pick best by CV score              |
+| `train_simple_optuna`        | Optuna HPO per model using LLM `search_space`; fallback to defaults |
+| `train_autogluon`            | `TabularPredictor.fit` with preset + model hyperparameters          |
+| `train_dask_xgb`             | Dask + XGBoost for very large data (>700k rows)                     |
+| `normalize_autogluon_preset` | Maps legacy preset names to AutoGluon 1.5 names                     |
 
 #### AutoGluon model prefixes (`AUTOGLUON_MODELS`)
 
-| Prefix | Backend | Requires |
-|--------|---------|----------|
-| `GBM` | LightGBM | `lightgbm` |
-| `XGB` | XGBoost | `xgboost` |
-| `RF` | sklearn RandomForest | `scikit-learn` |
-| `CAT` | CatBoost | `catboost` |
-| `XT` | sklearn ExtraTrees | `scikit-learn` |
-| `NN_TORCH` | PyTorch neural net | `torch>=2.6` |
-| `FASTAI` | FastAI tabular NN | `autogluon.tabular[fastai]` |
+| Prefix     | Backend              | Requires                    |
+| ---------- | -------------------- | --------------------------- |
+| `GBM`      | LightGBM             | `lightgbm`                  |
+| `XGB`      | XGBoost              | `xgboost`                   |
+| `RF`       | sklearn RandomForest | `scikit-learn`              |
+| `CAT`      | CatBoost             | `catboost`                  |
+| `XT`       | sklearn ExtraTrees   | `scikit-learn`              |
+| `NN_TORCH` | PyTorch neural net   | `torch>=2.6`                |
+| `FASTAI`   | FastAI tabular NN    | `autogluon.tabular[fastai]` |
 
 #### AutoGluon presets (LLM whitelist)
 
@@ -512,11 +516,11 @@ Lightweight — metrics are already in `pipeline_state.model_metrics` after trai
 
 The LLM **must** pick exactly one (enforced in `model_selection.py`):
 
-| LLM `approach` | `training_plan.approach` | Tool | Behavior |
-|----------------|--------------------------|------|----------|
-| `Simple` | `simple` | `train_simple` | sklearn defaults, no HPO |
-| `Simple+Optuna` | `simple_optuna` | `train_simple_optuna` | sklearn + Optuna with LLM search space |
-| `AutoGluon` | `autogluon` | `train_autogluon` | Full AutoGluon AutoML |
+| LLM `approach`  | `training_plan.approach` | Tool                  | Behavior                               |
+| --------------- | ------------------------ | --------------------- | -------------------------------------- |
+| `Simple`        | `simple`                 | `train_simple`        | sklearn defaults, no HPO               |
+| `Simple+Optuna` | `simple_optuna`          | `train_simple_optuna` | sklearn + Optuna with LLM search space |
+| `AutoGluon`     | `autogluon`              | `train_autogluon`     | Full AutoGluon AutoML                  |
 
 **Dask-XGBoost** is not an LLM choice. If `n_rows > 700_000`, engines may use Dask automatically (note in plan; large-data path uses preprocessed splits).
 
@@ -531,8 +535,8 @@ The LLM **must** pick exactly one (enforced in `model_selection.py`):
     "n_trials": 30,
     "search_space": {
       "RandomForest": {
-        "n_estimators": {"type": "int", "low": 50, "high": 200},
-        "max_depth": {"type": "int", "low": 3, "high": 15}
+        "n_estimators": { "type": "int", "low": 50, "high": 200 },
+        "max_depth": { "type": "int", "low": 3, "high": 15 }
       }
     }
   }
@@ -559,17 +563,18 @@ The LLM **must** pick exactly one (enforced in `model_selection.py`):
 
 ### Where prompts live
 
-| Purpose | File | Function / location |
-|---------|------|---------------------|
-| Model selection system prompt | `tools/nodes/model_selection.py` | `_SYSTEM` constant |
-| Model selection human prompt | `tools/nodes/model_selection.py` | `model_selection_node()` — built from profile + catalog |
-| ControllerAgent system prompt | `agents/dynamic/controller_agent/controller_agent.py` | `system_prompt` in `run()` |
-| Default CLI task prompt | `src/test_tools_pipeline.py` | `--prompt` argument default |
-| Preprocessing LLM policies | `agents/static/preprocessing_agent/` | Inside `PreprocessingNode` |
+| Purpose                       | File                                                  | Function / location                                     |
+| ----------------------------- | ----------------------------------------------------- | ------------------------------------------------------- |
+| Model selection system prompt | `tools/nodes/model_selection.py`                      | `_SYSTEM` constant                                      |
+| Model selection human prompt  | `tools/nodes/model_selection.py`                      | `model_selection_node()` — built from profile + catalog |
+| ControllerAgent system prompt | `agents/dynamic/controller_agent/controller_agent.py` | `system_prompt` in `run()`                              |
+| Default CLI task prompt       | `src/test_tools_pipeline.py`                          | `--prompt` argument default                             |
+| Preprocessing LLM policies    | `agents/static/preprocessing_agent/`                  | Inside `PreprocessingNode`                              |
 
 ### Whitelists (prevent hallucination)
 
 **sklearn models** (`SKLEARN_MODELS` in `model_selection.py`):
+
 - Classification: `RandomForest`, `GradientBoosting`, `LogisticRegression`, `XGBoost`
 - Regression: `RandomForest`, `GradientBoosting`, `LinearRegression`, `XGBoost`
 
@@ -625,22 +630,22 @@ Same tools, same `pipeline_state` — different orchestration style.
 
 `src/test_tools_pipeline.py`
 
-| Flag | Effect |
-|------|--------|
-| `--mode model_agent` | PreprocessingAgent → ModelAgent (default) |
-| `--data iris` | Dataset path or alias |
-| `--target species` | Target column for preprocessing |
-| `--no-prompts` | Auto-approve plan, skip interactive plan questions |
-| `--skip-preprocess` | Use existing splits in `Output/Preprocessing/` |
-| `--approach 1\|2\|3` | Force Simple / Optuna / AutoGluon |
-| `--prompt "..."` | User task string → planning LLM |
+| Flag                 | Effect                                             |
+| -------------------- | -------------------------------------------------- |
+| `--mode model_agent` | PreprocessingAgent → ModelAgent (default)          |
+| `--data iris`        | Dataset path or alias                              |
+| `--target species`   | Target column for preprocessing                    |
+| `--no-prompts`       | Auto-approve plan, skip interactive plan questions |
+| `--skip-preprocess`  | Use existing splits in `Output/Preprocessing/`     |
+| `--approach 1\|2\|3` | Force Simple / Optuna / AutoGluon                  |
+| `--prompt "..."`     | User task string → planning LLM                    |
 
 ### Programmatic ModelAgent
 
 ```python
 from agents.dynamic.model_agent import ModelAgent
 from agents.dynamic.preprocessing_agent.preprocessing_agent import PreprocessingAgent
-from tools.registry import ToolRegistry
+
 from tools.pipeline_state import empty_state
 
 # Register tools (see build_registry in test_tools_pipeline.py)
@@ -660,14 +665,14 @@ state = ModelAgent(logger, llm, registry).run(
 
 ## 14. Disk outputs
 
-| Artifact | Typical path |
-|----------|----------------|
-| Preprocessed splits | `Output/Preprocessing/{dataset}/X_train.csv`, etc. |
-| Engineered features | `Output/Preprocessing/{dataset}/X_train_engineered.csv` |
+| Artifact              | Typical path                                                |
+| --------------------- | ----------------------------------------------------------- |
+| Preprocessed splits   | `Output/Preprocessing/{dataset}/X_train.csv`, etc.          |
+| Engineered features   | `Output/Preprocessing/{dataset}/X_train_engineered.csv`     |
 | Preprocessing summary | `Output/Preprocessing/{dataset}/preprocessing_summary.json` |
-| Trained model | `output/dynamic_pipeline/{timestamp}/training_*/model.pkl` |
-| AutoGluon runs | `output/dynamic_pipeline/autogluon/run_{timestamp}/` |
-| Test run final state | `output/test_pipeline/final_state.json` |
+| Trained model         | `output/dynamic_pipeline/{timestamp}/training_*/model.pkl`  |
+| AutoGluon runs        | `output/dynamic_pipeline/autogluon/run_{timestamp}/`        |
+| Test run final state  | `output/test_pipeline/final_state.json`                     |
 
 ---
 
@@ -677,14 +682,14 @@ Install via `./setup_mac.sh` or `requirements-mac.txt`.
 
 Key packages for the full pipeline:
 
-| Package | Used for |
-|---------|----------|
-| `langchain-google-genai`, `langgraph` | Agents + LLM |
+| Package                                           | Used for                                |
+| ------------------------------------------------- | --------------------------------------- |
+| `langchain-google-genai`, `langgraph`             | Agents + LLM                            |
 | `scikit-learn`, `xgboost`, `lightgbm`, `catboost` | Simple / Optuna / AutoGluon tree models |
-| `optuna` | Simple+Optuna path |
-| `autogluon.tabular[fastai]>=1.5.0` | AutoGluon path |
-| `torch>=2.6` | AutoGluon `NN_TORCH` |
-| `dask`, `dask-ml` | Large-data path |
+| `optuna`                                          | Simple+Optuna path                      |
+| `autogluon.tabular[fastai]>=1.5.0`                | AutoGluon path                          |
+| `torch>=2.6`                                      | AutoGluon `NN_TORCH`                    |
+| `dask`, `dask-ml`                                 | Large-data path                         |
 
 ---
 
@@ -750,12 +755,12 @@ src/
 
 ### Legacy (not used by new pipeline)
 
-| Path | Notes |
-|------|-------|
-| `agents/static/automl_agent/` | Monolithic AutoMLAgent for OpenML benchmarks |
+| Path                                 | Notes                                                              |
+| ------------------------------------ | ------------------------------------------------------------------ |
+| `agents/static/automl_agent/`        | Monolithic AutoMLAgent for OpenML benchmarks                       |
 | `agents/static/preprocessing_agent/` | **Used** — `PreprocessingNode` called by `preprocessing_execution` |
-| ~~`tools/training_data.py`~~ | **Deleted** — merged into `training_common.py` |
-| ~~`tools/model_training.py`~~ | **Deleted** |
+| ~~`tools/training_data.py`~~         | **Deleted** — merged into `training_common.py`                     |
+| ~~`tools/model_training.py`~~        | **Deleted**                                                        |
 
 ---
 
@@ -788,4 +793,4 @@ test_tools_pipeline.py
 
 ---
 
-*See also: [`MODEL_AGENT.md`](./MODEL_AGENT.md) for a shorter overview (some sections may lag this document).*
+_See also: [`MODEL_AGENT.md`](./MODEL_AGENT.md) for a shorter overview (some sections may lag this document)._

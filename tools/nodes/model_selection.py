@@ -9,7 +9,7 @@ import dask.dataframe as dd
 import pandas as pd
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from tools.training_common import LARGE_DATA_ROW_THRESHOLD
+from tools.shared.training_common import LARGE_DATA_ROW_THRESHOLD
 from src.utils.logger import Logger
 
 logger = Logger()

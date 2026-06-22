@@ -12,7 +12,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score, r2_score, root_mean_squared_error
 
-from tools.pipeline_state import merge_state
+from state.pipeline_state import merge_state
 
 LARGE_DATA_ROW_THRESHOLD = 700_000
 
