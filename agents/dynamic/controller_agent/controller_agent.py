@@ -382,6 +382,20 @@ class ControllerAgent:
                 f"  agent.resume(run_id='{run_id}', decision='feedback', "
                 "feedback_text='your note here')"
             )
+        except (ValueError, TypeError) as e:
+            # Catch shape/length mismatch errors and provide detailed diagnostics
+            error_msg = str(e)
+            self.logger.error(f"[ControllerAgent] Data shape/type error: {error_msg}")
+            if "Lengths must match" in error_msg or "shapes" in error_msg.lower():
+                self.logger.error(
+                    "[ControllerAgent] This typically indicates a mismatch in array/dataframe lengths "
+                    "during a comparison or operation. Check target column alignment with data dimensions."
+                )
+            return {
+                "__error__": f"Data processing error: {error_msg}",
+                "__report_id__": run_id,
+                "__run_id__": run_id,
+            }
 
             # Return a partial state so callers can inspect what ran so far
             # Get current state snapshot from MemorySaver
