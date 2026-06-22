@@ -42,6 +42,18 @@ executor = ThreadPoolExecutor(max_workers=5)
 _dynamic_controller = ControllerAgent()
 
 
+def _sanitize_json_values(val):
+    """Recursively replace non-JSON-compliant floats (NaN, Inf) with None."""
+    import math
+    if isinstance(val, dict):
+        return {k: _sanitize_json_values(v) for k, v in val.items()}
+    elif isinstance(val, list):
+        return [_sanitize_json_values(v) for v in val]
+    elif isinstance(val, float):
+        if math.isnan(val) or math.isinf(val):
+            return None
+    return val
+
 def _dynamic_state_to_response(state: dict, run_id: str) -> dict:
     """
     Normalise the raw PipelineState / ControllerAgent return value into a
@@ -54,37 +66,36 @@ def _dynamic_state_to_response(state: dict, run_id: str) -> dict:
         status="error"     — unhandled exception inside the graph
     """
     if state.get("__error__"):
-        return {
+        res = {
             "run_id": run_id,
             "status": "error",
             "error":  state["__error__"],
         }
-
-    if state.get("__interrupted__"):
+    elif state.get("__interrupted__"):
         paused_at   = state.get("__paused_at__", "unknown")
         agent_out   = state.get("agent_outputs", {}).get(paused_at, {})
-        return {
+        res = {
             "run_id":       run_id,
             "status":       "paused",
             "paused_at":    paused_at,
             # The full output of the just-completed agent, ready for rendering
             "agent_output": agent_out,
         }
-
-    return {
-        "run_id": run_id,
-        "status": "completed",
-        "result": {
-            "target_column":      state.get("target_column"),
-            "task_type":          state.get("task_type"),
-            "trained_model_path": state.get("trained_model_path"),
-            "model_metrics":      state.get("model_metrics"),
-            "endpoint_url":       state.get("endpoint_url"),
-            # All per-agent outputs for the frontend panels
-            "agent_outputs":      state.get("agent_outputs", {}),
-        },
-    }
-
+    else:
+        res = {
+            "run_id": run_id,
+            "status": "completed",
+            "result": {
+                "target_column":      state.get("target_column"),
+                "task_type":          state.get("task_type"),
+                "trained_model_path": state.get("trained_model_path"),
+                "model_metrics":      state.get("model_metrics"),
+                "endpoint_url":       state.get("endpoint_url"),
+                # All per-agent outputs for the frontend panels
+                "agent_outputs":      state.get("agent_outputs", {}),
+            },
+        }
+    return _sanitize_json_values(res)
 
 def _dynamic_persist_to_mongo(report_id: str, state: dict) -> None:
     """Mirror dynamic pipeline state fields into the existing MongoDB document."""
@@ -95,11 +106,20 @@ def _dynamic_persist_to_mongo(report_id: str, state: dict) -> None:
             "error"     if state.get("__error__")       else
             "completed"
         )
+
+        # Sanitize full pipeline state for MongoDB persistence to avoid non-BSON errors
+        try:
+            serialized_state = json.loads(json.dumps(state, default=str))
+        except Exception as e:
+            print(f"[API][dynamic] State serialization error: {e}")
+            serialized_state = state
+
         update = {
             "updated_at":    datetime.utcnow(),
             "target_column": state.get("target_column"),
             "task_type":     state.get("task_type"),
             "dynamic_status": status,
+            "pipeline_state": serialized_state,
         }
         # Store each agent's output under report.<agent_name>
         for agent_name, output in agent_outputs.items():
@@ -273,7 +293,6 @@ async def run_custom_pipeline(
         "result": result,
     }
 
-
 @app.post("/dynamic/run/{report_id}")
 async def dynamic_run_pipeline(
     report_id:     str,
@@ -319,7 +338,6 @@ async def dynamic_run_pipeline(
     _dynamic_persist_to_mongo(report_id, state)
     return JSONResponse(content=_dynamic_state_to_response(state, run_id=report_id))
 
-
 @app.post("/dynamic/resume/{run_id}")
 async def dynamic_resume_pipeline(
     run_id:        str,
@@ -338,6 +356,34 @@ async def dynamic_resume_pipeline(
     """
     loop = asyncio.get_event_loop()
 
+    # Before invoking resume, check if checkpointer has session in memory.
+    # If not, retrieve persisted state from MongoDB and re-seed the checkpointer.
+    config = {"configurable": {"thread_id": run_id}}
+    try:
+        snapshot = _dynamic_controller.app.get_state(config)
+    except Exception:
+        snapshot = None
+
+    if not snapshot or not snapshot.values or "data_path" not in snapshot.values:
+        print(f"[API] Session '{run_id}' not found in MemorySaver checkpointer. Restoring from MongoDB...")
+        try:
+            doc = reports_collection.find_one({"_id": ObjectId(run_id)})
+            if doc and "pipeline_state" in doc:
+                saved_state = doc["pipeline_state"]
+                paused_at = saved_state.get("__paused_at__")
+                if paused_at:
+                    as_node = f"{paused_at}_agent"
+                    # Remove Mongo-specific keys to avoid write issue
+                    saved_state.pop("_id", None)
+                    _dynamic_controller.app.update_state(config, saved_state, as_node=as_node)
+                    print(f"[API] Successfully restored checkpointer state for run_id '{run_id}' as node '{as_node}'")
+                else:
+                    print(f"[API] Warning: Saved pipeline_state does not contain '__paused_at__'")
+            else:
+                print(f"[API] Warning: No pipeline state doc found in MongoDB for run_id '{run_id}'")
+        except Exception as err:
+            print(f"[API] MongoDB state recovery error: {err}")
+
     def _resume():
         return _dynamic_controller.resume(
             run_id=run_id,
@@ -349,7 +395,6 @@ async def dynamic_resume_pipeline(
 
     _dynamic_persist_to_mongo(run_id, state)
     return JSONResponse(content=_dynamic_state_to_response(state, run_id=run_id))
-
 
 @app.get("/dynamic/status/{run_id}")
 async def dynamic_pipeline_status(run_id: str):
@@ -363,16 +408,21 @@ async def dynamic_pipeline_status(run_id: str):
         snapshot = _dynamic_controller.app.get_state(
             {"configurable": {"thread_id": run_id}}
         )
-        if snapshot is None:
+        if snapshot is None or not snapshot.values:
+            # Fallback to MongoDB if not in memory
+            doc = reports_collection.find_one({"_id": ObjectId(run_id)})
+            if doc and "pipeline_state" in doc:
+                saved_state = doc["pipeline_state"]
+                return JSONResponse(content=_dynamic_state_to_response(saved_state, run_id=run_id))
+            
             return JSONResponse(
                 status_code=404,
-                content={"error": f"run_id '{run_id}' not found in memory"}
+                content={"error": f"run_id '{run_id}' not found in memory or database"}
             )
         state = dict(snapshot.values) if snapshot else {}
         return JSONResponse(content=_dynamic_state_to_response(state, run_id=run_id))
     except Exception as exc:
         return JSONResponse(status_code=500, content={"error": str(exc)})
-
 
 if __name__ == "__main__":
     import uvicorn

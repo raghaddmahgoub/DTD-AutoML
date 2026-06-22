@@ -568,7 +568,7 @@ def main():
                     data_path = "assets/data/Classification Datasets/Titanic-Dataset.csv"
         
         if not prompt:
-            prompt = "run full pipeline"
+            prompt = "run analysis, preprocessing and training"
 
         result = agent.run({
             "data_path":     data_path,
