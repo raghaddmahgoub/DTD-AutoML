@@ -6,7 +6,7 @@ from typing import Any
 
 from langchain_core.tools import tool
 
-from tools.nodes.model_selection import model_selection_node as tools_model_selection_node
+from tools.training.model_selection import model_selection_node as tools_model_selection_node
 from tools.shared import ensure_state, merge_state, parse_tool_input
 from tools.shared.training_common import (
     LARGE_DATA_ROW_THRESHOLD,

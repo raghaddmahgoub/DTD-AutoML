@@ -172,7 +172,7 @@ def _filter_ag_models(names: list) -> list[str]:
 
 
 def _filter_preset(raw: str) -> str:
-    from tools.nodes.training_engines import normalize_autogluon_preset
+    from tools.training.training_engines import normalize_autogluon_preset
 
     token = str(raw).strip()
     if token in AUTOGLUON_PRESETS:
