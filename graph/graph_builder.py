@@ -19,9 +19,10 @@ Node naming convention:
     "pipeline_done"            — terminal node
 
 How to add a new agent:
-    1. Implement agent_node() and checkpoint_node() in agents/<name>.py
+    1. Implement agent_node() and route_after_<name>() in agents/<name>.py
+       (NO checkpoint_node needed — the factory below generates it)
     2. Import both here
-    3. Add add_node() + add_edge() + add_conditional_edges() below
+    3. Add add_node() + add_conditional_edges() below, using _make_checkpoint_node()
     4. Wire the checkpoint's conditional edge to the next agent or done
 
 Usage (from agents.static.orchestrator.py):
@@ -41,9 +42,7 @@ from state.pipeline_state import PipelineState
 # ── Agent node imports ────────────────────────────────────────────────────────
 # Each agents/*.py exports exactly:
 #   <name>_node(state)          — executes the agent, returns partial state dict
-#   <name>_checkpoint_node(state) — calls interrupt(), returns user_decision + feedback_text
 #   route_after_<name>(state)   — conditional edge: "accept" path next node name
-#                                                   "feedback" path → same agent
 
 from agents.dynamic.intent_detector.intent_detector import (
     intent_detector_node,
@@ -52,31 +51,26 @@ from agents.dynamic.intent_detector.intent_detector import (
 
 from agents.dynamic.eda_agent.eda_agent import (
     eda_node,
-    eda_checkpoint_node,
     route_after_eda,
 )
 
 from agents.dynamic.model_selection_agent import (
     model_selection_node,
-    model_selection_checkpoint_node,
     route_after_model_selection,
 )
 
 from agents.dynamic.training_agent import (
     training_node,
-    training_checkpoint_node,
     route_after_training,
 )
 
 from agents.dynamic.evaluation_agent import (
     evaluation_node,
-    evaluation_checkpoint_node,
     route_after_evaluation,
 )
 
 from agents.dynamic.preprocessing_agent import (
     preprocessing_node,
-    preprocessing_checkpoint_node,
     route_after_preprocessing,
 )
 
@@ -260,6 +254,7 @@ def build_graph() -> any:
 
     # ── Agent 1: EDA ──────────────────────────────────────────────────────────
     # Real implementation — imported from agents.dynamic.eda_agent.eda_agent
+    eda_checkpoint_node = _make_checkpoint_node("eda")
     graph.add_node("eda_agent",      eda_node)
     graph.add_node("eda_checkpoint", eda_checkpoint_node)
     graph.add_edge("eda_agent", "eda_checkpoint")
@@ -269,7 +264,7 @@ def build_graph() -> any:
     )
 
     # ── Agent 2: Preprocessing ────────────────────────────────────────────────
-    # Real implementation — imported from agents.dynamic.preprocessing_agent
+    preprocessing_checkpoint_node = _make_checkpoint_node("preprocessing")
     graph.add_node("preprocessing_agent",      preprocessing_node)
     graph.add_node("preprocessing_checkpoint", preprocessing_checkpoint_node)
     graph.add_edge("preprocessing_agent", "preprocessing_checkpoint")
@@ -296,6 +291,7 @@ def build_graph() -> any:
     )
 
     # ── Agent 4: Model Selection ───────────────────────────────────────────────
+    model_selection_checkpoint_node = _make_checkpoint_node("model_selection")
     graph.add_node("model_selection_agent",      model_selection_node)
     graph.add_node("model_selection_checkpoint", model_selection_checkpoint_node)
     graph.add_edge("model_selection_agent", "model_selection_checkpoint")
@@ -305,6 +301,7 @@ def build_graph() -> any:
     )
 
     # ── Agent 5: Training ──────────────────────────────────────────────────────
+    training_checkpoint_node = _make_checkpoint_node("training")
     graph.add_node("training_agent",      training_node)
     graph.add_node("training_checkpoint", training_checkpoint_node)
     graph.add_edge("training_agent", "training_checkpoint")
@@ -314,6 +311,7 @@ def build_graph() -> any:
     )
 
     # ── Agent 6: Evaluation ────────────────────────────────────────────────────
+    evaluation_checkpoint_node = _make_checkpoint_node("evaluation")
     graph.add_node("evaluation_agent",      evaluation_node)
     graph.add_node("evaluation_checkpoint", evaluation_checkpoint_node)
     graph.add_edge("evaluation_agent", "evaluation_checkpoint")

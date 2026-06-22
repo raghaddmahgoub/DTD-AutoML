@@ -9,7 +9,7 @@ import dask.dataframe as dd
 import pandas as pd
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from tools.training_common import LARGE_DATA_ROW_THRESHOLD
+from tools.shared.training_common import LARGE_DATA_ROW_THRESHOLD
 from src.utils.logger import Logger
 
 logger = Logger()
@@ -172,7 +172,7 @@ def _filter_ag_models(names: list) -> list[str]:
 
 
 def _filter_preset(raw: str) -> str:
-    from tools.nodes.training_engines import normalize_autogluon_preset
+    from tools.training.training_engines import normalize_autogluon_preset
 
     token = str(raw).strip()
     if token in AUTOGLUON_PRESETS:

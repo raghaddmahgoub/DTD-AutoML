@@ -10,21 +10,23 @@ from typing import Any, Optional
 from langgraph.types import interrupt
 
 from state.pipeline_state import PipelineState
-from tools.llm_client import get_llm
-from tools.prompt_builder import build_prompt_preprocessing
+from tools.shared import get_llm, build_prompt_preprocessing
 from src.utils.logger import Logger
 
-# Import fine-grained preprocessing tools directly
-from tools.preprocessing_inspection import preprocessing_inspection
-from tools.preprocessing_plan import preprocessing_plan
-from tools.preprocessing_split import preprocessing_split
-from tools.preprocessing_missing_values import preprocessing_missing_values
-from tools.preprocessing_outliers import preprocessing_outliers
-from tools.preprocessing_encoding import preprocessing_encoding
-from tools.preprocessing_scaling import preprocessing_scaling
-from tools.preprocessing_normalization import preprocessing_normalization
-from tools.preprocessing_balancing import preprocessing_balancing
-from tools.preprocessing_validation import preprocessing_validation
+# Import fine-grained preprocessing tools from the new package namespace
+from tools.preprocessing import (
+    preprocessing_inspection,
+    preprocessing_plan,
+    preprocessing_split,
+    preprocessing_missing_values,
+    preprocessing_outliers,
+    preprocessing_encoding,
+    preprocessing_scaling,
+    preprocessing_normalization,
+    preprocessing_balancing,
+    preprocessing_validation,
+    PREPROCESSING_TOOLS,  # ordered list for introspection / future bind_tools
+)
 
 logger = logging.getLogger(__name__)
 
@@ -394,37 +396,6 @@ def preprocessing_node(state: PipelineState) -> dict:
     )
 
     return result
-
-
-def preprocessing_checkpoint_node(state: PipelineState) -> dict:
-    """HITL checkpoint interrupt node for human-in-the-loop validation."""
-    logger.info("[PreprocessingCheckpoint] Interrupting for human review")
-
-    human_response: dict = interrupt({
-        "agent":        "preprocessing",
-        "agent_output": state["agent_outputs"].get("preprocessing", {}),
-    })
-
-    decision      = human_response.get("decision", "accept")
-    feedback_text = human_response.get("text", "")
-
-    updates: dict = {
-        "user_decision": decision,
-        "feedback_text":  feedback_text,
-    }
-
-    if decision == "feedback" and feedback_text:
-        history = list(state.get("feedback_history", []))
-        history.append({
-            "agent":         "preprocessing",
-            "feedback_text": feedback_text,
-            "iteration":     len([h for h in history if h["agent"] == "preprocessing"]) + 1,
-        })
-        updates["feedback_history"] = history
-
-    logger.info("[PreprocessingCheckpoint] decision=%s", decision)
-    return updates
-
 
 def route_after_preprocessing(state: PipelineState) -> str:
     """LangGraph conditional edge router after the preprocessing node."""

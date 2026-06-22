@@ -8,7 +8,6 @@ Responsibility:
 
 What this file exports for graph_builder.py:
     intent_detector_node(state)     — the LangGraph node function
-    eda_checkpoint_node(state)      — NOT here (no HITL on Agent 0)
 
     route_after_intent(state) -> str — conditional edge function:
         always returns "eda_agent" or "preprocessing_gate" etc.
@@ -28,10 +27,12 @@ from typing import Optional, Literal
 from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage
 
-from tools.schema_extractor import extract_schema
-from tools.target_suggester import TargetSuggestionAgent
-from tools.prompt_builder   import build_prompt_intent_detector
-from tools.llm_client       import get_llm
+from tools.shared import (
+    extract_schema,
+    TargetSuggestionAgent,
+    build_prompt_intent_detector,
+    get_llm,
+)
 from state.pipeline_state   import PipelineState
 
 logger = logging.getLogger(__name__)

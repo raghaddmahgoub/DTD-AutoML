@@ -32,15 +32,10 @@ from agents.dynamic.controller_agent.controller_agent import ControllerAgent
 from agents.dynamic.model_agent import ModelAgent
 from agents.dynamic.preprocessing_agent.preprocessing_agent import PreprocessingAgent
 from src.utils.logger import Logger
-from tools.registry import ToolRegistry
-from tools.preprocessing_execution import preprocessing_execution
-from tools.plan_training import plan_training
-from tools.train_simple import train_simple
-from tools.train_simple_optuna import train_simple_optuna
-from tools.train_autogluon import train_autogluon
-from tools.evaluate import evaluate
-from tools.pipeline_state import empty_state, merge_state
-from tools.training_common import resolve_problem_type
+
+from tools.preprocessing import preprocessing_execution
+from tools.training import plan_training, train_simple, train_simple_optuna, train_autogluon, evaluate
+from tools.shared import empty_state, merge_state, resolve_problem_type
 
 
 DEFAULT_DATA_CANDIDATES = [
@@ -118,18 +113,19 @@ def resolve_data_path(user_path: str | None) -> str:
     return ensure_iris_fallback()
 
 
-def build_registry(*, include_controller_stubs: bool = False) -> ToolRegistry:
-    reg = ToolRegistry()
-    reg.register("preprocessing_execution", preprocessing_execution)
-    reg.register("plan_training", plan_training)
-    reg.register("train_simple", train_simple)
-    reg.register("train_simple_optuna", train_simple_optuna)
-    reg.register("train_autogluon", train_autogluon)
-    reg.register("evaluate", evaluate)
+def build_registry(*, include_controller_stubs: bool = False) -> dict:
+    """Return a plain dict mapping tool-name -> tool callable."""
+    reg = {
+        "preprocessing_execution": preprocessing_execution,
+        "plan_training": plan_training,
+        "train_simple": train_simple,
+        "train_simple_optuna": train_simple_optuna,
+        "train_autogluon": train_autogluon,
+        "evaluate": evaluate,
+    }
     if include_controller_stubs:
-        from tools.data_understanding import data_understanding
-
-        reg.register("data_understanding", data_understanding)
+        from tools.eda import data_understanding
+        reg["data_understanding"] = data_understanding
     return reg
 
 
@@ -175,7 +171,7 @@ def run_model_agent(
     data_path: str,
     prompt: str,
     llm,
-    registry: ToolRegistry,
+    registry: dict,
     *,
     approach: str | None,
     target: str | None,
@@ -267,7 +263,7 @@ def run_manual(
     data_path: str,
     prompt: str,
     llm,
-    registry: ToolRegistry,
+    registry: dict,
     *,
     approach: str | None,
     target: str | None,
@@ -288,13 +284,13 @@ def run_single_tool(
     data_path: str,
     prompt: str,
     llm,
-    registry: ToolRegistry,
+    registry: dict,
     *,
     approach: str | None,
 ) -> dict:
     tool = registry.get(tool_name)
     if tool is None:
-        raise RuntimeError(f"Unknown tool: {tool_name}. Available: {registry.list_tools()}")
+        raise RuntimeError(f"Unknown tool: {tool_name}. Available: {list(registry.keys())}")
 
     state = empty_state(data_path, prompt)
     tool_input: dict = {}
@@ -316,7 +312,7 @@ def run_single_tool(
     return state
 
 
-def run_controller(data_path: str, prompt: str, llm, registry: ToolRegistry) -> dict:
+def run_controller(data_path: str, prompt: str, llm, registry: dict) -> dict:
     logger = Logger()
     controller = ControllerAgent(logger, llm, registry)
     return controller.run(data_path, prompt)

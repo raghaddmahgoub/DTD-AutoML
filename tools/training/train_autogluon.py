@@ -5,9 +5,9 @@ Uses preprocessed train/test splits from PreprocessingAgent (no in-tool preproce
 """
 from langchain_core.tools import tool
 
-from tools.nodes.training_engines import train_autogluon as run_autogluon
-from tools.pipeline_state import ensure_state, parse_tool_input
-from tools.training_common import (
+from tools.training.training_engines import train_autogluon as run_autogluon
+from tools.shared import ensure_state, parse_tool_input
+from tools.shared.training_common import (
     APPROACH_AUTOGLUON,
     apply_test_metrics,
     complete_training,
