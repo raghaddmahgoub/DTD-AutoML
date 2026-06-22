@@ -23,10 +23,9 @@ Imports only from tools/ and state/:
 
 import logging
 from typing import Optional, Literal
-
+from graph.knowledge_graph import store_initial_knowledge_graph
 from pydantic import BaseModel, Field
 from langchain_core.messages import SystemMessage, HumanMessage
-
 from tools.shared import (
     extract_schema,
     TargetSuggestionAgent,
@@ -106,6 +105,9 @@ class IntentDetectorAgent:
             SystemMessage(content=prompts.system),
             HumanMessage(content=prompts.user),
         ])
+        
+        store_initial_knowledge_graph( state={"intent_flags": flags.model_dump()})
+        print(f"[IntentDetector] flags={flags.model_dump()}")
         logger.info("[IntentDetector] flags=%s", flags.model_dump())
 
         # Step 4 — fallback: target_column

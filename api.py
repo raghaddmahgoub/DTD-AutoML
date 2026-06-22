@@ -272,37 +272,6 @@ async def run_custom_pipeline(
         "status": "success",
         "result": result,
     }
-    
-
-@app.post('/run-custom-pipeline/pause')
-async def pause_pipeline():
-    pass
-
-@app.post('/run-custom-pipeline/resume')
-async def resume_pipeline_legacy():
-    """Legacy stub kept for backward compatibility. Use /dynamic/resume/{run_id} instead."""
-    pass
-
-
-# =============================================================================
-# DYNAMIC PIPELINE ENDPOINTS  (LangGraph + HITL)
-# =============================================================================
-# Prefix: /dynamic/*
-# These endpoints power the new dynamic agent pipeline.
-# The Node.js backend calls them in this order:
-#
-#   1. POST /dynamic/run/{report_id}        — start the pipeline
-#   2. GET  /dynamic/status/{run_id}        — poll until paused or completed
-#      (or read the immediate JSON response from step 1)
-#   3. POST /dynamic/resume/{run_id}        — send HITL decision (loop with step 2)
-#
-# response shape (all three endpoints return the same structure):
-#   { run_id, status: "paused"|"completed"|"error",
-#     paused_at?, agent_output?,          ← only when status=="paused"
-#     result?: { target_column, task_type, trained_model_path,
-#                model_metrics, endpoint_url, agent_outputs },
-#     error? }                            ← only when status=="error"
-# =============================================================================
 
 
 @app.post("/dynamic/run/{report_id}")
