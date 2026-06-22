@@ -80,6 +80,7 @@ def _dynamic_state_to_response(state: dict, run_id: str) -> dict:
             "paused_at":    paused_at,
             # The full output of the just-completed agent, ready for rendering
             "agent_output": agent_out,
+            "intent_flags": state.get("intent_flags"),
         }
     else:
         res = {
@@ -93,6 +94,7 @@ def _dynamic_state_to_response(state: dict, run_id: str) -> dict:
                 "endpoint_url":       state.get("endpoint_url"),
                 # All per-agent outputs for the frontend panels
                 "agent_outputs":      state.get("agent_outputs", {}),
+                "intent_flags":       state.get("intent_flags"),
             },
         }
     return _sanitize_json_values(res)
