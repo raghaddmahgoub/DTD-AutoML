@@ -21,8 +21,8 @@ def store_initial_knowledge_graph( state: dict) -> list:
         if value
     ]
 
-    # keep only the last selected flag
-    knowledge_graph = knowledge_graph[-1:]
+    # drop only the last selected flag and keep the others
+    knowledge_graph = knowledge_graph[:-1]
 
     run_id = "6a395d519b0c281d5031ad4f"  # Replace with actual run_id if available
 
