@@ -343,16 +343,16 @@ def route_after_eda(state: PipelineState) -> str:
     one step further down the pipeline (preprocessing onward).
     """
     flags = state["intent_flags"]
-    if flags["run_preprocessing"]:
+    if flags["preprocessing"]:
         return "preprocessing_agent"
-    if flags["run_feature_engineering"]:
+    if flags["feature_engineering"]:
         return "feature_engineering_agent"
-    if flags["run_model_selection"]:
+    if flags["model_selection"]:
         return "model_selection_agent"
-    if flags["run_training"]:
+    if flags["training"]:
         return "training_agent"
-    if flags["run_evaluation"]:
+    if flags["evaluation"]:
         return "evaluation_agent"
-    # if flags["run_deployment"]:
+    # if flags["deployment"]:
     #     return "deployment_agent"
     return "pipeline_done"

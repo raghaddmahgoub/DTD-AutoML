@@ -26,13 +26,13 @@ class IntentFlagsDict(TypedDict):
     Stored directly in PipelineState after .model_dump().
     Controls which LangGraph nodes are activated for this run.
     """
-    run_eda:                 bool
-    run_preprocessing:       bool
-    run_feature_engineering: bool
-    run_model_selection:     bool
-    run_training:            bool
-    run_evaluation:          bool
-    run_deployment:          bool
+    eda:                 bool
+    preprocessing:       bool
+    feature_engineering: bool
+    model_selection:     bool
+    training:            bool
+    evaluation:          bool
+    deployment:          bool
     target_column:           Optional[str]
     task_type:               str  # "classification"|"regression"|"clustering"|"unknown"
 
@@ -138,13 +138,13 @@ def make_initial_state(data_path: str, nl_query: str) -> PipelineState:
 
         # Intent
         intent_flags=IntentFlagsDict(
-            run_eda=False,
-            run_preprocessing=False,
-            run_feature_engineering=False,
-            run_model_selection=False,
-            run_training=False,
-            run_evaluation=False,
-            run_deployment=False,
+            eda=False,
+            preprocessing=False,
+            feature_engineering=False,
+            model_selection=False,
+            training=False,
+            evaluation=False,
+            deployment=False,
             target_column=None,
             task_type="unknown",
         ),
@@ -293,4 +293,4 @@ def merge_state(state: dict[str, Any], updates: dict[str, Any]) -> dict[str, Any
             merged[key] = nested
         else:
             merged[key] = value
-    return merged
+    return merged

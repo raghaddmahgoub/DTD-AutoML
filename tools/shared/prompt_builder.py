@@ -74,11 +74,11 @@ Available pipeline steps:
   7. Deployment         — FastAPI endpoint + Dockerfile
 
 Routing rules:
-  - "just preprocess" / "only clean"           → only run_preprocessing = true
-  - "train a model" / "build a model"          → run_preprocessing, run_model_selection, run_training, run_evaluation = true
+  - "just preprocess" / "only clean"           → only preprocessing = true
+  - "train a model" / "build a model"          → preprocessing, model_selection, training, evaluation = true
   - "full pipeline" / "end to end" / "all"     → all flags = true
-  - "analyse" / "analysis" / "explore"         → run_eda = true
-  - "deploy" / "serve" / "api"                 → run_deployment = true (+ training chain if no model yet)
+  - "analyse" / "analysis" / "explore"         → eda = true
+  - "deploy" / "serve" / "api"                 → deployment = true (+ training chain if no model yet)
   - If target column is explicitly named        → use it
   - If target column is not named              → infer from schema or set null
   - If task type is ambiguous                  → set "unknown"
@@ -90,13 +90,13 @@ Output rules:
 
 Output schema:
 {
-  "run_eda":                true | false,
-  "run_preprocessing":      true | false,
-  "run_feature_engineering":true | false,
-  "run_model_selection":    true | false,
-  "run_training":           true | false,
-  "run_evaluation":         true | false,
-  "run_deployment":         true | false,
+  "eda":                true | false,
+  "preprocessing":      true | false,
+  "feature_engineering":true | false,
+  "model_selection":    true | false,
+  "training":           true | false,
+  "evaluation":         true | false,
+  "deployment":         true | false,
   "target_column":          "column_name" | null,
   "task_type":              "classification" | "regression" | "clustering" | "unknown"
 }

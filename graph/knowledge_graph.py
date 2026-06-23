@@ -30,6 +30,7 @@ def store_initial_knowledge_graph(state: dict, run_id: str = None) -> list:
     # knowledge_graph = knowledge_graph[:-1]
 
     if run_id:
+        print(f"[KnowledgeGraph] Saving knowledge graph for run_id: {run_id}")
         try:
             query = (
                 {"_id": ObjectId(run_id)}

@@ -277,10 +277,10 @@ def build_graph() -> any:
     feature_engineering_node       = _stub_node("feature_engineering_agent")
     feature_engineering_checkpoint = _make_checkpoint_node("feature_engineering")
     route_after_feature_engineering = _make_stub_router([
-        ("run_model_selection", "model_selection_agent"),
-        ("run_training",        "training_agent"),
-        ("run_evaluation",      "evaluation_agent"),
-        ("run_deployment",      "deployment_agent"),
+        ("model_selection", "model_selection_agent"),
+        ("training",        "training_agent"),
+        ("evaluation",      "evaluation_agent"),
+        ("deployment",      "deployment_agent"),
     ])
     graph.add_node("feature_engineering_agent",      feature_engineering_node)
     graph.add_node("feature_engineering_checkpoint", feature_engineering_checkpoint)

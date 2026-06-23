@@ -62,6 +62,6 @@ def evaluation_node(state: PipelineState) -> dict:
 
 def route_after_evaluation(state: PipelineState) -> str:
     flags = state["intent_flags"]
-    if flags.get("run_deployment"):
+    if flags.get("deployment"):
         return "deployment_agent"
     return "pipeline_done"

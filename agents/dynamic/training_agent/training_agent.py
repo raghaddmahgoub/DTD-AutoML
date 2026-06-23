@@ -99,8 +99,8 @@ def training_node(state: PipelineState) -> dict:
 
 def route_after_training(state: PipelineState) -> str:
     flags = state["intent_flags"]
-    if flags.get("run_evaluation"):
+    if flags.get("evaluation"):
         return "evaluation_agent"
-    if flags.get("run_deployment"):
+    if flags.get("deployment"):
         return "deployment_agent"
     return "pipeline_done"

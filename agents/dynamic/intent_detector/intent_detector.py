@@ -48,13 +48,13 @@ class IntentFlags(BaseModel):
     Parsed directly from the LLM response — no manual JSON handling.
     Serialised to dict via .model_dump() before writing into PipelineState.
     """
-    run_eda:                 bool  = Field(description="Run EDA agent")
-    run_preprocessing:       bool  = Field(description="Run Preprocessing agent")
-    run_feature_engineering: bool  = Field(description="Run Feature Engineering agent")
-    run_model_selection:     bool  = Field(description="Run Model Selection agent")
-    run_training:            bool  = Field(description="Run Training agent")
-    run_evaluation:          bool  = Field(description="Run Evaluation agent")
-    # run_deployment:          bool  = Field(description="Run Deployment agent")
+    eda:                 bool  = Field(description="Run EDA agent")
+    preprocessing:       bool  = Field(description="Run Preprocessing agent")
+    feature_engineering: bool  = Field(description="Run Feature Engineering agent")
+    model_selection:     bool  = Field(description="Run Model Selection agent")
+    training:            bool  = Field(description="Run Training agent")
+    evaluation:          bool  = Field(description="Run Evaluation agent")
+    # deployment:          bool  = Field(description="Run Deployment agent")
     target_column: Optional[str]  = Field(default=None)
     task_type: Literal["classification", "regression", "clustering", "unknown"]
 
@@ -179,18 +179,18 @@ def route_after_intent(state: PipelineState) -> str:
     that exists in the StateGraph.
     """
     flags = state["intent_flags"]
-    if flags["run_eda"]:
+    if flags["eda"]:
         return "eda_agent"
-    if flags["run_preprocessing"]:
+    if flags["preprocessing"]:
         return "preprocessing_agent"
-    if flags["run_feature_engineering"]:
+    if flags["feature_engineering"]:
         return "feature_engineering_agent"
-    if flags["run_model_selection"]:
+    if flags["model_selection"]:
         return "model_selection_agent"
-    if flags["run_training"]:
+    if flags["training"]:
         return "training_agent"
-    if flags["run_evaluation"]:
+    if flags["evaluation"]:
         return "evaluation_agent"
-    # if flags["run_deployment"]:
+    # if flags["deployment"]:
     #     return "deployment_agent"
     return "pipeline_done"
