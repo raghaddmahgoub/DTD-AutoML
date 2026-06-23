@@ -51,7 +51,7 @@ from tools.eda import (
 )
 from tools.shared import build_prompt_eda, get_llm, TargetSuggestionAgent
 from state.pipeline_state import PipelineState
-
+from graph.agent_graph import append_agent_output
 logger = logging.getLogger(__name__)
 
 _AGENT_NAME = "eda"
@@ -261,6 +261,19 @@ class EDAAgent:
             "analysis_report_path": analysis_report_path,
         }
 
+        # Step 10 — update execution/agent graph
+        try:
+            append_agent_output(
+                run_id=run_id,
+                agent_name=_AGENT_NAME,
+                output=agent_output,
+            )
+        except Exception as e:
+            logger.warning(
+                "[EDAAgent] Failed to update agent graph: %s",
+                e,
+            )
+        
         logger.info("[EDAAgent] Done — %d plots, report → %s", len(all_plots), analysis_report_path)
 
         return {
