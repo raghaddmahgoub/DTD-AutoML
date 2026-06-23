@@ -14,12 +14,6 @@ def store_initial_knowledge_graph(state: dict, run_id: str = None) -> list:
     Called after IntentDetectorAgent.
     Saves the selected workflow stages to MongoDB.
     """
-
-    # knowledge_graph = [
-    #     flag
-    #     for flag, value in state.get("intent_flags", {}).items()
-    #     if value
-    # ]
     knowledge_graph = [
         flag
         for flag, value in state.get("intent_flags", {}).items()
