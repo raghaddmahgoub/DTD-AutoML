@@ -11,15 +11,26 @@ from tools.training import plan_training
 logger = logging.getLogger(__name__)
 
 
-def _build_feedback_context(state: PipelineState, agent_name: str) -> str:
+def _build_feedback_context(state: PipelineState, agent_names) -> str:
     """
-    Pull this agent's own feedback entries from state["feedback_history"]
+    Pull feedback entries for the given agent name(s) from state["feedback_history"]
     and format them for the prompt.
+
+    model_selection re-plans on feedback from TWO checkpoints:
+        - its own checkpoint ("model_selection") — feedback on the plan itself
+        - the training checkpoint ("training") — feedback on the trained
+          result (e.g. "try XGBoost instead"), rerouted here by
+          graph_builder.py's training-checkpoint router because
+          plan_training already has a reliable LLM step to turn that into
+          a concrete model/approach change, instead of training_agent
+          guessing at it.
     """
+    if isinstance(agent_names, str):
+        agent_names = (agent_names,)
     history = state.get("feedback_history", []) or []
-    own = [h["feedback_text"] for h in history if h.get("agent") == agent_name]
+    own = [h["feedback_text"] for h in history if h.get("agent") in agent_names]
     if own:
-        return f"\n\nUser Feedback History for {agent_name}:\n" + "\n".join(f"- {f}" for f in own)
+        return "\n\nUser Feedback History:\n" + "\n".join(f"- {f}" for f in own)
     return ""
 
 
@@ -38,7 +49,7 @@ def model_selection_node(state: PipelineState) -> dict:
     }
 
     task = state.get("controller_task") or "Build training plan"
-    feedback = _build_feedback_context(state, "model_selection")
+    feedback = _build_feedback_context(state, ("model_selection", "training"))
     prompt = state.get("nl_query", state.get("prompt", "")) + feedback
 
     result, updated_state = plan_training.invoke({
