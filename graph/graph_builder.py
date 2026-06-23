@@ -146,22 +146,34 @@ def _make_checkpoint_node(agent_name: str):
 #   "accept"   → next_node  (the next active agent, resolved by intent_flags)
 #   "feedback" → same_agent (re-run the agent with updated feedback_text)
 
-def _make_checkpoint_router(agent_node_name: str, accept_router):
+def _make_checkpoint_router(agent_node_name: str, accept_router, feedback_target: str = None):
     """
     Returns a conditional edge function for the checkpoint after an agent.
 
     Args:
-        agent_node_name: name of the agent node to loop back to on feedback.
+        agent_node_name: name of the agent node this checkpoint follows
+                          (used for logging and as the default feedback target).
         accept_router:   the route_after_<agent>() function from the agent file,
                          called when the user accepts to find the next node.
+        feedback_target: node to loop back to on "feedback". Defaults to
+                         agent_node_name (re-run the same agent). Pass a
+                         different node when feedback on this checkpoint
+                         should be re-planned upstream instead — e.g. the
+                         training checkpoint reroutes to model_selection_agent
+                         (see build_graph()) because plan_training already
+                         has a reliable LLM step to turn "use XGBoost instead"
+                         into a concrete model change, instead of training_agent
+                         guessing at it from free text.
 
     Returns:
         A conditional edge function compatible with add_conditional_edges().
     """
+    target = feedback_target or agent_node_name
+
     def router(state: PipelineState) -> str:
         if state.get("user_decision") == "feedback":
-            logger.info("[CheckpointRouter] feedback → re-running %s", agent_node_name)
-            return agent_node_name
+            logger.info("[CheckpointRouter] feedback → re-running %s", target)
+            return target
         logger.info("[CheckpointRouter] accept → routing forward")
         return accept_router(state)
 
@@ -305,9 +317,13 @@ def build_graph() -> any:
     graph.add_node("training_agent",      training_node)
     graph.add_node("training_checkpoint", training_checkpoint_node)
     graph.add_edge("training_agent", "training_checkpoint")
+    # Feedback on the training checkpoint reroutes to model_selection_agent
+    # (not training_agent) — see _make_checkpoint_router()'s feedback_target note.
     graph.add_conditional_edges(
         "training_checkpoint",
-        _make_checkpoint_router("training_agent", route_after_training),
+        _make_checkpoint_router(
+            "training_agent", route_after_training, feedback_target="model_selection_agent"
+        ),
     )
 
     # ── Agent 6: Evaluation ────────────────────────────────────────────────────
