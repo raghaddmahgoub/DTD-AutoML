@@ -15,14 +15,19 @@ def store_initial_knowledge_graph( state: dict) -> list:
     Saves the selected workflow stages to MongoDB.
     """
 
+    # knowledge_graph = [
+    #     flag
+    #     for flag, value in state.get("intent_flags", {}).items()
+    #     if value
+    # ]
     knowledge_graph = [
-        flag
-        for flag, value in state.get("intent_flags", {}).items()
-        if value
-    ]
+    flag
+    for flag, value in state.get("intent_flags", {}).items()
+    if flag.startswith("run_") and value is True
+]
 
     # drop only the last selected flag and keep the others
-    knowledge_graph = knowledge_graph[:-1]
+    # knowledge_graph = knowledge_graph[:-1]
 
     run_id = "6a395d519b0c281d5031ad4f"  # Replace with actual run_id if available
 
