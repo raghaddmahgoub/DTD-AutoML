@@ -24,7 +24,7 @@ else:
     print("[KnowledgeGraph] MONGO_URI/MONGO_DB not set — knowledge-graph storage disabled.")
 
 
-def store_initial_knowledge_graph(state: dict) -> list:
+def store_initial_knowledge_graph(state: dict, run_id: str = None) -> list:
     """
     Called after IntentDetectorAgent.
     Saves the selected workflow stages to MongoDB.
@@ -37,8 +37,6 @@ def store_initial_knowledge_graph(state: dict) -> list:
 
     if reports_collection is None:
         return knowledge_graph
-
-    run_id = "6a395d519b0c281d5031ad4f"  # Replace with actual run_id if available
 
     if run_id:
         try:
