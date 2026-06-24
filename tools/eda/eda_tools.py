@@ -411,6 +411,8 @@ def build_preprocessing_context(
             if pd.isna(val):
                 continue
             native = val.item() if hasattr(val, "item") else val
+            if isinstance(native, float):
+                native = round(native, 3)
             if native not in seen:
                 seen.append(native)
                 entry_samples.append(native)
@@ -427,9 +429,9 @@ def build_preprocessing_context(
         }
         if stats["data_type"] == "numeric":
             entry.update({
-                "mean": stats.get("mean"),
-                "std":  stats.get("std"),
-                "skew": stats.get("skewness"),
+                "mean": round(float(stats["mean"]), 3) if stats.get("mean") is not None else None,
+                "std":  round(float(stats["std"]), 3)  if stats.get("std") is not None else None,
+                "skew": round(float(stats["skewness"]), 3) if stats.get("skewness") is not None else None,
             })
         context.append(entry)
 

@@ -39,8 +39,8 @@ from agents.dynamic.controller_agent.controller_agent import ControllerAgent
 from src.utils.logger import Logger
 
 AGENT_NAME     = "model_selection"
-DEFAULT_DATA   = str(PROJECT_ROOT / "assets/data/Datasets/Classification Datasets/Iris.csv")
-DEFAULT_TARGET = "species"
+DEFAULT_DATA   = str(PROJECT_ROOT / "assets/data/Classification Datasets/Titanic-Dataset.csv")
+DEFAULT_TARGET = "Survived"
 DEFAULT_QUERY  = (
     "Run EDA, preprocessing, and model selection planning on this dataset. "
     "Do not train or evaluate yet."

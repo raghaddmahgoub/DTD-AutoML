@@ -1,25 +1,24 @@
 """
-Feedback / HITL interrupt test — Preprocessing Agent.
+Feedback / HITL interrupt test — EDA Agent.
 
-Runs the dynamic LangGraph pipeline up to the preprocessing checkpoint,
-pauses there, and lets YOU type feedback interactively so you can confirm:
-    1. The graph actually interrupts at the "preprocessing" checkpoint.
-    2. Typing feedback re-runs preprocessing_node with your feedback_text
-       injected (e.g. ask it to change imputation/encoding strategy and see
-       preprocessing_summary change between the two runs).
+Runs the dynamic LangGraph pipeline up to the EDA checkpoint, pauses there,
+and lets YOU type feedback interactively so you can confirm:
+    1. The graph actually interrupts at the "eda" checkpoint.
+    2. Typing feedback re-runs eda_node with your feedback_text injected
+       (you'll see the LLM-generated report change between the two runs).
     3. Accepting moves the pipeline forward and records the feedback in
        state["feedback_history"].
 
-EDA is enabled too (preprocessing reads its preprocessing_context), but its
-checkpoint is auto-accepted so this script stays focused on Preprocessing.
+Every OTHER checkpoint (if any gets activated) is auto-accepted so this
+script stays focused on the EDA agent only.
 
 Usage:
-    python tests/test_feedback_preprocessing.py
-    python tests/test_feedback_preprocessing.py --data path/to.csv --target col --query "..."
+    python tests/test_feedback_eda.py
+    python tests/test_feedback_eda.py --data path/to.csv --target col --query "..."
 
-At the preprocessing checkpoint prompt, either:
+At the EDA checkpoint prompt, either:
     - press Enter (or type "accept")  -> approves and continues
-    - type any other text             -> sent as feedback_text, preprocessing_node re-runs
+    - type any other text             -> sent as feedback_text, eda_node re-runs
 """
 import argparse
 import json
@@ -37,14 +36,14 @@ load_dotenv(PROJECT_ROOT / ".env")
 from agents.dynamic.controller_agent.controller_agent import ControllerAgent
 from src.utils.logger import Logger
 
-AGENT_NAME     = "preprocessing"
-DEFAULT_DATA   = str(PROJECT_ROOT / "assets/data/Classification Datasets/Titanic/Titanic-Dataset.csv")
+AGENT_NAME     = "eda"
+DEFAULT_DATA   = str(PROJECT_ROOT / "assets/data/Classification Datasets/Titanic-Dataset.csv")
 DEFAULT_TARGET = "Survived"
-DEFAULT_QUERY  = "Run EDA and preprocessing only on this dataset. Do not run feature engineering, model selection, training, or evaluation."
+DEFAULT_QUERY  = "Just run exploratory data analysis on this dataset. Do not preprocess, train, or evaluate."
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Interactive feedback test for the Preprocessing agent")
+    parser = argparse.ArgumentParser(description="Interactive feedback test for the EDA agent")
     parser.add_argument("--data",   default=DEFAULT_DATA)
     parser.add_argument("--target", default=DEFAULT_TARGET)
     parser.add_argument("--query",  default=DEFAULT_QUERY)

@@ -1,24 +1,29 @@
 """
-Feedback / HITL interrupt test — EDA Agent.
+Feedback / HITL interrupt test — Feature Engineering Agent.
 
-Runs the dynamic LangGraph pipeline up to the EDA checkpoint, pauses there,
-and lets YOU type feedback interactively so you can confirm:
-    1. The graph actually interrupts at the "eda" checkpoint.
-    2. Typing feedback re-runs eda_node with your feedback_text injected
-       (you'll see the LLM-generated report change between the two runs).
+Runs the dynamic LangGraph pipeline through EDA and preprocessing, then pauses at
+feature_engineering so YOU can type feedback interactively and confirm:
+    1. The graph actually interrupts at the "feature_engineering" checkpoint.
+    2. Typing feedback re-runs feature_engineering_node with your feedback_text
+       included in the feature-generation prompt.
     3. Accepting moves the pipeline forward and records the feedback in
        state["feedback_history"].
 
-Every OTHER checkpoint (if any gets activated) is auto-accepted so this
-script stays focused on the EDA agent only.
+EDA and preprocessing are auto-accepted so this script stays focused on Feature
+Engineering only.
 
 Usage:
-    python tests/test_feedback_eda.py
-    python tests/test_feedback_eda.py --data path/to.csv --target col --query "..."
+    python tests/test_feedback_feature_engineering.py
+    python tests/test_feedback_feature_engineering.py --data path/to.csv --target col --query "..."
 
-At the EDA checkpoint prompt, either:
+At the feature_engineering checkpoint prompt, either:
     - press Enter (or type "accept")  -> approves and continues
-    - type any other text             -> sent as feedback_text, eda_node re-runs
+    - type any other text             -> sent as feedback_text, feature_engineering_node re-runs
+
+Example feedback:
+    create ratio features only
+    use interactions between Fare, Age, and family-size-like columns
+    keep fewer weak features and prefer highly correlated ones
 """
 import argparse
 import json
@@ -36,14 +41,14 @@ load_dotenv(PROJECT_ROOT / ".env")
 from agents.dynamic.controller_agent.controller_agent import ControllerAgent
 from src.utils.logger import Logger
 
-AGENT_NAME     = "eda"
-DEFAULT_DATA   = str(PROJECT_ROOT / "assets/data/Datasets/Classification Datasets/Iris.csv")
-DEFAULT_TARGET = "species"
-DEFAULT_QUERY  = "Just run exploratory data analysis on this dataset. Do not preprocess, train, or evaluate."
+AGENT_NAME     = "feature_engineering"
+DEFAULT_DATA   = str(PROJECT_ROOT / "assets/data/Classification Datasets/Titanic-Dataset.csv")
+DEFAULT_TARGET = "Survived"
+DEFAULT_QUERY  = "Run EDA, preprocessing, and feature engineering on this dataset. Do not run model selection, training, or evaluation."
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Interactive feedback test for the EDA agent")
+    parser = argparse.ArgumentParser(description="Interactive feedback test for the Feature Engineering agent")
     parser.add_argument("--data",   default=DEFAULT_DATA)
     parser.add_argument("--target", default=DEFAULT_TARGET)
     parser.add_argument("--query",  default=DEFAULT_QUERY)
@@ -79,6 +84,7 @@ def main():
         "run_id":        run_id,
     })
 
+    feature_runs = []
     given_feedback = False
     iteration, max_steps = 0, 30
 
@@ -91,7 +97,11 @@ def main():
         print("-" * 70)
 
         if paused_at == AGENT_NAME:
-            print(json.dumps(output, indent=2, default=str)[:2000])
+            feature_runs.append(output)
+            print(json.dumps(output, indent=2, default=str)[:2500])
+            selected = output.get("selected_features") or []
+            if selected:
+                print(f"\nselected_features: {selected}")
             print("-" * 70)
             choice = input(
                 f"Enter feedback for '{AGENT_NAME}' (Enter / 'accept' to approve): "
@@ -115,15 +125,21 @@ def main():
         print(f"[ERROR] Pipeline failed: {state['__error__']}")
     else:
         print("[DONE] Pipeline finished (or max steps reached).")
+        print(f"\n[FEATURE ENGINEERING HISTORY] {len(feature_runs)} run(s):")
+        for i, run in enumerate(feature_runs, 1):
+            selected = run.get("selected_features") or []
+            report = run.get("feature_report_path") or run.get("feature_summary_path")
+            print(f"   {i}. status={run.get('status')} selected={selected} report={report}")
+
         history = [h for h in state.get("feedback_history", []) if h.get("agent") == AGENT_NAME]
         if history:
-            print(f"[OK] feedback_history has {len(history)} entr(y/ies) for '{AGENT_NAME}':")
+            print(f"\n[OK] feedback_history has {len(history)} entr(y/ies) for '{AGENT_NAME}':")
             for h in history:
                 print(f"   - iteration {h.get('iteration')}: {h.get('feedback_text')}")
         elif given_feedback:
-            print(f"[WARN] Feedback was sent but no entry found in feedback_history for '{AGENT_NAME}'.")
+            print(f"\n[WARN] Feedback was sent but no entry found in feedback_history for '{AGENT_NAME}'.")
         else:
-            print("[INFO] No feedback was given this run (you accepted immediately).")
+            print("\n[INFO] No feedback was given this run (you accepted immediately).")
     print("=" * 70)
 
 

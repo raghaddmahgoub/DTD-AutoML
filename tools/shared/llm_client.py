@@ -26,7 +26,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_MODEL = "gemini-2.5-flash"
+_DEFAULT_MODEL = "gemini-2.5-flash-lite"
 
 
 def get_llm(
@@ -42,7 +42,7 @@ def get_llm(
         2. GOOGLE_API_KEY environment variable
 
     Args:
-        model_name:     Gemini model string. Defaults to "gemini-2.5-flash".
+        model_name:     Gemini model string. Defaults to "gemini-2.5-flash-lite".
         temperature:    0.0 = deterministic (default for all structured calls).
         google_api_key: Optional explicit key (overrides env var).
 

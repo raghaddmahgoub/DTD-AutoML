@@ -366,7 +366,7 @@ def _get_llm_feature_recipes(
         {
             "name": column,
             "dtype": dtypes[column],
-            "correlation_with_target": round(correlations.get(column, 0.0), 6),
+            "correlation_with_target": round(correlations.get(column, 0.0), 3),
         }
         for column in numeric_columns
     ]
@@ -387,7 +387,7 @@ Allowed operations:
 - square: square of one column
 
 Available columns:
-{json.dumps(column_info, indent=2)}
+{json.dumps(column_info, separators=(',', ':'))}
 
 Respect the user task when choosing feature combinations.
 

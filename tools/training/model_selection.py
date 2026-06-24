@@ -82,6 +82,7 @@ def _compact_data_profile(
         if target_column and target_column in sample.columns and target_column not in keep:
             keep.append(target_column)
         sample = sample[keep]
+    sample = sample.round(3)
 
     dtypes = {str(c): str(sample[c].dtype) for c in sample.columns}
     missing_pct = float(sample.isnull().mean().mean() * 100) if len(sample.columns) else 0.0
