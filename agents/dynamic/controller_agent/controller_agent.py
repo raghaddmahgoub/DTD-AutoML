@@ -61,7 +61,7 @@ import sys
 import uuid
 from pathlib import Path
 from typing import Optional
-
+from google.genai.errors import ServerError
 def _find_project_root() -> Path:
     """
     Walk up the directory tree from this file until we find the folder
@@ -187,7 +187,7 @@ class ControllerAgent:
         # Build initial state
         # If target_column was explicitly provided, pre-populate it so
         # Intent Detector uses it directly instead of inferring.
-        initial_state = make_initial_state(data_path, nl_query)
+        initial_state = make_initial_state(data_path, nl_query, run_id=run_id)
         print(f"[ControllerAgent] Initial state Flags: {initial_state.get('intent_flags')}")
         if target_column:
             # Validate that target_column exists in the data
@@ -199,6 +199,17 @@ class ControllerAgent:
                         f"Target column '{target_column}' not found in data. "
                         f"Available columns: {list(df.columns)}"
                     )
+            except ServerError as exc:
+                self.logger.error(
+                    f"[ControllerAgent] LLM provider unavailable after retries: {exc}"
+                )
+                return {
+                    "__error__": "The AI model is temporarily unavailable (high demand). Please try again in a moment.",
+                    "__error_type__": "llm_unavailable",
+                    "__retryable__": True,
+                    "__report_id__": run_id,
+                    "__run_id__": run_id,
+                }
             except Exception as e:
                 self.logger.error(
                     f"[ControllerAgent] Failed to validate target column '{target_column}': {e}"

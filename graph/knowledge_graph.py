@@ -48,3 +48,25 @@ def store_initial_knowledge_graph(state: dict, run_id: str = None) -> list:
             print(f"[KnowledgeGraph] MongoDB error: {e}")
 
     return knowledge_graph
+
+
+def update_agent_progress(run_id: str, agent_name: str, agent_output: dict):
+    """
+    Directly update an agent's output status/progress in the MongoDB document.
+    Enables real-time progress tracking of sub-steps.
+    """
+    if not run_id:
+        return
+    try:
+        query = (
+            {"_id": ObjectId(run_id)}
+            if ObjectId.is_valid(run_id)
+            else {"run_id": run_id}
+        )
+        reports_collection.update_one(
+            query,
+            {"$set": {f"report.{agent_name}": agent_output}},
+            upsert=True
+        )
+    except Exception as e:
+        print(f"[AgentProgress] MongoDB error: {e}")

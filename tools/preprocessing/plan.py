@@ -62,8 +62,15 @@ def _constraints(prompt: str, columns: list[str]) -> dict[str, Any]:
             prompt.casefold(),
         )
     )
+    disable_feature_engineering = bool(
+        re.search(
+            r"(?:(?:do\s+not|don\'t|never)\s+(?:run\s+|do\s+|perform\s+|use\s+)?feature\s+engineering|(?:without|no)\s+feature\s+engineering)",
+            prompt.casefold(),
+        )
+    )
     return {
         "drop": explicit_drop,
+        "disable_feature_engineering": disable_feature_engineering,
         "do_not_drop": mentioned_columns(
             prompt, columns, ["do not drop", "don't drop", "never drop", "keep"]
         ),
@@ -292,8 +299,10 @@ def preprocessing_plan(task, tool_input, prompt, data_path, llm, state=None):
             or read_json(tool_input["evidence_path"])
         )
         top_k = max(0, min(20, int(tool_input.get("feature_top_k", 4))))
-        default = _default_plan(evidence, prompt, top_k)
         constraints = _constraints(prompt, evidence["columns"])
+        if constraints.get("disable_feature_engineering"):
+            top_k = 0
+        default = _default_plan(evidence, prompt, top_k)
         plan = default
         llm_error = ""
         if tool_input.get("use_llm", True) and llm is not None:

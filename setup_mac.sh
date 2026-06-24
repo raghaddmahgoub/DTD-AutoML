@@ -200,7 +200,7 @@ setup_env_file() {
     warn "Created .env from .env.example — add your GOOGLE_API_KEY before running LLM steps"
   else
     cat > "$REPO_ROOT/.env" <<'EOF'
-GOOGLE_API_KEY=your_gemini_api_key_here
+GOOGLE_API_KEY=your_google_api_key_here
 EOF
     warn "Created .env — add your GOOGLE_API_KEY"
   fi

@@ -49,8 +49,16 @@ from tools.eda import (
     generate_all_plots,
     generate_llm_requested_plot,
 )
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential_jitter,
+    retry_if_exception_type,
+)
+from google.genai.errors import ServerError
 from tools.shared import build_prompt_eda, get_llm, TargetSuggestionAgent
 from state.pipeline_state import PipelineState
+from graph.knowledge_graph import update_agent_progress
 
 logger = logging.getLogger(__name__)
 
@@ -116,6 +124,17 @@ class EDAAgent:
         self.llm = base_llm.with_structured_output(EDANarrativeReport)
         self.suggester = TargetSuggestionAgent()
 
+    @retry(
+    retry=retry_if_exception_type(ServerError),
+    wait=wait_exponential_jitter(initial=2, max=30),
+    stop=stop_after_attempt(5),
+    reraise=True,
+    )
+    def _invoke_llm(self, system_prompt: str, user_prompt: str) -> "EDANarrativeReport":
+        return self.llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_prompt),
+        ])
     def run(
         self,
         data_path: str,
@@ -138,11 +157,37 @@ class EDAAgent:
             data_path, target_column, task_type,
         )
 
+        sub_nodes = [
+            {"name": "Load Data", "description": "Loading target dataset into memory...", "status": "pending"},
+            {"name": "Summary", "description": "Computing overall dataset statistics.", "status": "pending"},
+            {"name": "Profiling", "description": "Analyzing column datatypes, values, and completeness.", "status": "pending"},
+            {"name": "Target Analysis", "description": "Analyzing target column distribution and balance.", "status": "pending"},
+            {"name": "Correlations", "description": "Calculating correlation coefficients.", "status": "pending"},
+            {"name": "Visualizations", "description": "Generating EDA distribution and relationship plots.", "status": "pending"},
+            {"name": "Narrative Report", "description": "Generating narrative report with LLM narrative context.", "status": "pending"}
+        ]
+        
+        agent_output = {
+            "status": "running",
+            "sub_nodes": sub_nodes
+        }
+
+        def update_step(name: str, status: str, description: str = None):
+            for node in sub_nodes:
+                if node["name"] == name:
+                    node["status"] = status
+                    if description:
+                        node["description"] = description
+                    break
+            update_agent_progress(run_id, _AGENT_NAME, agent_output)
+
         output_dir = _OUTPUT_DIR_TEMPLATE.format(run_id=run_id)
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         # Step 1 — load data via tools/eda_tools.py
+        update_step("Load Data", "running")
         df = load_dataframe(data_path)
+        update_step("Load Data", "completed", f"Loaded dataset from: {data_path}")
 
         # Step 2 — fallback target/task_type resolution (mirrors Agent 0's pattern)
         if not target_column or target_column not in df.columns:
@@ -154,14 +199,25 @@ class EDAAgent:
             logger.info("[EDAAgent] task_type unknown — inferred: %s", task_type)
 
         # Step 3 — deterministic computation (tools/eda_tools.py)
+        update_step("Summary", "running")
         dataset_summary  = compute_dataset_summary(df, target_column)
+        update_step("Summary", "completed", f"Computed summary profile showing {dataset_summary.get('n_rows', 0)} rows and {dataset_summary.get('n_columns', 0)} columns.")
+
+        update_step("Profiling", "running")
         column_profiles  = compute_column_profiles(df)
+        update_step("Profiling", "completed", f"Analyzed datatypes, uniqueness, and statistics for {len(column_profiles)} columns.")
+
+        update_step("Target Analysis", "running")
         target_analysis  = compute_target_analysis(df, target_column)
+        update_step("Target Analysis", "completed", f"Profiled target '{target_column}' class distribution ({task_type} task).")
+
+        update_step("Correlations", "running")
         data_quality     = compute_data_quality(df)
         relationships    = compute_relationships(df, target_column)
         warnings_list    = compute_warnings(dataset_summary, column_profiles, target_analysis)
         signal_analysis  = compute_signal_analysis(df, target_column, task_type)
         preprocessing_context = build_preprocessing_context(df, column_profiles, target_column)
+        update_step("Correlations", "completed", "Calculated associations between candidate features and target column.")
 
         computed_stats = {
             "dataset_summary":  dataset_summary,
@@ -174,6 +230,7 @@ class EDAAgent:
         }
 
         # Step 4 — standard deterministic plots (always generated)
+        update_step("Visualizations", "running")
         standard_plots = generate_all_plots(
             df=df,
             column_profiles=column_profiles,
@@ -183,10 +240,6 @@ class EDAAgent:
         )
 
         # Step 5 — prompt via tools/prompt_builder.py
-        # build_prompt_eda() returns PromptPair(system=..., user=...).
-        # The raw computed_stats JSON is appended after prompts.user, per the
-        # contract documented in prompt_builder.py ("eda_agent.py appends the
-        # actual dataset_info JSON after prompts.user").
         prompts = build_prompt_eda(
             data_path        = data_path,
             run_type         = "raw",
@@ -208,10 +261,13 @@ class EDAAgent:
         )
 
         logger.info("[EDAAgent] Invoking LLM…")
-        report: EDANarrativeReport = self.llm.invoke([
-            SystemMessage(content=prompts.system),
-            HumanMessage(content=user_prompt),
-        ])
+        update_step("Narrative Report", "running")
+        # report: EDANarrativeReport = self.llm.invoke([
+        #     SystemMessage(content=prompts.system),
+        #     HumanMessage(content=user_prompt),
+        # ])
+        report: EDANarrativeReport = self._invoke_llm(prompts.system, user_prompt)
+
         logger.info("[EDAAgent] Report title=%r | %d sections | %d extra viz requested",
                      report.title, len(report.sections), len(report.visualizations))
 
@@ -219,12 +275,13 @@ class EDAAgent:
         llm_viz_dicts = [v.model_dump() for v in report.visualizations[:5]]
         llm_only_plots = []
         for idx, viz in enumerate(llm_viz_dicts):
-            result = generate_llm_requested_plot(df, viz, output_dir, idx)
-            if result:
-                llm_only_plots.append(result)
+            res_val = generate_llm_requested_plot(df, viz, output_dir, idx)
+            if res_val:
+                llm_only_plots.append(res_val)
 
         all_plots = standard_plots + llm_only_plots
         visualization_paths = [p["local_path"] for p in all_plots]
+        update_step("Visualizations", "completed", f"Rendered {len(all_plots)} data visualizations (including correlation matrix and target distributions).")
 
         # Step 7 — automl_directives: compact summary fed to Model Selection Agent
         automl_directives = {
@@ -249,9 +306,11 @@ class EDAAgent:
             "automl_directives": automl_directives,
         }
         analysis_report_path = save_eda_report(full_report, output_dir, filename="eda_report.json")
+        update_step("Narrative Report", "completed", f"Generated narrative report '{report.title}' with {len(report.sections)} sections.")
 
         # Step 9 — per-agent UI payload (consumed by the HITL checkpoint + frontend)
         agent_output = {
+            "status": "success",
             "title":            report.title,
             "summary":          report.summary,
             "sections":         [s.model_dump() for s in report.sections],
@@ -259,6 +318,7 @@ class EDAAgent:
             "warnings":         warnings_list,
             "visualization_paths": visualization_paths,
             "analysis_report_path": analysis_report_path,
+            "sub_nodes": sub_nodes
         }
 
         logger.info("[EDAAgent] Done — %d plots, report → %s", len(all_plots), analysis_report_path)
@@ -319,7 +379,7 @@ def eda_node(state: PipelineState) -> dict:
         task_type         = state.get("task_type", "unknown"),
         nl_query          = state.get("nl_query", ""),
         feedback_context  = _build_feedback_context(state),
-        run_id            = Path(state["data_path"]).stem,
+        run_id            = state.get("run_id") or Path(state["data_path"]).stem,
     )
 
     # Merge into existing agent_outputs dict rather than overwrite it

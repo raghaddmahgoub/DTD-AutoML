@@ -86,15 +86,62 @@ class PreprocessingAgent:
         )
         Path(output_folder).mkdir(parents=True, exist_ok=True)
 
+        # Define sub_nodes initially for tracking progress
+        from graph.knowledge_graph import update_agent_progress
+        run_id = pipeline_state.get("run_id")
+
+        sub_nodes = [
+            {"name": "Inspection", "description": "Analyzing dataset properties and calculating preprocessing evidence.", "status": "pending"},
+            {"name": "Planning", "description": "Generating a preprocessing plan for column transformations.", "status": "pending"},
+            {"name": "Splitting", "description": "Splitting the dataset into train and test sets.", "status": "pending"},
+            {"name": "Imputation", "description": "Imputing missing values using median/mode/drop strategies.", "status": "pending"},
+            {"name": "Outliers", "description": "Handling numerical outliers via clipping or removal.", "status": "pending"},
+            {"name": "Encoding", "description": "Encoding categorical variables using one-hot, ordinal, or target methods.", "status": "pending"},
+            {"name": "Scaling", "description": "Scaling continuous/numerical features.", "status": "pending"},
+            {"name": "Normalization", "description": "Normalizing row vectors.", "status": "pending"},
+            {"name": "Balancing", "description": "Applying class balancing to train set to handle target imbalance.", "status": "pending"},
+            {"name": "Validation", "description": "Validating the shape and data types of training/testing matrices.", "status": "pending"}
+        ]
+        
+        agent_output = {
+            "status": "running",
+            "sub_nodes": sub_nodes
+        }
+
+        # Initialize progress in DB
+        update_agent_progress(run_id, "preprocessing", agent_output)
+
+        def update_step(name: str, status: str, description: str = None):
+            for node in sub_nodes:
+                if node["name"] == name:
+                    node["status"] = status
+                    if description:
+                        node["description"] = description
+                    break
+            update_agent_progress(run_id, "preprocessing", agent_output)
+
         # Helper to check for errors in intermediate tool results
-        def check_error(result: dict, state: dict) -> bool:
+        def check_error(result: dict, state: dict, step_name: str) -> bool:
             if result.get("status") == "error":
                 state["error"] = result.get("error", "Step failed")
                 state["status"] = "error"
+                update_step(step_name, "failed", f"Failed: {result.get('error', 'Step failed')}")
+                # Set subsequent steps to skipped
+                found_failed = False
+                for node in sub_nodes:
+                    if found_failed:
+                        node["status"] = "skipped"
+                    if node["name"] == step_name:
+                        found_failed = True
+                agent_output["status"] = "failed"
+                agent_output["sub_nodes"] = sub_nodes
+                state["agent_outputs"]["preprocessing"] = agent_output
+                update_agent_progress(run_id, "preprocessing", agent_output)
                 return True
             return False
 
         # 1. Dataset Inspection
+        update_step("Inspection", "running")
         self.logger.info("[PreprocessingAgent] 1/10 Running dataset inspection...")
         res, pipeline_state = preprocessing_inspection.invoke({
             "task": "Inspect dataset for preprocessing",
@@ -107,10 +154,12 @@ class PreprocessingAgent:
             "llm": self.llm,
             "state": pipeline_state,
         })
-        if check_error(res, pipeline_state):
+        if check_error(res, pipeline_state, "Inspection"):
             return pipeline_state
+        update_step("Inspection", "completed", "Analyzed dataset properties and calculated preprocessing evidence.")
 
         # 2. Build Preprocessing Plan
+        update_step("Planning", "running")
         self.logger.info("[PreprocessingAgent] 2/10 Generating preprocessing plan...")
         prompts = build_prompt_preprocessing(
             data_path=data_path,
@@ -134,10 +183,13 @@ class PreprocessingAgent:
             "llm": self.llm,
             "state": pipeline_state,
         })
-        if check_error(res, pipeline_state):
+        if check_error(res, pipeline_state, "Planning"):
             return pipeline_state
+        cols_plan = (pipeline_state.get("preprocessing_plan") or {}).get("columns") or {}
+        update_step("Planning", "completed", f"Generated preprocessing plan for {len(cols_plan)} columns.")
 
         # 3. Split Dataset
+        update_step("Splitting", "running")
         self.logger.info("[PreprocessingAgent] 3/10 Creating dataset train/test splits...")
         res, pipeline_state = preprocessing_split.invoke({
             "task": "Prepare data and create the train/test split",
@@ -153,10 +205,12 @@ class PreprocessingAgent:
             "llm": self.llm,
             "state": pipeline_state,
         })
-        if check_error(res, pipeline_state):
+        if check_error(res, pipeline_state, "Splitting"):
             return pipeline_state
+        update_step("Splitting", "completed", f"Split dataset into training and testing parts with test size {test_size}.")
 
         # 4. Handle Missing Values
+        update_step("Imputation", "running")
         self.logger.info("[PreprocessingAgent] 4/10 Imputing missing values...")
         res, pipeline_state = preprocessing_missing_values.invoke({
             "task": "Handle missing values",
@@ -173,10 +227,13 @@ class PreprocessingAgent:
             "llm": self.llm,
             "state": pipeline_state,
         })
-        if check_error(res, pipeline_state):
+        if check_error(res, pipeline_state, "Imputation"):
             return pipeline_state
+        missing_cnt = len(pipeline_state.get("missing_value_actions", {}))
+        update_step("Imputation", "completed", f"Imputed missing values across {missing_cnt} target columns.")
 
         # 5. Handle Outliers
+        update_step("Outliers", "running")
         self.logger.info("[PreprocessingAgent] 5/10 Handling outliers...")
         res, pipeline_state = preprocessing_outliers.invoke({
             "task": "Handle numerical outliers",
@@ -193,10 +250,13 @@ class PreprocessingAgent:
             "llm": self.llm,
             "state": pipeline_state,
         })
-        if check_error(res, pipeline_state):
+        if check_error(res, pipeline_state, "Outliers"):
             return pipeline_state
+        outlier_cnt = len(pipeline_state.get("outlier_actions", {}))
+        update_step("Outliers", "completed", f"Identified and capped numerical outliers for {outlier_cnt} columns.")
 
         # 6. Encode Categorical Features
+        update_step("Encoding", "running")
         self.logger.info("[PreprocessingAgent] 6/10 Encoding categorical features...")
         res, pipeline_state = preprocessing_encoding.invoke({
             "task": "Encode categorical features",
@@ -213,10 +273,13 @@ class PreprocessingAgent:
             "llm": self.llm,
             "state": pipeline_state,
         })
-        if check_error(res, pipeline_state):
+        if check_error(res, pipeline_state, "Encoding"):
             return pipeline_state
+        encoding_cnt = len(pipeline_state.get("encoding_actions", {}))
+        update_step("Encoding", "completed", f"Encoded categorical variables in {encoding_cnt} columns.")
 
         # 7. Scale Numerical Features
+        update_step("Scaling", "running")
         self.logger.info("[PreprocessingAgent] 7/10 Scaling numerical features...")
         res, pipeline_state = preprocessing_scaling.invoke({
             "task": "Scale numerical features",
@@ -233,10 +296,12 @@ class PreprocessingAgent:
             "llm": self.llm,
             "state": pipeline_state,
         })
-        if check_error(res, pipeline_state):
+        if check_error(res, pipeline_state, "Scaling"):
             return pipeline_state
+        update_step("Scaling", "completed", "Standardized continuous/numerical variables.")
 
         # 8. Normalize Feature Rows
+        update_step("Normalization", "running")
         self.logger.info("[PreprocessingAgent] 8/10 Normalizing feature rows...")
         res, pipeline_state = preprocessing_normalization.invoke({
             "task": "Normalize feature rows",
@@ -253,10 +318,12 @@ class PreprocessingAgent:
             "llm": self.llm,
             "state": pipeline_state,
         })
-        if check_error(res, pipeline_state):
+        if check_error(res, pipeline_state, "Normalization"):
             return pipeline_state
+        update_step("Normalization", "completed", "Normalized data row vectors.")
 
         # 9. Balance Target Variable
+        update_step("Balancing", "running")
         self.logger.info("[PreprocessingAgent] 9/10 Balancing training target...")
         res, pipeline_state = preprocessing_balancing.invoke({
             "task": "Balance the training target",
@@ -273,10 +340,12 @@ class PreprocessingAgent:
             "llm": self.llm,
             "state": pipeline_state,
         })
-        if check_error(res, pipeline_state):
+        if check_error(res, pipeline_state, "Balancing"):
             return pipeline_state
+        update_step("Balancing", "completed", "Applied class balancing to train set to handle target imbalance.")
 
         # 10. Final Model-Readiness Validation
+        update_step("Validation", "running")
         self.logger.info("[PreprocessingAgent] 10/10 Validating modeling readiness...")
         res, pipeline_state = preprocessing_validation.invoke({
             "task": "Validate modeling readiness",
@@ -292,8 +361,9 @@ class PreprocessingAgent:
             "llm": self.llm,
             "state": pipeline_state,
         })
-        if check_error(res, pipeline_state):
+        if check_error(res, pipeline_state, "Validation"):
             return pipeline_state
+        update_step("Validation", "completed", "Validated the shape and data types of training/testing matrices.")
 
         # Rebuild full combined dataset for clean analysis
         try:
@@ -364,7 +434,11 @@ class PreprocessingAgent:
             "X_test_path": pipeline_state.get("X_test_path"),
             "y_train_path": pipeline_state.get("y_train_path"),
             "y_test_path": pipeline_state.get("y_test_path"),
+            "sub_nodes": sub_nodes
         }
+
+        # Final DB progress update
+        update_agent_progress(run_id, "preprocessing", agent_output)
 
         merged_outputs = dict(pipeline_state.get("agent_outputs", {}))
         merged_outputs["preprocessing"] = agent_output
@@ -400,7 +474,10 @@ def preprocessing_node(state: PipelineState) -> dict:
 def route_after_preprocessing(state: PipelineState) -> str:
     """LangGraph conditional edge router after the preprocessing node."""
     flags = state["intent_flags"]
-    if flags.get("feature_engineering"):
+    feature_plan = (state.get("preprocessing_plan") or {}).get("feature_engineering") or {}
+    if feature_plan.get("enabled") is False:
+        pass
+    elif flags.get("feature_engineering") or feature_plan.get("enabled"):
         return "feature_engineering_agent"
     if flags.get("model_selection"):
         return "model_selection_agent"

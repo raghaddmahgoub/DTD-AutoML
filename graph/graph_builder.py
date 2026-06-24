@@ -74,6 +74,11 @@ from agents.dynamic.preprocessing_agent import (
     route_after_preprocessing,
 )
 
+from agents.dynamic.feature_engineering_agent import (
+    feature_engineering_node,
+    route_after_feature_engineering,
+)
+
 # Stubs — replace with real imports as each agent is implemented:
 # from agents.dynamic.feature_engineering_agent.feature_engineering_agent   import feature_engineering_node, route_after_feature_engineering
 # from agents.dynamic.deployment_agent.deployment_agent                     import deployment_node, route_after_deployment
@@ -286,14 +291,7 @@ def build_graph() -> any:
     )
 
     # ── Agent 3: Feature Engineering ──────────────────────────────────────────
-    feature_engineering_node       = _stub_node("feature_engineering_agent")
     feature_engineering_checkpoint = _make_checkpoint_node("feature_engineering")
-    route_after_feature_engineering = _make_stub_router([
-        ("model_selection", "model_selection_agent"),
-        ("training",        "training_agent"),
-        ("evaluation",      "evaluation_agent"),
-        ("deployment",      "deployment_agent"),
-    ])
     graph.add_node("feature_engineering_agent",      feature_engineering_node)
     graph.add_node("feature_engineering_checkpoint", feature_engineering_checkpoint)
     graph.add_edge("feature_engineering_agent", "feature_engineering_checkpoint")

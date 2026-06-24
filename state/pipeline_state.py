@@ -46,6 +46,7 @@ class PipelineState(TypedDict):
     # ── Inputs ────────────────────────────────────────────────────────────────
     data_path:  str        # absolute path to the uploaded dataset file
     nl_query:   str        # user's natural-language request
+    run_id:     Optional[str]
 
     # ── Intent (written by Agent 0 — intent_detector_node) ───────────────────
     intent_flags:  IntentFlagsDict
@@ -119,7 +120,7 @@ class PipelineState(TypedDict):
 # Empty state factory
 # ─────────────────────────────────────────────
 
-def make_initial_state(data_path: str, nl_query: str) -> PipelineState:
+def make_initial_state(data_path: str, nl_query: str, run_id: Optional[str] = None) -> PipelineState:
     """
     Return a fully initialised PipelineState with all Optional fields
     set to None and list/dict fields set to empty containers.
@@ -128,13 +129,12 @@ def make_initial_state(data_path: str, nl_query: str) -> PipelineState:
     node that reads an Optional field before it has been written.
 
     Usage:
-        initial = make_initial_state("data/train.csv", "run full pipeline")
-        result  = app.invoke(initial, config={"configurable": {"thread_id": "run-001"}})
     """
     return PipelineState(
         # Inputs
         data_path=data_path,
         nl_query=nl_query,
+        run_id=run_id,
 
         # Intent
         intent_flags=IntentFlagsDict(

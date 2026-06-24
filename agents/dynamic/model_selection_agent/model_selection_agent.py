@@ -7,6 +7,7 @@ from langgraph.types import interrupt
 from state.pipeline_state import PipelineState
 from tools.shared import get_llm
 from tools.training import plan_training
+from graph.knowledge_graph import update_agent_progress
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +39,31 @@ def model_selection_node(state: PipelineState) -> dict:
     logger.info("[ModelSelectionAgent] Starting model selection planning")
     llm = get_llm()
 
+    run_id = state.get("run_id")
+    sub_nodes = [
+        {"name": "Tuning Setup", "description": "Analyzing dataset configuration and user preferences.", "status": "pending"},
+        {"name": "Approach Plan", "description": "Selecting optimal training model approach.", "status": "pending"},
+        {"name": "Tuning Config", "description": "Configuring AutoML constraints and trial budgets.", "status": "pending"}
+    ]
+    agent_output = {
+        "status": "running",
+        "sub_nodes": sub_nodes
+    }
+
+    # Initialize progress in DB
+    update_agent_progress(run_id, "model_selection", agent_output)
+
+    def update_step(name: str, status: str, description: str = None):
+        for node in sub_nodes:
+            if node["name"] == name:
+                node["status"] = status
+                if description:
+                    node["description"] = description
+                break
+        update_agent_progress(run_id, "model_selection", agent_output)
+
+    update_step("Tuning Setup", "running")
+
     user_prefs = dict(state.get("user_preferences") or {})
     tool_input = {
         "target_column": state.get("target_column"),
@@ -51,6 +77,10 @@ def model_selection_node(state: PipelineState) -> dict:
     task = state.get("controller_task") or "Build training plan"
     feedback = _build_feedback_context(state, ("model_selection", "training"))
     prompt = state.get("nl_query", state.get("prompt", "")) + feedback
+
+    update_step("Tuning Setup", "completed", "Parsed target column, problem type, and hardware complexity constraints.")
+    update_step("Approach Plan", "running")
+    update_step("Tuning Config", "running")
 
     result, updated_state = plan_training.invoke({
         "task": task,
@@ -66,20 +96,33 @@ def model_selection_node(state: PipelineState) -> dict:
     updated_state["automl_config"] = plan.get("automl_config")
     updated_state["model_selection_reasoning"] = plan.get("reasoning")
 
+    train_tool = result.get("train_tool", "unknown")
+    status_val = result.get("status", "success")
+
+    if status_val == "success":
+        update_step("Approach Plan", "completed", f"Selected training method: '{train_tool}'.")
+        update_step("Tuning Config", "completed", f"Generated AutoML config: {result.get('message', '')}.")
+    else:
+        err_msg = result.get("error", "plan_training failed")
+        update_step("Approach Plan", "failed", f"Failed: {err_msg}")
+        update_step("Tuning Config", "skipped")
+
     # Set UI agent output
     agent_output = {
-        "status": result.get("status"),
+        "status": status_val,
         "message": result.get("message"),
         "plan_preview": result.get("plan_preview"),
-        "train_tool": result.get("train_tool"),
-        "error": result.get("error") if result.get("status") == "error" else None,
+        "train_tool": train_tool,
+        "error": result.get("error") if status_val == "error" else None,
+        "sub_nodes": sub_nodes
     }
+    update_agent_progress(run_id, "model_selection", agent_output)
 
     merged_outputs = dict(updated_state.get("agent_outputs", {}))
     merged_outputs["model_selection"] = agent_output
     updated_state["agent_outputs"] = merged_outputs
 
-    if result.get("status") == "error":
+    if status_val == "error":
         updated_state["error"] = result.get("error", "plan_training failed")
 
     return updated_state

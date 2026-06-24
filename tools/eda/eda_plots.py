@@ -109,8 +109,8 @@ def plot_target_distribution(
     if task_type == "regression":
         sns.histplot(series, kde=True, ax=ax, color="#2E75B6")
     else:
-        sns.countplot(x=series, ax=ax, palette="Blues_d")
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=30, ha="right")
+        sns.countplot(x=series, ax=ax, hue=series, legend=False, palette="Blues_d")
+        ax.tick_params(axis="x", rotation=30)
 
     path = os.path.join(output_dir, "target_distribution.png")
     _save(fig, path, f"Target Distribution — {target_column}")
@@ -194,7 +194,7 @@ def plot_categorical_distributions(
 
     for i, col in enumerate(cat_cols):
         order = df[col].value_counts().head(10).index
-        sns.countplot(x=df[col], order=order, ax=axes[i], palette="Blues_d")
+        sns.countplot(x=df[col], order=order, ax=axes[i], hue=df[col], legend=False, palette="Blues_d")
         axes[i].set_title(col, fontsize=9)
         axes[i].set_xlabel("")
         axes[i].tick_params(axis="x", rotation=30)
@@ -273,8 +273,8 @@ def generate_llm_requested_plot(
         elif plot_type == "countplot":
             if columns:
                 order = df[columns[0]].value_counts().head(15).index
-                hue   = df[columns[1]] if len(columns) >= 2 else None
-                sns.countplot(x=df[columns[0]], order=order, hue=hue, ax=ax, palette="Blues_d")
+                hue   = df[columns[1]] if len(columns) >= 2 else df[columns[0]]
+                sns.countplot(x=df[columns[0]], order=order, hue=hue, ax=ax, palette="Blues_d", legend=False if len(columns) < 2 else True)
                 ax.tick_params(axis="x", rotation=30)
 
         elif plot_type == "scatterplot":

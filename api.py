@@ -424,6 +424,19 @@ async def dynamic_pipeline_status(run_id: str):
                 content={"error": f"run_id '{run_id}' not found in memory or database"}
             )
         state = dict(snapshot.values) if snapshot else {}
+        try:
+            query = {"_id": ObjectId(run_id)} if ObjectId.is_valid(run_id) else {"run_id": run_id}
+            doc = reports_collection.find_one(query)
+            if doc and "report" in doc:
+                db_reports = doc["report"]
+                if "agent_outputs" not in state:
+                    state["agent_outputs"] = {}
+                state["agent_outputs"] = dict(state["agent_outputs"])
+                for agent_key, agent_val in db_reports.items():
+                    state["agent_outputs"][agent_key] = agent_val
+        except Exception as e:
+            print(f"[API] Error merging MongoDB reports into status: {e}")
+
         return JSONResponse(content=_dynamic_state_to_response(state, run_id=run_id))
     except Exception as exc:
         return JSONResponse(status_code=500, content={"error": str(exc)})
