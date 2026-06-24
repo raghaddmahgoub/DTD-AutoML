@@ -26,7 +26,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from orchestrator import DTDPipeline  # noqa: E402  (after path fix)
+from agents.static.orchestrator import DTDPipeline  # noqa: E402  (after path fix)
 
 # ── Dataset registry ──────────────────────────────────────────────────────────
 CLS = os.path.join("assets", "data", "Datasets", "Classification Datasets")

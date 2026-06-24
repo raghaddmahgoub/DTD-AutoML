@@ -39,11 +39,14 @@ catboost_info/
 venv/
 .venv/
 
-output/Preprocessing/*.csv
-output/Preprocessing/best_pipeline.pkl
-output/clean/clean_data_frontend_data.jsonoutput/
-assets/logs/
-output/automl/
+# Outputs, Plans, and Benchmarks
+[Oo]utput/
+[Pp]lan/
+benchmark/results/
+
+# Temporary files
+~$*
+
 
 # API key environment files
 .env

@@ -1,0 +1,44 @@
+{
+  "dataset_cache": "32ba3ce51664e6a12c0c927ed193b41e3c4743fdf18bc0317389892aed27f556",
+  "snapshot": {
+    "file_name": "1781856014777.csv",
+    "num_rows": 558837,
+    "num_columns": 16,
+    "column_names": [
+      "year",
+      "make",
+      "model",
+      "trim",
+      "body",
+      "transmission",
+      "vin",
+      "state",
+      "condition",
+      "odometer",
+      "color",
+      "interior",
+      "seller",
+      "mmr",
+      "sellingprice",
+      "saledate"
+    ],
+    "dtypes": {
+      "year": "int64",
+      "make": "object",
+      "model": "object",
+      "trim": "object",
+      "body": "object",
+      "transmission": "object",
+      "vin": "object",
+      "state": "object",
+      "condition": "float64",
+      "odometer": "float64",
+      "color": "object",
+      "interior": "object",
+      "seller": "object",
+      "mmr": "float64",
+      "sellingprice": "float64",
+      "saledate": "object"
+    }
+  }
+}

@@ -283,6 +283,8 @@ check("langchain_google_genai", lambda: __import__("langchain_google_genai"))
 check("openml", lambda: __import__("openml"))
 check("autogluon.tabular", lambda: __import__("autogluon.tabular"))
 check("AutoGluon TabularPredictor", lambda: __import__("autogluon.tabular", fromlist=["TabularPredictor"]))
+check("torch (NN_TORCH)", lambda: __import__("torch"))
+check("fastai (FASTAI)", lambda: __import__("fastai"))
 
 if errors:
     print("\nSome packages failed:", ", ".join(errors))

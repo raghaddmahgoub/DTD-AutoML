@@ -1,8 +1,12 @@
 import pandas as pd
-from ..agents.static.eda_agent.eda_agent import TargetSuggestionAgent
+from agents.static.eda_agent.eda_agent import TargetSuggestionAgent
+
+from pathlib import Path
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # Load your dataset
-df = pd.read_csv('R:/GP/assets/data/Classification Datasets/Titanic-Dataset.csv')
+df = pd.read_csv(PROJECT_ROOT / 'assets/data/Classification Datasets/Titanic-Dataset.csv')
 
 # Run suggestion agent
 tsa = TargetSuggestionAgent(df)

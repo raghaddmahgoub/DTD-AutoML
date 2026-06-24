@@ -1,126 +1,628 @@
+"""
+D.T.D (Data To Deployment) — Multi-Agent AutoML Pipeline
+
+What changed vs the old version:
+    OLD: while True → LLM picks a tool → tool.invoke() → repeat
+         (custom ReAct loop, registry-based, no state persistence)
+
+    NEW: build_graph() → app.invoke(initial_state) → LangGraph drives everything
+         - Agent 0 (Intent Detector) replaces the LLM tool-picking loop:
+           it decides WHICH agents run and in what combination
+         - Each agent is a LangGraph node, not a registry tool
+         - HITL checkpoints use interrupt() — the graph pauses and waits
+           for human input instead of the LLM deciding the next step
+         - MemorySaver persists state across interrupt/resume cycles
+         - run_id (thread_id) lets you resume a paused graph later
+
+    KEPT:
+         - Same __init__ signature (logger, llm, registry) — registry is
+           accepted but ignored; kept so existing call sites don't break
+         - Same run(inputs) entry point
+         - Same inputs dict keys: data_path, target_column, prompt
+         - Console output style matches the original
+
+How to run (CLI):
+    python agents/dynamic/controller_agent/controller_agent.py \\
+        --data   path/to/dataset.csv \\
+        --query  "train a classifier, target column is Survived" \\
+        --target Survived
+
+    Or import and call directly:
+        from agents.controller_agent import ControllerAgent
+        agent = ControllerAgent(logger=my_logger, llm=None, registry=None)
+        result = agent.run({
+            "data_path":     "data/titanic.csv",
+            "target_column": "Survived",
+            "prompt":        "run full pipeline",
+        })
+
+HITL resume (after an interrupt):
+    result = agent.resume(
+        run_id="run-001",
+        decision="accept",       # or "feedback"
+        feedback_text="",        # only needed when decision == "feedback"
+    )
+
+    Or from the command line (after the graph printed a paused run_id):
+        python agents/dynamic/controller_agent/controller_agent.py \\
+            --resume  run-001 \\
+            --decision accept
+
+        python agents/dynamic/controller_agent/controller_agent.py \\
+            --resume   run-001 \\
+            --decision feedback \\
+            --feedback "please also compute ROC curve"
+"""
+
+import argparse
 import json
-from langchain_core.messages import SystemMessage, HumanMessage
+import logging
+import sys
+import uuid
+from pathlib import Path
+from typing import Optional
 
-from tools.pipeline_state import empty_state, ensure_state
+def _find_project_root() -> Path:
+    """
+    Walk up the directory tree from this file until we find the folder
+    that contains both 'state/' and 'graph/' subdirectories.
+    That folder is the project root.
+    Falls back to 3 levels up from this file if the marker dirs aren't found.
+    """
+    current = Path(__file__).resolve().parent
+    for _ in range(10):                          # max 10 levels up
+        if (current / "state").is_dir() and (current / "graph").is_dir():
+            return current
+        parent = current.parent
+        if parent == current:                    # reached filesystem root
+            break
+        current = parent
 
+    return Path(__file__).resolve().parents[3]
+
+_PROJECT_ROOT = _find_project_root()
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
+from state.pipeline_state import make_initial_state
+from graph.graph_builder  import build_graph
+
+logger = logging.getLogger(__name__)
+try:
+    from dotenv import load_dotenv
+    _env_file = _PROJECT_ROOT / ".env"
+    if _env_file.exists():
+        load_dotenv(dotenv_path=_env_file)   # loads from project root
+    else:
+        load_dotenv()                         # fallback: searches parent dirs
+except ImportError:
+    pass
 
 class ControllerAgent:
-    def __init__(self, logger, llm, registry):
-        self.logger = logger
-        self.llm = llm
-        self.registry = registry
+    """
+    Entry point for the D.T.D pipeline.
 
-    def run(self, data_path: str, prompt: str):
-        print("Plan Started")
+    Responsibilities:
+        1. Accept user inputs (data_path, nl_query, target_column)
+        2. Build (or reuse) the compiled LangGraph app
+        3. Invoke the graph — LangGraph drives all agent execution
+        4. Handle interrupt() pauses — surface them to the caller
+        5. Accept resume() calls to continue after human feedback
+    """
 
-        self.logger.info("\n" + "=" * 50)
-        self.logger.info("LLM TOOL-CALLING AGENT MODE")
-        self.logger.info("=" * 50)
+    def __init__(self, logger=None, llm=None, registry=None):
+        """
+        Args:
+            logger:   Optional logger. Falls back to module-level logger.
+            llm:      Accepted for backward compatibility — not used.
+                      Each agent constructs its own LLM via tools/llm_client.py.
+            registry: Accepted for backward compatibility — not used.
+                      Agents are LangGraph nodes, not registry tools.
+        """
+        self.logger = logger or logging.getLogger(__name__)
 
-        system_prompt = f"""
-You are an AutoML controller that executes ONE tool per step.
+        # llm and registry are kept in signature so existing call sites
+        if llm is not None:
+            self.logger.info(
+                "[ControllerAgent] Note: llm argument is no longer used. "
+                "Each agent builds its own LLM via tools/llm_client.py."
+            )
+        if registry is not None:
+            self.logger.info(
+                "[ControllerAgent] Note: registry argument is no longer used. "
+                "Agents are LangGraph nodes registered in graph/graph_builder.py."
+            )
 
-Available tools:
-{self.registry.list_tools_with_schema()}
+        # Build and cache the compiled graph once per ControllerAgent instance.
+        # MemorySaver is wired inside build_graph() — it persists state
+        # across interrupt/resume cycles keyed by thread_id (run_id).
+        self.logger.info("[ControllerAgent] Building LangGraph pipeline…")
+        self.app = build_graph()
+        self.logger.info("[ControllerAgent] Pipeline ready.")
+        
+    # ─────────────────────────────────────────────
+    # Primary entry point
+    # ─────────────────────────────────────────────
 
-PIPELINE ORDER (follow when possible):
-1) data_understanding
-2) data_cleaning / feature_engineering (optional)
-3) plan_training  (builds plan + user approval; does NOT train)
-4) exactly ONE training tool from plan:
-   - train_simple         → default sklearn hyperparameters
-   - train_simple_optuna  → sklearn + Optuna HPO
-   - train_autogluon      → AutoGluon AutoML
-   Large datasets (>700k rows) automatically use Dask-XGBoost inside training tools.
-5) evaluate
+    def run(self, inputs: dict) -> dict:
+        """
+        Start a new pipeline run.
 
-RULES:
-- Return ONLY valid JSON
-- Choose one tool per step
-- After plan_training, call the train tool named in result.train_tool
-- Do not call a train tool before plan_training is approved
-- Stop when evaluation is done
+        Args:
+            inputs: dict with keys:
+                data_path     (str)  — path to the dataset file
+                target_column (str)  — target/label column name (optional; Intent Detector will try to infer it)
+                prompt        (str)  — natural-language request
+                                       e.g. "run full pipeline"
+                                            "just preprocess my data"
+                                            "train a classifier on the churn column"
+                run_id        (str)  — optional; auto-generated if not provided
 
-FORMAT:
-{{
-  "tool": "tool_name",
-  "task": "task_description",
-  "input": {{}},
-  "done": false
-}}
+        Returns:
+            Final PipelineState dict after the pipeline completes or pauses.
+            Check result["__interrupted__"] to know if a HITL pause occurred.
+        """
+        data_path     = inputs.get("data_path")
+        target_column = inputs.get("target_column")
+        nl_query      = inputs.get("prompt") or inputs.get("nl_query", "")
+        report_id     = inputs.get("report_id") or inputs.get("run_id") or f"run-{uuid.uuid4().hex[:8]}"
+        run_id        = report_id  # run_id corresponds to report_id in database
+        print("Report ID:", report_id)
+        print("Run ID:", run_id)
+        if not data_path:
+            raise ValueError("inputs['data_path'] is required")
+        if not nl_query:
+            raise ValueError("inputs['prompt'] or inputs['nl_query'] is required")
+   
+        self.logger.info(
+            "\n" + "=" * 60 + "\n"
+            "D.T.D PIPELINE — NEW RUN\n"
+            + "=" * 60 + "\n"
+            f"report_id   : {run_id}\n"
+            f"data_path   : {data_path}\n"
+            f"nl_query    : {nl_query}\n"
+            f"target_col  : {target_column or '(will be inferred)'}"
+        )
 
-FINAL STEP:
-{{
-  "tool": "none",
-  "task": "",
-  "input": {{}},
-  "done": true
-}}
-"""
-
-        pipeline_state = empty_state(data_path, prompt)
-        memory = f"Task: {prompt}\nPipeline state step: {pipeline_state.get('step')}"
-
-        while True:
-            response = self.llm.invoke([
-                SystemMessage(content=system_prompt),
-                HumanMessage(content=memory),
-            ])
-
-            raw = response.content.strip()
-            if raw.startswith("```"):
-                raw = raw.replace("```json", "").replace("```", "").strip()
-
+        # Build initial state
+        # If target_column was explicitly provided, pre-populate it so
+        # Intent Detector uses it directly instead of inferring.
+        initial_state = make_initial_state(data_path, nl_query)
+        print(f"[ControllerAgent] Initial state Flags: {initial_state.get('intent_flags')}")
+        if target_column:
+            # Validate that target_column exists in the data
             try:
-                step = json.loads(raw)
-            except Exception:
-                self.logger.error("Failed to parse LLM output")
-                self.logger.info("Raw output:")
-                self.logger.info(response.content)
-                return pipeline_state
+                import pandas as pd
+                df = pd.read_csv(data_path) if isinstance(data_path, str) else data_path
+                if target_column not in df.columns:
+                    raise ValueError(
+                        f"Target column '{target_column}' not found in data. "
+                        f"Available columns: {list(df.columns)}"
+                    )
+            except Exception as e:
+                self.logger.error(
+                    f"[ControllerAgent] Failed to validate target column '{target_column}': {e}"
+                )
+                raise
+            initial_state["target_column"] = target_column
 
-            tool_name = step.get("tool")
-            tool_input = step.get("input", {})
-            task = step.get("task")
-            done = step.get("done", False)
+        # LangGraph config — thread_id is the resume key for MemorySaver
+        config = {"configurable": {"thread_id": run_id}}
 
-            if done:
-                self.logger.info("\n[AGENT] Workflow completed successfully")
-                pipeline_state["status"] = "completed"
-                break
+        return self._invoke(initial_state, config, run_id)
 
-            tool = self.registry.get(tool_name)
-            if tool is None:
-                self.logger.error(f"Unknown tool: {tool_name}")
-                break
+    # ─────────────────────────────────────────────
+    # Resume after HITL interrupt
+    # ─────────────────────────────────────────────
 
-            self.logger.info(f"\n[AGENT] Executing tool: {tool_name}")
+    def resume(
+        self,
+        run_id: str,
+        decision: str,              # "accept" | "feedback"
+        feedback_text: str = "",
+    ) -> dict:
+        """
+        Resume a paused pipeline after a Human-in-the-Loop checkpoint.
 
-            result, pipeline_state = tool.invoke({
-                "task": task,
-                "tool_input": tool_input,
-                "prompt": prompt,
-                "data_path": pipeline_state.get("data_path", data_path),
-                "llm": self.llm,
-                "state": pipeline_state,
-            })
+        Args:
+            run_id:        The run_id returned by the run() that paused.
+            decision:      "accept" — approve agent output and continue.
+                           "feedback" — reject and re-run with feedback_text.
+            feedback_text: Free-text feedback used when decision == "feedback".
 
-            # Backward compatibility: if a tool still returns only data_path string
-            if isinstance(pipeline_state, str):
-                pipeline_state = ensure_state(None, pipeline_state, prompt)
+        Returns:
+            Updated PipelineState dict.
+            May contain another "__interrupted__" if the next checkpoint fires.
 
-            self.logger.info(f"[RESULT] {result}")
+        How it works internally:
+            LangGraph's MemorySaver checkpointer has saved the full state at the
+            interrupted checkpoint. We load that state and inject the human response
+            via app.invoke(None, config) — passing None tells LangGraph to load
+            the saved state instead of creating a fresh one. The resume payload is
+            passed via the checkpoint node's interrupt response mechanism.
+        """
+        from langgraph.types import Command
 
-            memory = f"""
-Task: {prompt}
+        self.logger.info("\n" + "=" * 60)
+        self.logger.info("D.T.D PIPELINE — RESUME")
+        self.logger.info("=" * 60)
+        self.logger.info(f"run_id   : {run_id}")
+        self.logger.info(f"decision : {decision}")
+        if feedback_text:
+                self.logger.info(f"feedback : {feedback_text}")
+        if decision == "feedback":
+            self.logger.info("paused")
 
-Last tool: {tool_name}
-Last result: {json.dumps(result, default=str)[:2500]}
-Pipeline step: {pipeline_state.get('step')}
-Training plan approved: {(pipeline_state.get('training_plan') or {}).get('approved')}
-Next train tool (if planned): {(pipeline_state.get('training_plan') or {}).get('train_tool')}
+        config = {"configurable": {"thread_id": run_id}}
 
-Choose the NEXT single tool.
-"""
+        # Check if the session exists in the checkpointer
+        try:
+            state_snapshot = self.app.get_state(config)
+            if not state_snapshot or not state_snapshot.values or "data_path" not in state_snapshot.values:
+                self.logger.error(f"[ControllerAgent] Resume failed: Session {run_id} not found in checkpointer.")
+                return {
+                    "__error__": f"Pipeline session '{run_id}' not found. Note that because the checkpointer is in-memory, session state cannot be persisted across separate CLI process runs. Start a new run or run the API server (api.py) for persistent session resume support.",
+                    "__report_id__": run_id,
+                    "__run_id__": run_id,
+                }
 
-        return pipeline_state
+            self.logger.info(f"Checkpoint found.")
+            self.logger.info(state_snapshot)
+        except Exception as e:
+            self.logger.warning(f"Error checking state for run_id {run_id}: {e}")
+
+        # Create resume command with human response
+        # Include full feedback context for the graph to re-run agent if feedback provided
+        resume_payload = {
+            "decision": decision,
+            "feedback_text": feedback_text,
+            "text": feedback_text,  # backward compatibility
+        }
+        # When decision is "feedback", we need to pass the feedback through the interrupt response
+        # so the graph can re-run the agent with the user's feedback
+        command = Command(resume=resume_payload)
+        return self._invoke(command, config, run_id)
+
+    # ─────────────────────────────────────────────
+    # Internal invoke wrapper
+    # ─────────────────────────────────────────────
+
+    def _invoke(self, input_or_command, config: dict, run_id: str) -> dict:
+        """
+        Invoke the graph and handle GraphInterrupt (HITL pause) gracefully.
+
+        When interrupt() fires inside a checkpoint node, LangGraph raises
+        GraphInterrupt. We catch it, log the pause details, and return a
+        state dict with "__interrupted__": True so the caller knows to
+        call resume() later.
+        """
+        from langgraph.errors import GraphInterrupt
+
+        try:
+            final_state = self.app.invoke(input_or_command, config)
+            snapshot = self.app.get_state(config)
+
+            self.logger.info("=" * 60)
+            self.logger.info(f"Snapshot after invoke = {snapshot}")
+            self.logger.info("=" * 60)
+            # Check if execution paused on an interrupt (newer LangGraph returns interrupt state directly)
+            if isinstance(final_state, dict) and final_state.get("__interrupt__"):
+                raw = final_state["__interrupt__"]
+                interrupt_data = {}
+                if isinstance(raw, list) and len(raw) > 0:
+                    if hasattr(raw[0], "value"):
+                        interrupt_data = raw[0].value
+                    else:
+                        # try dict or object access
+                        try:
+                            interrupt_data = raw[0].get("value", raw[0])
+                        except Exception:
+                            interrupt_data = raw[0]
+                elif isinstance(raw, dict):
+                    interrupt_data = raw
+
+                agent_name = "unknown"
+                agent_output = {}
+                if isinstance(interrupt_data, dict):
+                    agent_name    = interrupt_data.get("agent", "unknown")
+                    agent_output  = interrupt_data.get("agent_output", {})
+                    if interrupt_data.get("decision") == "feedback" or interrupt_data.get("feedback_text"):
+                            self.logger.info("paused")
+
+                self.logger.info("\n" + "─" * 60)
+                self.logger.info(f"[HITL CHECKPOINT] Pipeline paused at: {agent_name}")
+                self.logger.info(f"report_id: {run_id}  (use this to resume)")
+                self.logger.info("─" * 60)
+                self.logger.info("[AGENT OUTPUT PREVIEW]")
+                self.logger.info(json.dumps(agent_output, indent=2, default=str)[:1000])
+                self.logger.info("─" * 60)
+                self.logger.info(
+                    "To resume, call:\n"
+                    f"  agent.resume(run_id='{run_id}', decision='accept')\n"
+                    f"  agent.resume(run_id='{run_id}', decision='feedback', "
+                    "feedback_text='your note here')"
+                )
+
+                partial_state = dict(final_state)
+                partial_state["__interrupted__"] = True
+                partial_state["__paused_at__"]   = agent_name
+                partial_state["__report_id__"]   = run_id
+                partial_state["__run_id__"]      = run_id
+                return partial_state
+
+            self.logger.info("\n[ControllerAgent] Pipeline completed successfully.")
+            self._log_summary(final_state)
+            return final_state
+        except GraphInterrupt as interrupt_event:
+            # Extract what the checkpoint node surfaced via interrupt({...})
+            interrupt_data = {}
+            if interrupt_event.args:
+                raw = interrupt_event.args[0]
+                # LangGraph wraps interrupt value in a list of Interrupt objects
+                if isinstance(raw, list) and hasattr(raw[0], "value"):
+                    interrupt_data = raw[0].value
+                elif isinstance(raw, dict):
+                    interrupt_data = raw
+
+            agent_name    = interrupt_data.get("agent", "unknown")
+            agent_output  = interrupt_data.get("agent_output", {})
+            if interrupt_data.get("decision") == "feedback" or interrupt_data.get("feedback_text"):
+                self.logger.info("paused")
+
+            self.logger.info("\n" + "─" * 60)
+            self.logger.info(f"[HITL CHECKPOINT] Pipeline paused at: {agent_name}")
+            self.logger.info(f"report_id: {run_id}  (use this to resume)")
+            self.logger.info("─" * 60)
+            self.logger.info("[AGENT OUTPUT PREVIEW]")
+            self.logger.info(json.dumps(agent_output, indent=2, default=str)[:1000])
+            self.logger.info("─" * 60)
+            self.logger.info(
+                "To resume, call:\n"
+                f"  agent.resume(run_id='{run_id}', decision='accept')\n"
+                f"  agent.resume(run_id='{run_id}', decision='feedback', "
+                "feedback_text='your note here')"
+            )
+        except (ValueError, TypeError) as e:
+            # Catch shape/length mismatch errors and provide detailed diagnostics
+            error_msg = str(e)
+            self.logger.error(f"[ControllerAgent] Data shape/type error: {error_msg}")
+            if "Lengths must match" in error_msg or "shapes" in error_msg.lower():
+                self.logger.error(
+                    "[ControllerAgent] This typically indicates a mismatch in array/dataframe lengths "
+                    "during a comparison or operation. Check target column alignment with data dimensions."
+                )
+            return {
+                "__error__": f"Data processing error: {error_msg}",
+                "__report_id__": run_id,
+                "__run_id__": run_id,
+            }
+
+        except Exception as exc:
+            import traceback
+            self.logger.error(f"[ControllerAgent] Pipeline error: {exc}\n{traceback.format_exc()}")
+            return {
+                "__error__": str(exc),
+                "__report_id__": run_id,
+                "__run_id__": run_id,
+            }
+
+    # ─────────────────────────────────────────────
+    # Helpers
+    # ─────────────────────────────────────────────
+
+    def _log_summary(self, state: dict) -> None:
+        """Print a compact summary of what ran and what was produced."""
+        self.logger.info("\n── PIPELINE SUMMARY ──────────────────────────────────")
+        flags = state.get("intent_flags", {})
+        ran   = [k.replace("run_", "") for k, v in flags.items()
+                 if k.startswith("run_") and v]
+        self.logger.info(f"Agents activated : {', '.join(ran) if ran else 'none'}")
+        self.logger.info(f"Target column    : {state.get('target_column')}")
+        self.logger.info(f"Task type        : {state.get('task_type')}")
+        self.logger.info(f"Trained model    : {state.get('trained_model_path') or '—'}")
+        self.logger.info(f"Model metrics    : {state.get('model_metrics') or '—'}")
+        self.logger.info(f"Endpoint URL     : {state.get('endpoint_url') or '—'}")
+        self.logger.info(f"Intent flags     : {state.get('intent_flags') or '—'}")
+        self.logger.info("─" * 54)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CLI runner
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _build_cli_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="controller_agent",
+        description="D.T.D Multi-Agent AutoML Pipeline — CLI runner",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+EXAMPLES
+────────
+
+Start a new full pipeline run:
+  python agents/dynamic/controller_agent/controller_agent.py \\
+      --data   data/titanic.csv \\
+      --query  "run full pipeline, predict survival" \\
+      --target Survived
+
+Run only preprocessing + training:
+  python agents/dynamic/controller_agent/controller_agent.py \\
+      --data  data/churn.csv \\
+      --query "preprocess then train a classifier on the Churn column"
+
+Run with an explicit run_id (useful for reproducibility):
+  python agents/dynamic/controller_agent/controller_agent.py \\
+      --data   data/titanic.csv \\
+      --query  "full pipeline" \\
+      --run-id my-experiment-01
+
+Resume after a HITL pause (accept):
+  python agents/dynamic/controller_agent/controller_agent.py \\
+      --resume   run-4f3a9b12 \\
+      --decision accept
+
+Resume after a HITL pause (feedback):
+  python agents/dynamic/controller_agent/controller_agent.py \\
+      --resume   run-4f3a9b12 \\
+      --decision feedback \\
+      --feedback "please also generate a correlation heatmap"
+""",
+    )
+
+    # ── New run arguments ─────────────────────────────────────────────────────
+    new_run = p.add_argument_group("New run")
+    new_run.add_argument(
+        "--data", "-d",
+        metavar="PATH",
+        help="Path to dataset file (.csv / .xlsx / .parquet / .json)",
+    )
+    new_run.add_argument(
+        "--query", "-q",
+        metavar="TEXT",
+        help='Natural-language request. e.g. "run full pipeline"',
+    )
+    new_run.add_argument(
+        "--target", "-t",
+        metavar="COLUMN",
+        default=None,
+        help="Target column name (optional — will be inferred if omitted)",
+    )
+    new_run.add_argument(
+        "--run-id",
+        metavar="ID",
+        default=None,
+        help="Explicit run ID (auto-generated if omitted)",
+    )
+
+    # ── Resume arguments ──────────────────────────────────────────────────────
+    resume_grp = p.add_argument_group("Resume after HITL pause")
+    resume_grp.add_argument(
+        "--resume", "-r",
+        metavar="RUN_ID",
+        default=None,
+        help="run_id of a previously paused pipeline to resume",
+    )
+    resume_grp.add_argument(
+        "--decision",
+        choices=["accept", "feedback"],
+        default="accept",
+        help="HITL decision: 'accept' continues, 'feedback' re-runs the agent",
+    )
+    resume_grp.add_argument(
+        "--feedback", "-f",
+        metavar="TEXT",
+        default="",
+        help="Feedback text (only used when --decision feedback)",
+    )
+
+    return p
+
+
+def main():
+
+    
+    agent = ControllerAgent(logger=logger, llm=None, registry=None)
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s  %(levelname)-8s  %(message)s",
+        datefmt="%H:%M:%S",
+    )
+
+    parser = _build_cli_parser()
+    args   = parser.parse_args()
+
+    # ── Resume mode ───────────────────────────────────────────────────────────
+    if args.resume:
+        result = agent.resume(
+            run_id=args.resume,
+            decision=args.decision,
+            feedback_text=args.feedback,
+        )
+
+    # ── New run mode ──────────────────────────────────────────────────────────
+    else:
+        # if not args.data or not args.query:
+        #     parser.error("--data and --query are required for a new run.\n"
+        #                  "Use --help to see all options.")
+
+        # result = agent.run({
+        #     "data_path":     args.data,
+        #     "prompt":        args.query,
+        #     "target_column": args.target,
+        #     "run_id":        args.run_id,
+        # })
+        data_path = args.data
+        prompt = args.query
+        target_column = args.target
+
+        if not data_path:
+            default_path = _PROJECT_ROOT / "assets/data/Classification Datasets/Titanic-Dataset.csv"
+            if default_path.exists():
+                data_path = str(default_path)
+            else:
+                default_path_alt = _PROJECT_ROOT / "assets/data/Datasets/Classification Datasets/Iris.csv"
+                if default_path_alt.exists():
+                    data_path = str(default_path_alt)
+                else:
+                    data_path = "assets/data/Classification Datasets/Titanic-Dataset.csv"
+        
+        if not prompt:
+            prompt = "run analysis, preprocessing and training"
+
+        result = agent.run({
+            "data_path":     data_path,
+            "prompt":        prompt,
+            "target_column": target_column,
+            "run_id":        args.run_id,
+            "report_id":     args.run_id,
+        })
+
+    # ── Output / Interactive loop ──────────────────────────────────────────────
+    while result.get("__interrupted__"):
+        paused_at = result["__paused_at__"]
+        run_id    = result["__run_id__"]
+        
+        print(f"\n[PAUSED] Pipeline paused at checkpoint: {paused_at}")
+        print(f"   run_id: {run_id}")
+        print("-" * 50)
+        
+        try:
+            choice = input("Enter decision ('accept' / 'feedback') or 'exit' to quit: ").strip().lower()
+            if choice == "exit":
+                print("\nExiting. Note: Since the checkpointer is in-memory, you will not be able to resume this session from a new CLI run. Use the web UI/API to resume persistent runs.")
+                sys.exit(0)
+            while choice not in ("accept", "feedback"):
+                choice = input("Invalid entry. Enter 'accept', 'feedback', or 'exit': ").strip().lower()
+                if choice == "exit":
+                    print("\nExiting.")
+                    sys.exit(0)
+                    
+            feedback_text = ""
+            if choice == "feedback":
+                feedback_text = input("Enter your feedback note: ").strip()
+                
+            print(f"\nResuming pipeline with decision '{choice}'...")
+            result = agent.resume(
+                run_id=run_id,
+                decision=choice,
+                feedback_text=feedback_text,
+            )
+        except KeyboardInterrupt:
+            print("\nExiting.")
+            sys.exit(0)
+
+    if result.get("__error__"):
+        print(f"\n[ERROR] Pipeline error: {result['__error__']}")
+        sys.exit(1)
+
+    print("\n[OK] Pipeline complete.")
+    print(f"   Target column : {result.get('target_column')}")
+    print(f"   Task type     : {result.get('task_type')}")
+    print(f"   Trained model : {result.get('trained_model_path') or '—'}")
+    print(f"   Endpoint URL  : {result.get('endpoint_url') or '—'}")
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    main()
