@@ -84,10 +84,10 @@ def _cache_key(file_hash: str, target_column: str) -> str:
     return hashlib.sha256(combined.encode()).hexdigest()
 
 
-def _run_dir(cache_key_hex: str, target_column: str) -> Path:
+def _run_dir(cache_root: Path, cache_key_hex: str, target_column: str) -> Path:
     prefix   = cache_key_hex[:16]
     safe_col = _safe_dir_name(target_column)
-    return CACHE_ROOT / f"{prefix}__{safe_col}"
+    return cache_root / f"{prefix}__{safe_col}"
 
 
 # ── public API ────────────────────────────────────────────────────────────────
@@ -119,7 +119,7 @@ class PipelineCacheManager:
         if key not in self._resolved:
             fh  = file_hash or compute_file_hash(data_path)
             ck  = _cache_key(fh, target_column)
-            rd  = _run_dir(ck, target_column)
+            rd  = _run_dir(self.cache_root, ck, target_column)
             self._resolved[key] = (fh, ck, rd)
         return self._resolved[key]
 

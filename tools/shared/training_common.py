@@ -280,9 +280,27 @@ def complete_training(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     metrics = dict(metrics or {})
     metrics["training_method"] = training_method
-    metrics["used_dask"] = False
-    metrics["n_rows"] = n_rows
-    metrics["data_source"] = "preprocessed_splits"
+
+    # Extract feature importance for sklearn models (AutoGluon sets this in the engine)
+    if "feature_importance" not in metrics:
+        try:
+            fi = None
+            if hasattr(model, "feature_importances_") and hasattr(model, "feature_names_in_"):
+                fi = dict(sorted(
+                    zip(model.feature_names_in_, model.feature_importances_.tolist()),
+                    key=lambda x: x[1], reverse=True,
+                ))
+            elif hasattr(model, "coef_") and hasattr(model, "feature_names_in_"):
+                coef = model.coef_[0] if model.coef_.ndim > 1 else model.coef_
+                fi = dict(sorted(
+                    zip(model.feature_names_in_, np.abs(coef).tolist()),
+                    key=lambda x: x[1], reverse=True,
+                ))
+            if fi:
+                metrics["feature_importance"] = fi
+        except Exception:
+            pass
+
     saved_files = save_model_artifact(model, subfolder)
 
     pipeline_state = merge_state(
@@ -316,71 +334,58 @@ def complete_training(
 
 
 def build_automl_results_payload(pipeline_state: dict[str, Any], *, timestamp: str | None = None) -> dict[str, Any]:
-    """Build results JSON payload matching static AutoMLAgent._save_outputs structure."""
+    """Build results JSON payload matching static AutoMLAgent output structure."""
     stamp = timestamp or datetime.now().strftime("%Y%m%d_%H%M%S")
     metrics = dict(pipeline_state.get("model_metrics") or {})
     plan = pipeline_state.get("training_plan") or {}
-    approach = plan.get("approach")
-    use_automl = approach == APPROACH_AUTOGLUON
+    use_automl = plan.get("approach") == APPROACH_AUTOGLUON
 
-    automl_config = plan.get("automl_config") or {}
-    optuna_config = plan.get("optuna_config") or {}
-    optuna_refined = None
-    if use_automl and automl_config:
-        optuna_refined = {
-            "models": automl_config.get("models") or automl_config.get("models_to_prioritize"),
-            "time_limit": automl_config.get("time_limit") or automl_config.get("time_limit_seconds"),
-            "preset": automl_config.get("preset") or automl_config.get("preset_mode"),
-        }
+    # Normalize automl_config key names (LLM may produce time_limit_seconds, preset_mode, etc.)
+    raw_cfg = plan.get("automl_config") or {}
+    automl_config = {
+        "models": raw_cfg.get("models") or raw_cfg.get("models_to_prioritize") or [],
+        "time_limit": raw_cfg.get("time_limit") or raw_cfg.get("time_limit_seconds"),
+        "preset": raw_cfg.get("preset") or raw_cfg.get("preset_mode"),
+    }
 
-    agent_messages = list(pipeline_state.get("agent_messages") or [])
-    reasoning = plan.get("reasoning")
-    if not agent_messages and reasoning:
-        agent_messages = [{"agent": "model_selection", "message": reasoning}]
+    reasoning = plan.get("reasoning") or pipeline_state.get("model_selection_reasoning")
+
+    best_score = metrics.get("best_score")
+    score_str = f"{best_score:.4f}" if isinstance(best_score, float) else str(best_score or "")
 
     training_results = {
-        "training_method": metrics.get("training_method"),
         "best_model": metrics.get("best_model"),
-        "best_score": metrics.get("best_score"),
-        "metric_name": metrics.get("metric_name", "score"),
+        "best_score": best_score,
+        "feature_importance": metrics.get("feature_importance"),
         "models_trained": metrics.get("models_trained"),
         "all_models": metrics.get("all_models", []),
         "all_scores": metrics.get("all_scores", []),
+        "training_method": metrics.get("training_method"),
+        "f1_score": metrics.get("f1_score") or metrics.get("test_f1_score"),
         "confusion_matrix": metrics.get("confusion_matrix"),
-        "best_params_per_model": metrics.get("best_params_per_model", {}),
-        "optuna_refined_config": optuna_refined,
-        "test_accuracy": metrics.get("test_accuracy"),
-        "test_f1_score": metrics.get("test_f1_score"),
-        "test_r2_score": metrics.get("test_r2_score"),
-        "rmse": metrics.get("rmse"),
-        "tuning_best_score": metrics.get("tuning_best_score"),
-        "optuna_trials": metrics.get("optuna_trials") or optuna_config.get("n_trials"),
-        "optuna_search_space": metrics.get("optuna_search_space") or optuna_config.get("search_space"),
-        "data_source": metrics.get("data_source"),
-        "n_rows": metrics.get("n_rows"),
     }
 
     return {
         "run_timestamp": stamp,
         "data_path": pipeline_state.get("data_path"),
         "target_column": pipeline_state.get("target_column"),
-        "problem_type": pipeline_state.get("problem_type"),
+        "problem_type": pipeline_state.get("problem_type") or pipeline_state.get("task_type"),
         "model_selection": {
             "use_automl": use_automl,
-            "approach": approach,
             "automl_config": automl_config,
             "selected_models": plan.get("selected_models") or [],
-            "optuna_config": optuna_config,
             "model_selection_reasoning": reasoning,
-            "train_tool": plan.get("train_tool"),
         },
         "training_results": training_results,
-        "agent_messages": agent_messages,
+        "agent_messages": [
+            {
+                "agent": "training",
+                "message": f"Training complete. Training completed. Best score: {score_str}",
+            }
+        ],
         "workflow": {
             "final_step": pipeline_state.get("step"),
-            "status": pipeline_state.get("status"),
             "error": pipeline_state.get("error"),
-            "saved_model": (pipeline_state.get("saved_files") or {}).get("pickle"),
         },
     }
 

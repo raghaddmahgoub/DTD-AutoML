@@ -12,10 +12,8 @@ from pathlib import Path
 import requests
 
 # ================== CONFIG ==================
-PLAN_DIR = Path("AutoML_Agent_approach/Plan")
-OUTPUT_DIR = Path("AutoML_Agent_approach/Output")
-for d in (PLAN_DIR, OUTPUT_DIR):
-    d.mkdir(parents=True, exist_ok=True)
+PLAN_DIR = Path("Output/static/Plan")
+OUTPUT_DIR = Path("Output/static/Preprocessing")
 
 PROFILE_PATH = PLAN_DIR / "Titanic-Dataset_preprocessing_context (1).json"
 PLAN_OUT = PLAN_DIR / "task_definition.json"
@@ -109,6 +107,8 @@ Return ONLY valid JSON:
 
 
 def main():
+    for d in (PLAN_DIR, OUTPUT_DIR):
+        d.mkdir(parents=True, exist_ok=True)
     profile = load_profile()
     # First marked 'is_target' or fallback to last column
     target_column = next((col["column"] for col in profile if col.get("is_target") is True), profile[-1]["column"])

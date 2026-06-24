@@ -131,8 +131,6 @@ def route_after_model_selection(state: PipelineState) -> str:
     flags = state["intent_flags"]
     if flags.get("training"):
         return "training_agent"
-    if flags.get("evaluation"):
-        return "evaluation_agent"
     if flags.get("deployment"):
         return "deployment_agent"
     return "pipeline_done"

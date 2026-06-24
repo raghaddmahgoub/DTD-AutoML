@@ -39,10 +39,8 @@ DATASET_PATHS = {
 # Treat literal '?' as missing values (common in Adult Census)
 NA_VALUES = ["?"]
 
-PLAN_DIR = Path("AutoML_Agent_approach/Plan")
-OUTPUT_DIR = Path("AutoML_Agent_approach/Output")
-for d in (PLAN_DIR, OUTPUT_DIR):
-    d.mkdir(parents=True, exist_ok=True)
+PLAN_DIR = Path("Output/static/Plan")
+OUTPUT_DIR = Path("Output/static/Preprocessing")
 
 TASK_JSON = PLAN_DIR / "task_definition.json"
 REPORT_JSON = PLAN_DIR / "final_report.json"
@@ -94,6 +92,8 @@ def _get_feature_names(preproc) -> List[str]:
 
 
 def main():
+    for d in (PLAN_DIR, OUTPUT_DIR):
+        d.mkdir(parents=True, exist_ok=True)
     data_path = Path(DATASET_PATHS[DATASET_NAME])
     if not data_path.exists():
         raise FileNotFoundError(f"Dataset not found at {data_path.resolve()}")

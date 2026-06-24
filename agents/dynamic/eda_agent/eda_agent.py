@@ -411,8 +411,6 @@ def route_after_eda(state: PipelineState) -> str:
         return "model_selection_agent"
     if flags["training"]:
         return "training_agent"
-    if flags["evaluation"]:
-        return "evaluation_agent"
-    # if flags["deployment"]:
-    #     return "deployment_agent"
+    if flags.get("deployment"):
+        return "deployment_agent"
     return "pipeline_done"

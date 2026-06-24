@@ -1,7 +1,7 @@
 import pandas as pd
-from agents.static.eda_agent import EDAAgent
+from agents.static.eda_agent.eda_agent import EDAAgent
 import os
-from benchmark import AnalysisEvaluator
+from agents.static.eda_agent.benchmark import AnalysisEvaluator
 
 
 filename = 'assets/data/Classification Datasets/Titanic-Dataset.csv'

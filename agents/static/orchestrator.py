@@ -1,5 +1,6 @@
 from importlib.resources import path
 import os
+import sys
 import time
 import pandas as pd
 from typing import TypedDict, Optional, Generator
@@ -7,7 +8,17 @@ from langgraph.graph import StateGraph, END
 from dotenv import load_dotenv
 import json
 from pathlib import Path
-from agents.static.preprocessing_agent.preprocessing_pipeline import PreprocessingPipelineAgent
+
+# Add project root to sys.path to allow absolute imports when run directly from package subfolders
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+# Force UTF-8 encoding for standard streams to prevent UnicodeEncodeError on Windows terminals
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 
 # Import modular agents from your folders
 from agents.static.eda_agent.eda_agent import EDAAgent
@@ -18,10 +29,12 @@ from cache.cache_manager import PipelineCacheManager
 
 load_dotenv()
 
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
 ORCHESTRATOR_CONFIG = {
-    "data_path": "assets/data/Classification Datasets/Titanic-Dataset.csv",
+    "data_path": str(PROJECT_ROOT / "assets/data/Classification Datasets/Titanic-Dataset.csv"),
     "target_column": "Survived",
-    "preprocessing_output_root": os.path.join("Output", "Preprocessing"),
+    "preprocessing_output_root": str(PROJECT_ROOT / "Output" / "static" / "Preprocessing"),
     "use_preprocessing_llm": True,
 }
 
@@ -48,7 +61,7 @@ class AgentState(TypedDict, total=False):
 
 class DTDPipeline:
     def __init__(self):
-        self.cache = PipelineCacheManager()
+        self.cache = PipelineCacheManager(cache_root=PROJECT_ROOT / "Output" / "static" / "cache")
         self.workflow = self._build_graph()
 
     def _get_dataset_name(self, path: str) -> str:
@@ -214,7 +227,7 @@ class DTDPipeline:
         df = pd.read_csv(state['data_path'])
         agent = EDAAgent(df,target_column=state['target_column'],df_name=self._get_dataset_name(state['data_path']))
         agent.run(run_type="raw")
-        results = agent.export(output_dir="output/orchestrator")
+        results = agent.export(output_dir=str(PROJECT_ROOT / "Output" / "static" / "orchestrator"))
 
         frontend_json_path = results.get("frontend_json_path")
         with open(frontend_json_path, 'r', encoding='utf-8') as f:
@@ -321,7 +334,7 @@ class DTDPipeline:
         agent = EDAAgent(df, target_column=state['target_column'], df_name=self._get_dataset_name(
             state['clean_data_path']))
         agent.run(run_type="clean")
-        results = agent.export(output_dir="output/orchestrator")
+        results = agent.export(output_dir=str(PROJECT_ROOT / "Output" / "static" / "orchestrator"))
 
         state['automl_directives'] = results.get("automl_context")
 
@@ -388,7 +401,7 @@ class DTDPipeline:
             final_subagent_state = automl_agent_instance.run(
                 data_path=state['clean_data_path'],
                 target_column=target_col,
-                output_dir="output/automl",
+                output_dir=str(PROJECT_ROOT / "Output" / "static" / "automl"),
                 automl_directives=directives,
                 problem_type=task_type,
               

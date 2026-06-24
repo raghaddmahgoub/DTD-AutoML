@@ -27,11 +27,8 @@ import joblib
 # =========================
 
 DATA_PATH = "assets/data/Classification Datasets/breast_cancer.csv"
-OUTPUT_DIR = Path("output/preprocessing")
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-PLAN_DIR = Path("Plan")
-PLAN_DIR.mkdir(parents=True, exist_ok=True)
+OUTPUT_DIR = Path("Output/static/Preprocessing")
+PLAN_DIR = Path("Output/static/Plan")
 
 # =========================
 # TASK INFERENCE (Simplified)
@@ -70,6 +67,9 @@ class PreprocessingPipelineAgent:
             data_path: str = DATA_PATH,
             target_column: Optional[str] = None
             ) -> Dict[str, Any]:
+
+        OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+        PLAN_DIR.mkdir(parents=True, exist_ok=True)
 
         print("🔄 Loading dataset...")
         df = pd.read_csv(data_path)

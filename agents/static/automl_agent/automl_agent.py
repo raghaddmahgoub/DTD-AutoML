@@ -1031,7 +1031,7 @@ Provide your analysis and decision:
                 logger.info(f"Mapped 'classification' to '{ag_problem_type}' ({unique_targets} classes)")
             
             # Create a unique path for this predictor to avoid conflicts
-            base_dir = Path("output/automl")
+            base_dir = Path(getattr(self, "output_dir", "Output/static/automl"))
             base_dir.mkdir(parents=True, exist_ok=True)
 
             predictor_path = base_dir / f"run_{int(time.time())}"

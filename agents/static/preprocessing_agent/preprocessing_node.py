@@ -31,7 +31,7 @@ import logging
 import json
 from dotenv import load_dotenv
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
 
 RUN_CONFIG = {
@@ -114,7 +114,7 @@ class PreprocessingNode:
             target_col = state["target_column"]
             dataset_stem = Path(state["dataset_path"]).stem
             output_folder = Path(
-                state.get("output_folder", Path("Output") / "Preprocessing" / dataset_stem))
+                state.get("output_folder", PROJECT_ROOT / "Output" / "static" / "Preprocessing" / dataset_stem))
             test_size = float(state.get("test_size", self.config["test_size"]))
             random_state = int(
                 state.get("random_state", self.config["random_state"]))

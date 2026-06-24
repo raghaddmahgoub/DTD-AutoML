@@ -64,10 +64,6 @@ from agents.dynamic.training_agent import (
     route_after_training,
 )
 
-from agents.dynamic.evaluation_agent import (
-    evaluation_node,
-    route_after_evaluation,
-)
 
 from agents.dynamic.preprocessing_agent import (
     preprocessing_node,
@@ -257,7 +253,7 @@ def build_graph() -> any:
           → feature_engineering_agent → feature_engineering_checkpoint
           → model_selection_agent → model_selection_checkpoint
           → training_agent → training_checkpoint
-          → evaluation_agent → evaluation_checkpoint
+          → (evaluation runs as subnode inside training_agent)
           → deployment_agent → deployment_checkpoint
           → pipeline_done
         END
@@ -324,17 +320,7 @@ def build_graph() -> any:
         ),
     )
 
-    # ── Agent 6: Evaluation ────────────────────────────────────────────────────
-    evaluation_checkpoint_node = _make_checkpoint_node("evaluation")
-    graph.add_node("evaluation_agent",      evaluation_node)
-    graph.add_node("evaluation_checkpoint", evaluation_checkpoint_node)
-    graph.add_edge("evaluation_agent", "evaluation_checkpoint")
-    graph.add_conditional_edges(
-        "evaluation_checkpoint",
-        _make_checkpoint_router("evaluation_agent", route_after_evaluation),
-    )
-
-    # ── Agent 7: Deployment ────────────────────────────────────────────────────
+    # ── Agent 6: Deployment ────────────────────────────────────────────────────
     deployment_node       = _stub_node("deployment_agent")
     deployment_checkpoint = _make_checkpoint_node("deployment")
     route_after_deployment = _make_stub_router([])   # nothing after deployment

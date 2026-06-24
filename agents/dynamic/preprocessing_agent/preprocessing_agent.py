@@ -483,8 +483,6 @@ def route_after_preprocessing(state: PipelineState) -> str:
         return "model_selection_agent"
     if flags.get("training"):
         return "training_agent"
-    if flags.get("evaluation"):
-        return "evaluation_agent"
     if flags.get("deployment"):
         return "deployment_agent"
     return "pipeline_done"
