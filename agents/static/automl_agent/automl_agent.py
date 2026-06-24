@@ -33,6 +33,9 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from dotenv import load_dotenv
 
 from src.utils.logger import Logger
+import hashlib
+from langgraph.cache.memory import InMemoryCache
+from langgraph.types import CachePolicy
 
 # Load environment variables
 load_dotenv()
@@ -79,7 +82,115 @@ class AutoMLAgent:
         self.graph = self._build_graph()
     
     
-        
+    @staticmethod
+    def _bucket_size(n_rows: int, n_cols: int) -> str:
+        if n_rows > 700_000:
+            return "large"
+        elif n_rows > 50_000:
+            return "medium"
+        return "small"
+
+    @staticmethod
+    def _bucket_ratio(ratio: float) -> str:
+        if ratio > 0.5:
+            return "high"
+        elif ratio > 0.2:
+            return "medium"
+        return "low"
+
+    def _selection_cache_key(self, state: AgentState) -> str:
+        """
+        LangGraph key_func: called by the graph runtime before executing
+        model_selection_agent. Returns a string key — same key = cache hit.
+        """
+        directives = state.get('automl_directives') or {}
+        report = directives.get('report') or {}
+        target_info = report.get('target_analysis') or {}
+        multicollinearity = report.get('multicollinearity') or {}
+        encoding_hints = report.get('encoding_hints') or {}
+        signal_analysis = report.get('signal_analysis') or {}
+        dataset_summary = report.get('dataset_summary') or {}
+
+        # Get size signals — use directives if data not loaded yet
+        data = state.get('data')
+        if data is not None:
+            n_rows = data.shape[0].compute() if isinstance(data, dd.DataFrame) else data.shape[0]
+            n_cols = data.shape[1]
+        else:
+            n_rows = dataset_summary.get('n_rows', 0)
+            n_cols = dataset_summary.get('n_columns', 0)
+
+        duplicate_ratio = (
+            report.get('data_quality_report', {})
+                .get('duplicates', {})
+                .get('duplicate_ratio', 0.0)
+        )
+
+        signature = {
+            "task_type":              state.get('problem_type'),
+            "skew_severity":          target_info.get('skew_severity', 'N/A'),
+            "multicollinearity_risk": len(multicollinearity.get('pairs', [])) > 3,
+            "encoding_needed":        bool(encoding_hints),
+            "signal_keys":            sorted(signal_analysis.keys()),
+            "size_bucket":            self._bucket_size(n_rows, n_cols),
+            "duplicate_bucket":       self._bucket_ratio(duplicate_ratio),
+        }
+
+        key_str = json.dumps(signature, sort_keys=True)
+        cache_key = hashlib.md5(key_str.encode()).hexdigest()
+        logger.info(f"[Cache] model_selection_agent key={cache_key[:8]}… signature={signature}")
+        return cache_key
+
+    def _training_cache_key(self, state: AgentState) -> str:
+        """Cache key for training_agent — based on what model was selected + data shape."""
+        directives = state.get('automl_directives') or {}
+        report = directives.get('report') or {}
+        dataset_summary = report.get('dataset_summary') or {}
+
+        data = state.get('data')
+        if data is not None:
+            n_rows = data.shape[0].compute() if isinstance(data, dd.DataFrame) else data.shape[0]
+            n_cols = data.shape[1]
+        else:
+            n_rows = dataset_summary.get('n_rows', 0)
+            n_cols = dataset_summary.get('n_columns', 0)
+
+        signature = {
+            "problem_type":    state.get('problem_type'),
+            "use_automl":      state.get('use_automl'),
+            "use_dask":        state.get('use_dask'),
+            "selected_models": sorted(state.get('selected_models') or []),
+            "automl_config":   json.dumps(state.get('automl_config') or {}, sort_keys=True),
+            "size_bucket":     self._bucket_size(n_rows, n_cols),
+        }
+
+        key_str = json.dumps(signature, sort_keys=True)
+        cache_key = hashlib.md5(key_str.encode()).hexdigest()
+        logger.info(f"[Cache] training_agent key={cache_key[:8]}… signature={signature}")
+        return cache_key
+
+
+    def _interpret_cache_key(self, state: AgentState) -> str:
+        """Cache key for _interpret_training_results — based on actual metrics."""
+        metrics = state.get('model_metrics') or {}
+
+        # Round score to 3dp so tiny float drift doesn't bust the cache
+        best_score = metrics.get('best_score')
+        best_score_rounded = round(best_score, 3) if isinstance(best_score, float) else best_score
+
+        signature = {
+            "training_method": metrics.get('training_method'),
+            "best_model":      metrics.get('best_model'),
+            "best_score":      best_score_rounded,
+            "use_automl":      state.get('use_automl'),
+            "confusion_matrix": str(metrics.get('confusion_matrix', '')),
+        }
+
+        key_str = json.dumps(signature, sort_keys=True)
+        cache_key = hashlib.md5(key_str.encode()).hexdigest()
+        logger.info(f"[Cache] interpret key={cache_key[:8]}… signature={signature}")
+        return cache_key
+
     def _build_graph(self) -> StateGraph:
         """Build the LangGraph AutoML workflow."""
         
@@ -91,8 +202,8 @@ class AutoMLAgent:
 
         # Specialized subagents
         # workflow.add_node("data_analysis_agent", self.data_analysis_agent)
-        workflow.add_node("model_selection_agent", self.model_selection_agent)
-        workflow.add_node("training_agent", self.training_agent)
+        workflow.add_node("model_selection_agent", self.model_selection_agent, cache_policy=CachePolicy(key_func=self._selection_cache_key))
+        workflow.add_node("training_agent", self.training_agent, cache_policy=CachePolicy(key_func=self._training_cache_key))
 
         # Define the flow
         workflow.set_entry_point("load_data")#start by loading data, defines the init state
@@ -102,7 +213,7 @@ class AutoMLAgent:
         workflow.add_edge("identify_target", "model_selection_agent")#then select the models
         workflow.add_edge("model_selection_agent", "training_agent")#then train the models
 
-        return workflow.compile()
+        return workflow.compile(cache=InMemoryCache())
 
     
     def should_use_automl(self, state: AgentState) -> Literal["automl", "simple"]:
@@ -470,19 +581,19 @@ class AutoMLAgent:
             )
 
             # --- LLM strategy assessment block ---
-            try:
-                training_strategy_prompt = (
-                    f"Assess this strategy: {'AutoGluon' if use_automl else 'Simple'}."
-                    f" Reasoning: {model_selection_reasoning[:500]}"
-                )
-                strategy_messages = [
-                    SystemMessage(content="You are an ML engineer. Provide brief insights."),
-                    HumanMessage(content=training_strategy_prompt)
-                ]
-                strategy_response = self.llm.invoke(strategy_messages)
-                training_insight = strategy_response.content
-            except Exception:
-                training_insight = "Executing training strategy..."
+            # try:
+            #     training_strategy_prompt = (
+            #         f"Assess this strategy: {'AutoGluon' if use_automl else 'Simple'}."
+            #         f" Reasoning: {model_selection_reasoning[:500]}"
+            #     )
+            #     strategy_messages = [
+            #         SystemMessage(content="You are an ML engineer. Provide brief insights."),
+            #         HumanMessage(content=training_strategy_prompt)
+            #     ]
+            #     strategy_response = self.llm.invoke(strategy_messages)
+            #     training_insight = strategy_response.content
+            # except Exception:
+            #     training_insight = "Executing training strategy..."
 
             data = state['data']
             target_column = state['target_column']
