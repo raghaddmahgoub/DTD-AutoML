@@ -72,7 +72,7 @@ PREPROCESSING_CONFIG = {
     "max_outlier_clip_quantile": 0.01,
     "target_metric_priority": "f1",
     "gemini_model": "gemini-2.5-flash",
-    "gemini_api_key_env": "GEMINI_API_KEY",
+    "google_api_key_env": "GOOGLE_API_KEY",
 }
 
 
@@ -102,11 +102,11 @@ class PreprocessingNode:
         if config:
             self.config.update(config)
         # Read API credentials from environment only.
-        self.gemini_api_key = os.getenv(
-            self.config.get("gemini_api_key_env", "GEMINI_API_KEY")
+        self.google_api_key = os.getenv(
+            self.config.get("google_api_key_env", "GOOGLE_API_KEY")
         ) or os.getenv("GOOGLE_API_KEY")
         logger.debug("PreprocessingNode initialised | gemini_credentials=%s", bool(
-            self.gemini_api_key))
+            self.google_api_key))
 
     def run(self, state: Dict[str, Any]) -> Dict[str, Any]:
         try:
@@ -289,17 +289,17 @@ class PreprocessingNode:
             )
 
     def _has_llm_credentials(self) -> bool:
-        return bool(self.gemini_api_key)
+        return bool(self.google_api_key)
 
     def _call_gemini(self, prompt: str) -> Optional[str]:
-        if not self.gemini_api_key:
+        if not self.google_api_key:
             logger.warning("Gemini: no API key available")
             return None
         model = str(self.config.get("gemini_model", "gemini-2.5-flash"))
         logger.debug("Gemini: calling model=%s", model)
         url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{model}:generateContent?key=" + self.gemini_api_key
+            f"{model}:generateContent?key=" + self.google_api_key
         )
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
