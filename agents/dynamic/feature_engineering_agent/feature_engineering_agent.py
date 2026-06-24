@@ -14,6 +14,16 @@ from graph.knowledge_graph import update_agent_progress
 logger = logging.getLogger(__name__)
 
 
+def _build_feedback_context(state: dict, agent_name: str = "feature_engineering") -> str:
+    """Format user feedback for this feature-engineering checkpoint."""
+    history = state.get("feedback_history", []) or []
+    own = [h.get("feedback_text", "") for h in history if h.get("agent") == agent_name]
+    own = [text for text in own if text]
+    if own:
+        return "\n\nUser Feedback History for feature engineering:\n" + "\n".join(f"- {text}" for text in own)
+    return ""
+
+
 class FeatureEngineeringAgent:
     """Run feature engineering after preprocessing using the execution tool."""
 
@@ -23,7 +33,9 @@ class FeatureEngineeringAgent:
 
     def run(self, pipeline_state: dict) -> dict:
         data_path = pipeline_state.get("data_path")
-        prompt = pipeline_state.get("prompt") or pipeline_state.get("nl_query") or "feature engineer the data"
+        base_prompt = pipeline_state.get("prompt") or pipeline_state.get("nl_query") or "feature engineer the data"
+        feedback_context = _build_feedback_context(pipeline_state)
+        prompt = f"{base_prompt}{feedback_context}"
         preprocessing_plan = pipeline_state.get("preprocessing_plan") or {}
         feature_plan = preprocessing_plan.get("feature_engineering") or {}
 
@@ -150,6 +162,7 @@ class FeatureEngineeringAgent:
             agent_output = {
                 "status": "success",
                 "message": result.get("message"),
+                "feedback_applied": bool(feedback_context),
                 **feature_output,
                 "sub_nodes": sub_nodes
             }
