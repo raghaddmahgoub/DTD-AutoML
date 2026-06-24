@@ -71,7 +71,7 @@ PREPROCESSING_CONFIG = {
     "max_row_drop_fraction": 0.02,
     "max_outlier_clip_quantile": 0.01,
     "target_metric_priority": "f1",
-    "gemini_model": "gemini-2.5-flash",
+    "gemini_model": "gemma-4-31b-it",
     "gemini_api_key_env": "GEMINI_API_KEY",
 }
 
@@ -295,7 +295,7 @@ class PreprocessingNode:
         if not self.gemini_api_key:
             logger.warning("Gemini: no API key available")
             return None
-        model = str(self.config.get("gemini_model", "gemini-2.5-flash"))
+        model = str(self.config.get("gemini_model", "gemma-4-31b-it"))
         logger.debug("Gemini: calling model=%s", model)
         url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -1141,7 +1141,7 @@ class PreprocessingNode:
                 "enabled": use_llm,
                 "policy_used": bool(metadata.get("llm_policy_used", False)),
                 "provider": "gemini",
-                "model": self.config.get("gemini_model", "gemini-2.5-flash"),
+                "model": self.config.get("gemini_model", "gemma-4-31b-it"),
                 "final_decision_enabled": bool(self.config.get("llm_final_decision", True)),
             },
             "steps_status": metadata["steps_status"],

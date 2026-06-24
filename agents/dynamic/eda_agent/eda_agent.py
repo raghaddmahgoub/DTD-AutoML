@@ -108,7 +108,7 @@ class EDAAgent:
 
     def __init__(
         self,
-        model_name: str = "gemini-2.5-flash",
+        model_name: str = "gemma-4-31b-it",
         temperature: float = 0.6,
         google_api_key: Optional[str] = None,
     ):

@@ -43,6 +43,7 @@ venv/
 [Oo]utput/
 [Pp]lan/
 benchmark/results/
+benchmark/debug/
 
 # Temporary files
 ~$*

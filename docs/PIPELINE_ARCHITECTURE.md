@@ -587,7 +587,7 @@ The LLM **must** pick exactly one (enforced in `model_selection.py`):
 ### Required environment
 
 - `GOOGLE_API_KEY` in `.env` for Gemini
-- Optional: `GEMINI_MODEL` (default in test runner: `gemini-2.5-flash-lite`)
+- Optional: `GEMINI_MODEL` (default in test runner: `gemma-4-31b-it`)
 
 ---
 
