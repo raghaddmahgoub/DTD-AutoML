@@ -568,7 +568,7 @@ def main():
         target_column = args.target
 
         if not data_path:
-            default_path = _PROJECT_ROOT / "assets/data/Classification Datasets/Titanic-Dataset.csv"
+            default_path = _PROJECT_ROOT / "assets/data/Classification Datasets/Titanic/Titanic-Dataset.csv"
             if default_path.exists():
                 data_path = str(default_path)
             else:

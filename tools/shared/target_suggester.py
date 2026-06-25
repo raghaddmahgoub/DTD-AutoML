@@ -9,24 +9,31 @@ class TargetSuggestionAgent:
         "survived", "diagnosis", "price", "salary", "revenue",
     }
 
-    def __init__(self, df: pd.DataFrame):
+    def __init__(self, df: Optional[pd.DataFrame] = None):
         self.df = df
 
-    def suggest(self) -> Optional[str]:
-        if self.df.empty:
+    def suggest(self, df: Optional[pd.DataFrame] = None) -> Optional[str]:
+        data = df if df is not None else self.df
+        if data is None or data.empty:
             return None
 
-        for col in self.df.columns:
+        for col in data.columns:
             if col.lower() in self.COMMON_TARGET_NAMES:
                 return col
 
-        return self.df.columns[-1]
+        return data.columns[-1]
 
-    def suggest_task_type(self, target_column: str) -> str:
-        if target_column not in self.df.columns:
+    def suggest_task_type(self, df_or_target, target_column: Optional[str] = None) -> str:
+        if target_column is None:
+            data = self.df
+            target_column = df_or_target
+        else:
+            data = df_or_target
+
+        if data is None or target_column not in data.columns:
             return "unknown"
 
-        series = self.df[target_column]
+        series = data[target_column]
 
         if not pd.api.types.is_numeric_dtype(series):
             return "classification"
