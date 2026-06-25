@@ -12,6 +12,7 @@ import pandas as pd
 
 from state.pipeline_state import PipelineState
 from tools.shared import get_llm
+from tools.shared.training_common import align_features_for_model
 from tools.training import train_simple, train_simple_optuna, train_autogluon
 from graph.knowledge_graph import update_agent_progress
 
@@ -64,8 +65,8 @@ def _run_evaluation_subnode(state: dict) -> dict:
         if y_test_path and Path(y_test_path).exists():
             y_test = pd.read_csv(y_test_path).iloc[:, 0]
         if model is not None and X_test is not None:
-            if not is_autogluon and hasattr(model, "feature_names_in_"):
-                X_test = X_test.reindex(columns=model.feature_names_in_, fill_value=0)
+            if not is_autogluon:
+                X_test = align_features_for_model(model, X_test)
             preds = model.predict(X_test)
     except Exception as exc:
         logger.warning("[TrainingAgent/Evaluation] Could not load model/data: %s", exc)

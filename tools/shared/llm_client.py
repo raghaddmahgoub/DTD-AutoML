@@ -24,16 +24,31 @@ from typing import Optional
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 
+from tools.shared.llm_fallback import GeminiQwenFallbackLLM
+
 logger = logging.getLogger(__name__)
 
 _DEFAULT_MODEL = "gemini-2.5-flash-lite"
+
+
+class _MissingGeminiLLM:
+    """Placeholder that lets fallback logic handle missing Gemini credentials."""
+
+    def __init__(self, reason: str):
+        self.reason = reason
+
+    def invoke(self, *args, **kwargs):
+        raise EnvironmentError(self.reason)
+
+    def with_structured_output(self, *args, **kwargs):
+        return self
 
 
 def get_llm(
     model_name: str = _DEFAULT_MODEL,
     temperature: float = 0.0,
     google_api_key: Optional[str] = None,
-) -> ChatGoogleGenerativeAI:
+) -> GeminiQwenFallbackLLM:
     """
     Construct and return a ChatGoogleGenerativeAI instance.
 
@@ -56,16 +71,16 @@ def get_llm(
     """
     api_key = google_api_key or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
-        raise EnvironmentError(
-            "GOOGLE_API_KEY not found.\n"
-            "  export GOOGLE_API_KEY='your-key'  — or —\n"
-            "  get_llm(google_api_key='your-key')"
-        )
+        reason = "GOOGLE_API_KEY not found."
+        logger.warning(reason)
+        return GeminiQwenFallbackLLM(_MissingGeminiLLM(reason), temperature=temperature)
 
     logger.debug("[LLMClient] Building %s (temp=%.1f)", model_name, temperature)
 
-    return ChatGoogleGenerativeAI(
+    gemini_llm = ChatGoogleGenerativeAI(
         model=model_name,
         temperature=temperature,
         google_api_key=api_key,
     )
+
+    return GeminiQwenFallbackLLM(gemini_llm, temperature=temperature)
