@@ -161,7 +161,9 @@ def compute_target_analysis(df: pd.DataFrame, target_column: Optional[str]) -> O
     }
 
     if is_numeric and series.nunique() > 20:
-        q1, q3 = series.quantile(0.25), series.quantique(0.75) if False else (series.quantile(0.25), series.quantile(0.75))
+        # q1, q3 = series.quantile(0.25), series.quantique(0.75) if False else (series.quantile(0.25), series.quantile(0.75))
+        q1 = series.quantile(0.25)
+        q3 = series.quantile(0.75)
         iqr    = q3 - q1
         skew   = float(series.skew())
         analysis.update({

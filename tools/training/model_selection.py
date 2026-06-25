@@ -222,6 +222,11 @@ def _parse_model_decision(
     llm_approach = ""
 
     try:
+        if isinstance(reasoning, list):
+            reasoning = "\n".join(
+                str(x.content if hasattr(x, "content") else x)
+                for x in reasoning
+            )
         data = _extract_json_block(reasoning)
         if data:
             llm_approach = _normalize_approach(str(data.get("approach", "")))
