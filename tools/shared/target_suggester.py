@@ -1,79 +1,53 @@
-"""
-tools/target_suggester.py
-D.T.D (Data To Deployment) — Multi-Agent AutoML Pipeline
-
-Tool: Target Suggestion Agent
-Responsibility:
-    Heuristic fallback that suggests the most likely target column
-    and task type when the LLM cannot determine them.
-
-    suggest() priority order:
-        1. Column name matches a well-known target keyword
-        2. Last column in the DataFrame (standard ML convention)
-
-    suggest_task_type() logic:
-        - Non-numeric target         → classification
-        - Numeric, ≤ 20 unique vals  → classification
-        - Numeric, > 20 unique vals  → regression
-
-Consumers:
-    - agents/intent_detector.py  (Agent 0)
-    - agents/eda_agent.py        (Agent 1)
-"""
-
-import logging
-from typing import Optional
-
 import pandas as pd
-
-logger = logging.getLogger(__name__)
+from typing import Optional
 
 
 class TargetSuggestionAgent:
-
-    COMMON_TARGET_NAMES: list[str] = [
+    COMMON_TARGET_NAMES = {
         "target", "label", "class", "output", "y",
         "result", "outcome", "churn", "fraud", "default",
         "survived", "diagnosis", "price", "salary", "revenue",
-    ]
+    }
 
-    def suggest(self, df: pd.DataFrame) -> Optional[str]:
-        """Return the most likely target column name, or None."""
-        cols_lower = {c.lower(): c for c in df.columns}
+    def __init__(self, df: Optional[pd.DataFrame] = None):
+        self.df = df
 
-        # Priority 1 — well-known name
-        for name in self.COMMON_TARGET_NAMES:
-            if name in cols_lower:
-                col = cols_lower[name]
-                logger.info("[TargetSuggester] Matched known name: '%s'", col)
+    def suggest(self, df: Optional[pd.DataFrame] = None) -> Optional[str]:
+        data = df if df is not None else self.df
+        if data is None or data.empty:
+            return None
+
+        for col in data.columns:
+            if col.lower() in self.COMMON_TARGET_NAMES:
                 return col
 
-        # Priority 2 — last column
-        if len(df.columns) > 0:
-            col = df.columns[-1]
-            logger.info("[TargetSuggester] Fallback to last column: '%s'", col)
-            return col
+        return data.columns[-1]
 
-        logger.warning("[TargetSuggester] Could not suggest a target column.")
-        return None
+    def suggest_task_type(self, df_or_target, target_column: Optional[str] = None) -> str:
+        if target_column is None:
+            data = self.df
+            target_column = df_or_target
+        else:
+            data = df_or_target
 
-    def suggest_task_type(self, df: pd.DataFrame, target_column: str) -> str:
-        """Infer task type from the target column distribution."""
-        if target_column not in df.columns:
+        if data is None or target_column not in data.columns:
             return "unknown"
 
-        series   = df[target_column].dropna()
-        n_unique = series.nunique()
+        series = data[target_column]
 
         if not pd.api.types.is_numeric_dtype(series):
-            logger.info("[TargetSuggester] Non-numeric target -> classification")
             return "classification"
 
-        if n_unique <= 20:
-            logger.info(
-                "[TargetSuggester] %d unique values -> classification", n_unique
-            )
-            return "classification"
+        return (
+            "classification"
+            if series.nunique(dropna=True) <= 20
+            else "regression"
+        )
 
-        logger.info("[TargetSuggester] %d unique values -> regression", n_unique)
-        return "regression"
+    def run(self):
+        target = self.suggest()
+
+        return {
+            "target_column": target,
+            "task_type": self.suggest_task_type(target) if target else "unknown",
+        }

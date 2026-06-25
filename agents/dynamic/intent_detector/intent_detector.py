@@ -54,7 +54,7 @@ class IntentFlags(BaseModel):
     model_selection:     bool  = Field(description="Run Model Selection agent")
     training:            bool  = Field(description="Run Training agent")
     evaluation:          bool  = Field(description="Run Evaluation agent")
-    # deployment:          bool  = Field(description="Run Deployment agent")
+    deployment:          bool  = Field(description="Run Deployment agent")
     target_column: Optional[str]  = Field(default=None)
     task_type: Literal["classification", "regression", "clustering", "unknown"]
 

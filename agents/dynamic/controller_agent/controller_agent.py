@@ -575,6 +575,7 @@ def main():
 
         if not data_path:
             default_path = _PROJECT_ROOT / "benchmark/datasets/diabetes130/diabetic_data.csv"
+            # default_path = _PROJECT_ROOT / "assets/data/Classification Datasets/Titanic/Titanic-Dataset.csv"
             if default_path.exists():
                 data_path = str(default_path)
             else:

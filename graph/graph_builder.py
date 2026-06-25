@@ -75,9 +75,10 @@ from agents.dynamic.feature_engineering_agent import (
     route_after_feature_engineering,
 )
 
-# Stubs — replace with real imports as each agent is implemented:
-# from agents.dynamic.feature_engineering_agent.feature_engineering_agent   import feature_engineering_node, route_after_feature_engineering
-# from agents.dynamic.deployment_agent.deployment_agent                     import deployment_node, route_after_deployment
+from agents.dynamic.deployment_agent import (
+    deployment_node,
+    route_after_deployment,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -321,9 +322,7 @@ def build_graph() -> any:
     )
 
     # ── Agent 6: Deployment ────────────────────────────────────────────────────
-    deployment_node       = _stub_node("deployment_agent")
     deployment_checkpoint = _make_checkpoint_node("deployment")
-    route_after_deployment = _make_stub_router([])   # nothing after deployment
     graph.add_node("deployment_agent",      deployment_node)
     graph.add_node("deployment_checkpoint", deployment_checkpoint)
     graph.add_edge("deployment_agent", "deployment_checkpoint")

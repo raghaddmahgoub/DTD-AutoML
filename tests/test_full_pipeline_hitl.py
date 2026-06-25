@@ -67,9 +67,9 @@ def test_full_pipeline_hitl():
         decision = "accept"
         feedback = ""
         
-        if paused_at == "preprocessing" and not any(h.get("agent") == "preprocessing" for h in state.get("feedback_history", [])):
+        if paused_at == "deployment" and not any(h.get("agent") == "deployment" for h in state.get("feedback_history", [])):
             decision = "feedback"
-            feedback = "Please impute missing categorical columns with mode."
+            feedback = "Please change the port number to 50000 and ensure the model is loaded correctly."
             logger.info(f"[HITL] [Simulated HITL] Injecting feedback loop back to '{paused_at}': '{feedback}'")
         else:
             logger.info(f"[HITL] [Simulated HITL] Resuming with decision: 'accept'")

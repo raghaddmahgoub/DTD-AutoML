@@ -291,7 +291,7 @@ def build_prompt_preprocessing(
         target_column         = target_column,
         task_type             = task_type,
         test_size             = test_size,
-        preprocessing_context = json.dumps(preprocessing_context, indent=2) if preprocessing_context else "not available",
+        preprocessing_context = json.dumps(preprocessing_context, separators=(',', ':')) if preprocessing_context else "not available",
         feedback_context      = feedback_context or "none",
     )
     return PromptPair(system=_PREPROCESSING_SYSTEM, user=user)
@@ -344,7 +344,7 @@ def build_prompt_feature_engineering(
         X_test_path           = X_test_path,
         target_column         = target_column,
         task_type             = task_type,
-        preprocessing_summary = json.dumps(preprocessing_summary, indent=2) if preprocessing_summary else "not available",
+        preprocessing_summary = json.dumps(preprocessing_summary, separators=(',', ':')) if preprocessing_summary else "not available",
         feedback_context      = feedback_context or "none",
     )
     return PromptPair(system=_FEATURE_ENGINEERING_SYSTEM, user=user)
@@ -408,9 +408,9 @@ def build_prompt_model_selection(
         n_rows             = n_rows,
         n_features         = n_features,
         task_type          = task_type,
-        class_distribution = json.dumps(class_distribution) if class_distribution else "{}",
-        feature_types      = json.dumps(feature_types)      if feature_types      else "{}",
-        automl_directives  = json.dumps(automl_directives, indent=2) if automl_directives else "not available",
+        class_distribution = json.dumps(class_distribution, separators=(',', ':')) if class_distribution else "{}",
+        feature_types      = json.dumps(feature_types, separators=(',', ':'))      if feature_types      else "{}",
+        automl_directives  = json.dumps(automl_directives, separators=(',', ':')) if automl_directives else "not available",
         feedback_context   = feedback_context or "none",
     )
     return PromptPair(system=_MODEL_SELECTION_SYSTEM, user=user)
@@ -460,7 +460,7 @@ def build_prompt_training(
 ) -> PromptPair:
     import json
     user = _TRAINING_USER.format(
-        automl_config        = json.dumps(automl_config, indent=2) if automl_config else "{}",
+        automl_config        = json.dumps(automl_config, separators=(',', ':')) if automl_config else "{}",
         X_train_path         = X_train_path,
         y_train_path         = y_train_path,
         X_test_path          = X_test_path,
@@ -521,7 +521,7 @@ def build_prompt_evaluation(
         X_test_path        = X_test_path,
         y_test_path        = y_test_path,
         task_type          = task_type,
-        training_log       = json.dumps(training_log, indent=2) if training_log else "{}",
+        training_log       = json.dumps(training_log, separators=(',', ':')) if training_log else "{}",
         feedback_context   = feedback_context or "none",
     )
     return PromptPair(system=_EVALUATION_SYSTEM, user=user)
@@ -572,8 +572,8 @@ def build_prompt_deployment(
     user = _DEPLOYMENT_USER.format(
         trained_model_path = trained_model_path,
         task_type          = task_type,
-        feature_schema     = json.dumps(feature_schema, indent=2) if feature_schema else "{}",
-        model_metrics      = json.dumps(model_metrics,  indent=2) if model_metrics  else "{}",
+        feature_schema     = json.dumps(feature_schema, separators=(',', ':')) if feature_schema else "{}",
+        model_metrics      = json.dumps(model_metrics,  separators=(',', ':')) if model_metrics  else "{}",
         feedback_context   = feedback_context or "none",
     )
     return PromptPair(system=_DEPLOYMENT_SYSTEM, user=user)

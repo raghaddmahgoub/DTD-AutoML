@@ -1,5 +1,6 @@
 import os
 import json
+from io import BytesIO
 import asyncio
 import shutil
 from agents.dynamic.controller_agent.controller_agent import ControllerAgent
@@ -139,28 +140,43 @@ def _dynamic_persist_to_mongo(report_id: str, state: dict) -> None:
 
 @app.post("/suggest-target")
 async def suggest_target(file: UploadFile = File(...)):
-    print("Received file:", file.filename if file else "NO FILE")
     try:
-        temp_path = UPLOAD_DIR / file.filename
-        with open(temp_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
+        file_bytes = await file.read()
 
-        # Load dataset
         ext = file.filename.rsplit(".", 1)[-1].lower()
+
         if ext == "csv":
-            df = pd.read_csv(temp_path)
+            df = pd.read_csv(
+                BytesIO(file_bytes),
+                low_memory=True
+            )
+
         elif ext in ("xlsx", "xls"):
-            df = pd.read_excel(temp_path)
+            df = pd.read_excel(
+                BytesIO(file_bytes),
+            )
+
         elif ext == "json":
-            df = pd.read_json(temp_path)
+            df = pd.read_json(BytesIO(file_bytes))
+
+            if len(df) > 1000:
+                df = df.head(1000)
+
         else:
-            return JSONResponse(status_code=400, content={"error": "Unsupported file format"})
+            return JSONResponse(
+                status_code=400,
+                content={"error": "Unsupported file format"}
+            )
 
         result = TargetSuggestionAgent(df).run()
+
         return JSONResponse(content=result)
 
     except Exception as e:
-        return JSONResponse(status_code=500, content={"error": str(e)})
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e)}
+        )
 
 @app.post("/run-pipeline/{dataset_id}/{report_id}")
 async def run_pipeline(

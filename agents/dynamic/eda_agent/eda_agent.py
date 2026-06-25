@@ -109,6 +109,109 @@ class EDANarrativeReport(BaseModel):
 
 
 # ─────────────────────────────────────────────
+# Helper to prune statistics passed to the LLM to save tokens
+# ─────────────────────────────────────────────
+
+def _prune_stats_for_llm(stats: dict, target_column: Optional[str]) -> dict:
+    import copy
+    pruned = copy.deepcopy(stats)
+    
+    # 1. Compact column_profiles
+    if "column_profiles" in pruned:
+        pruned_profiles = {}
+        for col, profile in pruned["column_profiles"].items():
+            col_type = profile.get("data_type")
+            is_target = (col == target_column)
+            
+            # Base fields
+            pruned_prof = {
+                "type": col_type,
+                "missing_pct": round(profile.get("missing_ratio", 0.0) * 100, 1) if profile.get("missing_ratio", 0.0) > 0 else 0,
+                "unique": profile.get("unique_count"),
+            }
+            
+            # Remove 0 missing_pct to save space
+            if pruned_prof["missing_pct"] == 0:
+                del pruned_prof["missing_pct"]
+                
+            # Numeric fields
+            if col_type == "numeric":
+                # Only include standard stats
+                for k in ["mean", "std", "min", "max", "median"]:
+                    if k in profile and profile[k] is not None:
+                        try:
+                            pruned_prof[k] = round(float(profile[k]), 2)
+                        except (ValueError, TypeError):
+                            pruned_prof[k] = profile[k]
+                # Only include outliers / skewness if they are notable or if it's the target column
+                outliers = profile.get("outlier_count_iqr", 0)
+                if outliers > 0 or is_target:
+                    pruned_prof["outliers"] = outliers
+                skew = profile.get("skewness")
+                if skew is not None:
+                    try:
+                        skew_val = float(skew)
+                        if abs(skew_val) > 1.0 or is_target:
+                            pruned_prof["skew"] = round(skew_val, 2)
+                    except (ValueError, TypeError):
+                        pass
+            
+            # Categorical fields
+            elif col_type == "categorical":
+                if "top_values" in profile:
+                    # Keep top 3 values instead of top 5 to save space
+                    top_vals = profile["top_values"]
+                    if isinstance(top_vals, dict):
+                        pruned_prof["top_values"] = dict(list(top_vals.items())[:3])
+            
+            pruned_profiles[col] = pruned_prof
+        pruned["column_profiles"] = pruned_profiles
+
+    # 2. Compact target_analysis
+    if "target_analysis" in pruned and pruned["target_analysis"]:
+        ta = pruned["target_analysis"]
+        for k in ["mean", "std", "min", "max", "skewness", "outlier_ratio_iqr", "imbalance_ratio", "minority_class_ratio"]:
+            if k in ta and ta[k] is not None:
+                try:
+                    ta[k] = round(float(ta[k]), 3)
+                except (ValueError, TypeError):
+                    pass
+        if "class_distribution" in ta and ta["class_distribution"]:
+            ta["class_distribution"] = {str(k): round(float(v), 3) for k, v in ta["class_distribution"].items()}
+
+    # 3. Compact relationships
+    if "relationships" in pruned and pruned["relationships"]:
+        rel = pruned["relationships"]
+        if "numeric_correlations" in rel and rel["numeric_correlations"]:
+            # Only keep strong correlations or top ones
+            pairs = rel["numeric_correlations"].get("strong_pairs") or []
+            # Keep top 15 pairs at most to avoid token flooding
+            rel["numeric_correlations"]["strong_pairs"] = pairs[:15]
+        if "target_relationships" in rel and rel["target_relationships"]:
+            tr = rel["target_relationships"]
+            if "feature_correlations" in tr and tr["feature_correlations"]:
+                # Round correlations to 3 decimals
+                tr["feature_correlations"] = {k: round(float(v), 3) for k, v in tr["feature_correlations"].items()}
+            if "group_means" in tr and tr["group_means"]:
+                # Round group means to 2 decimals
+                gm_pruned = {}
+                for col, val_dict in tr["group_means"].items():
+                    if isinstance(val_dict, dict):
+                        gm_pruned[col] = {str(k): round(float(v), 2) for k, v in val_dict.items()}
+                tr["group_means"] = gm_pruned
+
+    # 4. Compact signal_analysis
+    if "signal_analysis" in pruned and pruned["signal_analysis"]:
+        sa = pruned["signal_analysis"]
+        if "univariate_class_signal" in sa and sa["univariate_class_signal"]:
+            sa["univariate_class_signal"] = {k: round(float(v), 2) for k, v in sa["univariate_class_signal"].items()}
+        if "linear_signal_strength" in sa and sa["linear_signal_strength"]:
+            sa["linear_signal_strength"] = {k: round(float(v), 2) for k, v in sa["linear_signal_strength"].items()}
+
+    return pruned
+
+
+# ─────────────────────────────────────────────
 # Agent class
 # ─────────────────────────────────────────────
 
@@ -250,10 +353,11 @@ class EDAAgent:
             nl_query         = nl_query,
         )
 
+        llm_stats = _prune_stats_for_llm(computed_stats, target_column)
         user_prompt = (
             f"{prompts.user}\n\n"
             f"Dataset statistics (JSON):\n"
-            f"{json.dumps(computed_stats, indent=2, default=str)}\n\n"
+            f"{json.dumps(llm_stats, separators=(',', ':'), default=str)}\n\n"
             f"You may additionally request UP TO 5 extra targeted plots in "
             f"`visualizations` (only if they add real analytical value beyond "
             f"the standard plots already generated: missing values, correlation "
