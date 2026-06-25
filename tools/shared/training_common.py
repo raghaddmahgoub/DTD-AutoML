@@ -216,6 +216,14 @@ def load_training_context(pipeline_state: dict[str, Any]) -> tuple[dict[str, Any
     }, None
 
 
+def align_features_for_model(model: Any, X: pd.DataFrame) -> pd.DataFrame:
+    """Apply the same dummy-column shape expected by a fitted sklearn model."""
+    if hasattr(model, "feature_names_in_"):
+        X_aligned = pd.get_dummies(X, drop_first=True)
+        return X_aligned.reindex(columns=model.feature_names_in_, fill_value=0)
+    return X
+
+
 def _prediction_labels(y_true_np: np.ndarray, y_pred_np: np.ndarray) -> np.ndarray:
     if y_pred_np.ndim > 1:
         return y_pred_np.argmax(axis=1)

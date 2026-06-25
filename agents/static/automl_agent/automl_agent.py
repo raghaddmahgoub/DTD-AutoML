@@ -28,11 +28,11 @@ except ImportError:
     xgb = None  # type: ignore[assignment]
 
 from langgraph.graph import StateGraph, END
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from dotenv import load_dotenv
 
 from src.utils.logger import Logger
+from tools.shared.llm_client import get_llm
 
 # Load environment variables
 load_dotenv()
@@ -69,11 +69,7 @@ class AutoMLAgent:
        
         self.model_name = model_name
         model_name = "gemini-2.5-flash"
-        self.llm = ChatGoogleGenerativeAI(
-            model=model_name,
-            google_api_key=os.getenv("GOOGLE_API_KEY"),
-            temperature=0.3,
-        )
+        self.llm = get_llm(model_name=model_name, temperature=0.3)
         
         
         self.graph = self._build_graph()
