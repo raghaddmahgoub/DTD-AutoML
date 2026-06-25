@@ -9,6 +9,7 @@ from tools.training.training_engines import train_autogluon as run_autogluon
 from tools.shared import ensure_state, parse_tool_input
 from tools.shared.training_common import (
     APPROACH_AUTOGLUON,
+    align_features_for_model,
     apply_test_metrics,
     complete_training,
     load_training_context,
@@ -49,7 +50,12 @@ def train_autogluon(task, tool_input, prompt, data_path, llm, state=None):
         print(f"[train_autogluon] Actual trainer: {metrics.get('training_method')}")
         print("!" * 70 + "\n")
 
-    preds = model.predict(ctx["X_test"])
+    X_test = (
+        align_features_for_model(model, ctx["X_test"])
+        if not metrics.get("autogluon_used", True)
+        else ctx["X_test"]
+    )
+    preds = model.predict(X_test)
     metrics = apply_test_metrics(metrics, ctx["y_test"], preds, ctx["problem_type"])
 
     return complete_training(

@@ -9,6 +9,7 @@ from tools.training.training_engines import train_simple_defaults
 from tools.shared import ensure_state, parse_tool_input
 from tools.shared.training_common import (
     APPROACH_SIMPLE,
+    align_features_for_model,
     apply_test_metrics,
     complete_training,
     load_training_context,
@@ -41,7 +42,8 @@ def train_simple(task, tool_input, prompt, data_path, llm, state=None):
     model, metrics = train_simple_defaults(
         ctx["X_train"], ctx["y_train"], ctx["problem_type"], models
     )
-    preds = model.predict(ctx["X_test"])
+    X_test = align_features_for_model(model, ctx["X_test"])
+    preds = model.predict(X_test)
     metrics = apply_test_metrics(metrics, ctx["y_test"], preds, ctx["problem_type"])
 
     return complete_training(

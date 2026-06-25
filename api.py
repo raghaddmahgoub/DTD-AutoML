@@ -6,6 +6,7 @@ import shutil
 from agents.dynamic.controller_agent.controller_agent import ControllerAgent
 from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
 from bson import ObjectId
 from pymongo import MongoClient
@@ -28,6 +29,10 @@ pipeline_instance = DTDPipeline()
 BASE_DIR = Path(__file__).resolve().parent
 UPLOAD_DIR = BASE_DIR / "uploads"
 UPLOAD_DIR.mkdir(exist_ok=True)
+
+PLOT_OUTPUT_DIR = BASE_DIR.parents[2] / "Output"
+PLOT_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/Output", StaticFiles(directory=str(PLOT_OUTPUT_DIR)), name="plot_output")
 
 # --- Mongo connection ---
 client = MongoClient(MONGO_URI)

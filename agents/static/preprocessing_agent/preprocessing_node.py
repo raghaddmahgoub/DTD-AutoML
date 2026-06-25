@@ -30,6 +30,7 @@ import os
 import logging
 import json
 from dotenv import load_dotenv
+from tools.shared.llm_fallback import call_qwen_fallback
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 load_dotenv(PROJECT_ROOT / ".env")
@@ -105,6 +106,7 @@ class PreprocessingNode:
         self.google_api_key = os.getenv(
             self.config.get("google_api_key_env", "GOOGLE_API_KEY")
         ) or os.getenv("GOOGLE_API_KEY")
+        self._last_gemini_error = ""
         logger.debug("PreprocessingNode initialised | gemini_credentials=%s", bool(
             self.google_api_key))
 
@@ -289,11 +291,13 @@ class PreprocessingNode:
             )
 
     def _has_llm_credentials(self) -> bool:
-        return bool(self.google_api_key)
+        return bool(self.google_api_key or os.getenv("HF_TOKEN"))
 
     def _call_gemini(self, prompt: str) -> Optional[str]:
+        self._last_gemini_error = ""
         if not self.google_api_key:
-            logger.warning("Gemini: no API key available")
+            self._last_gemini_error = "Gemini: no API key available"
+            logger.warning(self._last_gemini_error)
             return None
         model = str(self.config.get("gemini_model", "gemma-4-31b-it"))
         logger.debug("Gemini: calling model=%s", model)
@@ -314,11 +318,13 @@ class PreprocessingNode:
             with urllib.request.urlopen(request, timeout=30) as response:
                 body = response.read().decode("utf-8")
         except urllib.error.HTTPError as e:
-            logger.error("Gemini HTTP error: %s — %s",
-                         e.code, e.read().decode()[:200])
+            error_body = e.read().decode("utf-8")[:200]
+            self._last_gemini_error = f"Gemini HTTP error: {e.code} - {error_body}"
+            logger.error(self._last_gemini_error)
             return None
         except (urllib.error.URLError, TimeoutError) as e:
-            logger.error("Gemini connection error: %s", str(e))
+            self._last_gemini_error = f"Gemini connection error: {e}"
+            logger.error(self._last_gemini_error)
             return None
 
         try:
@@ -331,13 +337,36 @@ class PreprocessingNode:
             )
             logger.debug("Gemini: response received (%d chars)",
                          len(text) if text else 0)
+            if not text:
+                self._last_gemini_error = "Gemini response was empty"
             return text
         except (json.JSONDecodeError, IndexError, KeyError, TypeError) as e:
-            logger.error("Gemini response parse error: %s", str(e))
+            self._last_gemini_error = f"Gemini response parse error: {e}"
+            logger.error(self._last_gemini_error)
             return None
 
     def _call_llm(self, prompt: str) -> Optional[str]:
-        return self._call_gemini(prompt)
+        print("[LLM] Trying Gemini 2.5 Flash...")
+        try:
+            text = self._call_gemini(prompt)
+            if not text or not str(text).strip():
+                raise ValueError(self._last_gemini_error or "Gemini returned an empty response")
+            print("[LLM] Gemini succeeded.")
+            return text
+        except Exception as exc:
+            print(f"[LLM] Gemini failed: {exc}")
+            print("[LLM] Trying fallback LLM: Qwen2.5-7B...")
+
+        try:
+            text = call_qwen_fallback(prompt, temperature=0.0)
+            if not text or not str(text).strip():
+                raise ValueError("Qwen returned an empty response")
+            print("[LLM] Qwen fallback succeeded.")
+            return text
+        except Exception as exc:
+            print(f"[LLM] Qwen fallback failed: {exc}")
+            print("[LLM] Returning safe default response.")
+            return None
 
     def _parse_llm_json(self, text: str) -> Optional[Dict[str, Any]]:
         if not text:
