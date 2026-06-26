@@ -31,7 +31,6 @@ class IntentFlagsDict(TypedDict):
     feature_engineering: bool
     model_selection:     bool
     training:            bool
-    evaluation:          bool
     deployment:          bool
     target_column:           Optional[str]
     task_type:               str  # "classification"|"regression"|"clustering"|"unknown"
@@ -143,7 +142,6 @@ def make_initial_state(data_path: str, nl_query: str, run_id: Optional[str] = No
             feature_engineering=False,
             model_selection=False,
             training=False,
-            evaluation=False,
             deployment=False,
             target_column=None,
             task_type="unknown",

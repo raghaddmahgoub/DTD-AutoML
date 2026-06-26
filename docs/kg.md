@@ -18,7 +18,7 @@ I am building a Knowledge Graph feature for my D.T.D (Data To Deployment) AutoML
 ## Pipeline Agents (in order)
 
 ```
-Intent Detector → EDA → Preprocessing → Feature Engineering → Model Selection → Training → Evaluation → Deployment
+Intent Detector → EDA → Preprocessing → Feature Engineering → Model Selection → Training → Deployment
 ```
 
 All agents communicate through a shared `PipelineState` TypedDict. Each agent writes its output to:
@@ -381,7 +381,7 @@ frontend/src/Components/Pages/KnowledgeGraph/
 export default function EDAGraphPage({ runId }) {
     return <KnowledgeGraph runId={runId} stage="eda" title="EDA Knowledge Graph" />;
 }
-// Same pattern: stage="preprocessing", "feature_engineering", "model_selection", "training", "evaluation"
+// Same pattern: stage="preprocessing", "feature_engineering", "model_selection", "training"
 ```
 
 ### `GraphView.jsx`:

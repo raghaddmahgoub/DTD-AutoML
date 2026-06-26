@@ -14,7 +14,6 @@ Consumers:
     - agents/intent_detector.py
     - agents/model_selection_agent.py
     - agents/feature_engineering_agent.py
-    - agents/evaluation_agent.py
     - agents/deployment_agent.py
 """
 

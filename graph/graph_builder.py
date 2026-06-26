@@ -254,7 +254,6 @@ def build_graph() -> any:
           → feature_engineering_agent → feature_engineering_checkpoint
           → model_selection_agent → model_selection_checkpoint
           → training_agent → training_checkpoint
-          → (evaluation runs as subnode inside training_agent)
           → deployment_agent → deployment_checkpoint
           → pipeline_done
         END
