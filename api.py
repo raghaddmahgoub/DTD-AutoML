@@ -410,6 +410,17 @@ async def dynamic_run_pipeline(
     print(f"[API][TRACE] /dynamic/run/{report_id} response conversion completed in {(response_end - response_start).total_seconds()}s")
     # Use the recorded run end time to report actual pipeline execution duration
     print(f"[API][TRACE] /dynamic/run/{report_id} total processing time: {(run_ended_at - run_started_at).total_seconds()}s")
+    
+    # Store end_time in MongoDB
+    print(f"[API][TRACE] Storing end_time in MongoDB for report_id={report_id}")
+    mongo_start = datetime.utcnow()
+    reports_collection.update_one(
+        {"_id": ObjectId(report_id)},
+        {"$set": {"end_time": datetime.utcnow(), "dynamic_status": "completed"}},
+    )
+    mongo_end = datetime.utcnow()
+    print(f"[API][TRACE] MongoDB end_time storage completed in {(mongo_end - mongo_start).total_seconds()}s")
+    
     return JSONResponse(content=response)
 
 @app.post("/dynamic/resume/{run_id}")
