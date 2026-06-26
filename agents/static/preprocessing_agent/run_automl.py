@@ -20,7 +20,7 @@ from agents.static.preprocessing_agent.automl_preprocessing_search import automl
 
 
 # ================== CONFIG ==================
-DATASET_NAME = "Titanic-Dataset"   # adult_census | breast_cancer | titanic
+DATASET_NAME = "Titanic-Dataset"   
 TARGETS = {
     "adult_census": "income",
     "breast_cancer": "diagnosis",
@@ -120,9 +120,7 @@ def main():
     )
 
     best_pipeline, best_cv_score, best_config = automl_preprocessing_search(
-        X_train, y_train, task_type=task_type, metric=metric, cv=5,  # search (library module)
-        # optional: if you updated automl_preprocessing_search to accept output_dir, pass it here:
-        # output_dir=OUTPUT_DIR
+        X_train, y_train, task_type=task_type, metric=metric, cv=5,  
     )
 
     # Fit the final pipeline on train and evaluate

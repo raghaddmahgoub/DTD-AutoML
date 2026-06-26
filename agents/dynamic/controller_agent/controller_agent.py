@@ -559,23 +559,13 @@ def main():
 
     # ── New run mode ──────────────────────────────────────────────────────────
     else:
-        # if not args.data or not args.query:
-        #     parser.error("--data and --query are required for a new run.\n"
-        #                  "Use --help to see all options.")
-
-        # result = agent.run({
-        #     "data_path":     args.data,
-        #     "prompt":        args.query,
-        #     "target_column": args.target,
-        #     "run_id":        args.run_id,
-        # })
+    
         data_path = args.data
         prompt = args.query
         target_column = args.target
 
         if not data_path:
             default_path = _PROJECT_ROOT / "benchmark/datasets/diabetes130/diabetic_data.csv"
-            # default_path = _PROJECT_ROOT / "assets/data/Classification Datasets/Titanic/Titanic-Dataset.csv"
             if default_path.exists():
                 data_path = str(default_path)
             else:

@@ -171,8 +171,6 @@ class DeploymentAgent:
 
             # Copy model pkl file to same folder
             shutil.copy2(trained_model_path, deploy_dir / "model.pkl")
-
-            # Auto-detect if LLM used another filename like model_1.pkl or model_1.0.pkl (handles f-strings)
             import re
             version_match = re.search(r'(?:MODEL_)?VERSION\s*=\s*["\']([\w\.]+)["\']', api_server_code, re.IGNORECASE)
             version = version_match.group(1) if version_match else "1.0"

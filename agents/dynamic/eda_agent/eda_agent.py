@@ -156,7 +156,6 @@ def _prune_stats_for_llm(stats: dict, target_column: Optional[str]) -> dict:
                     except (ValueError, TypeError):
                         pass
             
-            # Categorical fields
             elif col_type == "categorical":
                 if "top_values" in profile:
                     # Keep top 3 values instead of top 5 to save space
@@ -366,10 +365,6 @@ class EDAAgent:
 
         logger.info("[EDAAgent] Invoking LLM…")
         update_step("Narrative Report", "running")
-        # report: EDANarrativeReport = self.llm.invoke([
-        #     SystemMessage(content=prompts.system),
-        #     HumanMessage(content=user_prompt),
-        # ])
         report: EDANarrativeReport = self._invoke_llm(prompts.system, user_prompt)
 
         logger.info("[EDAAgent] Report title=%r | %d sections | %d extra viz requested",

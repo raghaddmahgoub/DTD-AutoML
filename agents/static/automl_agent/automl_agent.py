@@ -476,19 +476,6 @@ class AutoMLAgent:
             )
 
             # --- LLM strategy assessment block ---
-            # try:
-            #     training_strategy_prompt = (
-            #         f"Assess this strategy: {'AutoGluon' if use_automl else 'Simple'}."
-            #         f" Reasoning: {model_selection_reasoning[:500]}"
-            #     )
-            #     strategy_messages = [
-            #         SystemMessage(content="You are an ML engineer. Provide brief insights."),
-            #         HumanMessage(content=training_strategy_prompt)
-            #     ]
-            #     strategy_response = self.llm.invoke(strategy_messages)
-            #     training_insight = strategy_response.content
-            # except Exception:
-            #     training_insight = "Executing training strategy..."
 
             data = state['data']
             target_column = state['target_column']
@@ -832,18 +819,6 @@ Provide your analysis and decision:
                             ]
                         else:
                             selected_models = []
-                        # if isinstance(state['data'], dd.DataFrame):
-                        #     selected_models = data.get("dask_models", [])
-                        # else:
-                        #     # selected_models = data.get("simple_models", [])
-                        #     raw_models = data.get("simple_models")
-                        #     selected_models = (
-                        #         [str(m).strip() for m in raw_models if m]
-                        #         if isinstance(raw_models, list)
-                        #         else [raw_models.strip()]
-                        #         if isinstance(raw_models, str) and raw_models.strip()
-                        #         else []
-                        #     )
 
         except Exception as e:
             logger.warn(f"JSON parsing failed, falling back to regex: {e}")
@@ -1027,9 +1002,6 @@ Provide your analysis and decision:
                 # AutoGluon hyperparameters format: {'MODEL_TYPE': {}}
                 for model_type in ag_models:
                     hyperparameters[model_type] = {}
-            
-            # Train with specified configuration
-            # Note: AutoGluon will automatically select the best model after training all specified models
 
             fit_kwargs = {
                 "time_limit": time_limit,

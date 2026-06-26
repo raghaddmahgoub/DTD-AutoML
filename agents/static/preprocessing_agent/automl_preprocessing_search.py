@@ -25,9 +25,9 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 def _make_ohe() -> OneHotEncoder:
     """Return an OneHotEncoder that outputs dense arrays across sklearn versions."""
     try:
-        return OneHotEncoder(handle_unknown="ignore", sparse_output=False)  # sklearn >= 1.2
+        return OneHotEncoder(handle_unknown="ignore", sparse_output=False)   
     except TypeError:
-        return OneHotEncoder(handle_unknown="ignore", sparse=False)         # sklearn <= 1.1
+        return OneHotEncoder(handle_unknown="ignore", sparse=False)        
 
 
 def _pick_model(task_type: str) -> List[Tuple[str, object]]:
@@ -99,7 +99,7 @@ def automl_preprocessing_search(
         ("median", "most_frequent", StandardScaler()),
         ("mean", "most_frequent", MinMaxScaler()),
         ("median", "most_frequent", MinMaxScaler()),
-        ("median", "most_frequent", None),  # trees often don't need scaling
+        ("median", "most_frequent", None),  
     ]
 
     best: Dict[str, object] = {"score": -np.inf, "pipeline": None, "config": None}
@@ -135,7 +135,7 @@ def automl_preprocessing_search(
             output_dir.mkdir(parents=True, exist_ok=True)
             cfg_path = output_dir / "best_preprocessing.json"
             with open(cfg_path, "w", encoding="utf-8") as f:
-                json.dump(best["config"], f, indent=2)  # type: ignore[arg-type]
+                json.dump(best["config"], f, indent=2)  
         except Exception as e:
             # Non-fatal: just print and continue
             print(f"Warning: failed to write best_preprocessing.json: {e}")
