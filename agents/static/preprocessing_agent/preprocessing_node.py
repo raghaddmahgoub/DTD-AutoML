@@ -297,6 +297,12 @@ class PreprocessingNode:
     def _has_llm_credentials(self) -> bool:
         return bool(self.google_api_key or os.getenv("HF_TOKEN"))
 
+    def _datetime_fill_value(self, converted: pd.Series) -> pd.Timestamp:
+        mode_val = converted.dropna().mode()
+        if not mode_val.empty:
+            return mode_val.iloc[0]
+        return pd.Timestamp("1970-01-01", tz="UTC")
+
     def _call_google_model(self, prompt: str, model: str, provider_label: str) -> Optional[str]:
         self._last_gemini_error = ""
         if not self.google_api_key:
@@ -778,7 +784,7 @@ class PreprocessingNode:
             if dtype_choice == "numeric":
                 converted = pd.to_numeric(s, errors="coerce")
             elif dtype_choice == "datetime":
-                converted = pd.to_datetime(s, errors="coerce")
+                converted = pd.to_datetime(s, errors="coerce", utc=True)
             else:
                 converted = s.astype("string")
 
@@ -805,7 +811,7 @@ class PreprocessingNode:
                     converted = converted.fillna(
                         float(converted.median()) if converted.notna().any() else 0.0)
             elif dtype_choice == "datetime":
-                converted = converted.fillna(pd.Timestamp("1970-01-01"))
+                converted = converted.fillna(self._datetime_fill_value(converted))
             else:
                 if missing_method in {"mode", "keep"}:
                     mode_val = converted.mode(dropna=True)
@@ -842,6 +848,7 @@ class PreprocessingNode:
             if dtype_choice == "datetime":
                 if policy.get("feature_creation", {}).get("method") == "datetime_parts":
                     converted = pd.to_datetime(s, errors="coerce", utc=True)
+                    converted = converted.fillna(self._datetime_fill_value(converted))
                     if pd.api.types.is_datetime64_any_dtype(converted):
                         feature_frames.append(
                             pd.DataFrame(
