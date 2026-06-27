@@ -5,7 +5,7 @@ D.T.D (Data To Deployment) — Multi-Agent AutoML Pipeline
 Tool: LLM Client Factory
 Responsibility:
     Single place that constructs and returns a configured
-    ChatGoogleGenerativeAI instance (Gemini 2.5 Flash).
+    LangChain-compatible LLM wrapper.
 
     All agents call get_llm() so model name, API key handling,
     and defaults are never duplicated across agent files.
@@ -23,11 +23,11 @@ from typing import Optional
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from tools.shared.llm_fallback import GeminiQwenFallbackLLM
+from tools.shared.llm_fallback import MultiProviderFallbackLLM, PRIMARY_MODEL
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_MODEL = "gemma-4-31b-it"
+_DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-lite"
 
 
 class _MissingGeminiLLM:
@@ -44,24 +44,26 @@ class _MissingGeminiLLM:
 
 
 def get_llm(
-    model_name: str = _DEFAULT_MODEL,
+    model_name: str = _DEFAULT_GEMINI_MODEL,
     temperature: float = 0.0,
     google_api_key: Optional[str] = None,
-) -> GeminiQwenFallbackLLM:
+    primary_model_name: Optional[str] = None,
+) -> MultiProviderFallbackLLM:
     """
-    Construct and return a ChatGoogleGenerativeAI instance.
+    Construct and return the shared fallback LLM wrapper.
 
     API key resolution order:
         1. Explicit google_api_key argument
         2. GOOGLE_API_KEY environment variable
 
     Args:
-        model_name:     Gemini model string. Defaults to "gemma-4-31b-it".
+        model_name:     Gemini fallback model string.
         temperature:    0.0 = deterministic (default for all structured calls).
         google_api_key: Optional explicit key (overrides env var).
+        primary_model_name: Optional primary model override.
 
     Returns:
-        ChatGoogleGenerativeAI instance.
+        LangChain-compatible LLM wrapper.
         Bind structured output with:
             llm = get_llm().with_structured_output(MyPydanticModel)
 
@@ -72,14 +74,42 @@ def get_llm(
     if not api_key:
         reason = "GOOGLE_API_KEY not found."
         logger.warning(reason)
-        return GeminiQwenFallbackLLM(_MissingGeminiLLM(reason), temperature=temperature)
+        missing_llm = _MissingGeminiLLM(reason)
+        return MultiProviderFallbackLLM(
+            missing_llm,
+            missing_llm,
+            temperature=temperature,
+        )
 
-    logger.debug("[LLMClient] Building %s (temp=%.1f)", model_name, temperature)
+    primary_model = (
+        primary_model_name
+        or os.getenv("PRIMARY_LLM_MODEL")
+        or os.getenv("GEMMA_MODEL")
+        or PRIMARY_MODEL
+    )
+    gemini_model = os.getenv("GEMINI_FALLBACK_MODEL") or model_name
 
-    gemini_llm = ChatGoogleGenerativeAI(
-        model=model_name,
+    logger.debug(
+        "[LLMClient] Building primary=%s fallback=%s (temp=%.1f)",
+        primary_model,
+        gemini_model,
+        temperature,
+    )
+
+    primary_llm = ChatGoogleGenerativeAI(
+        model=primary_model,
         temperature=temperature,
         google_api_key=api_key,
     )
 
-    return GeminiQwenFallbackLLM(gemini_llm, temperature=temperature)
+    gemini_llm = ChatGoogleGenerativeAI(
+        model=gemini_model,
+        temperature=temperature,
+        google_api_key=api_key,
+    )
+
+    return MultiProviderFallbackLLM(
+        primary_llm,
+        gemini_llm,
+        temperature=temperature,
+    )

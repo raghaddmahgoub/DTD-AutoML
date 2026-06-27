@@ -569,7 +569,7 @@ def main():
             if default_path.exists():
                 data_path = str(default_path)
             else:
-                default_path_alt = _PROJECT_ROOT / "assets/data/Datasets/Classification Datasets/Iris.csv"
+                default_path_alt = _PROJECT_ROOT / "assets/data/Classification Datasets/Titanic/Titanic-Dataset.csv"
                 if default_path_alt.exists():
                     data_path = str(default_path_alt)
                 else:

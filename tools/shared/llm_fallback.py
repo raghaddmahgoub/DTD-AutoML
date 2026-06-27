@@ -1,7 +1,9 @@
-"""Shared Gemini-first LLM fallback helpers.
+"""Shared LLM fallback helpers.
 
-Gemini remains the primary model. Qwen is called only after Gemini fails,
-returns an empty/unusable response, or raises an exception.
+Provider order:
+    1. Primary Gemma model
+    2. Gemini fallback
+    3. Qwen fallback
 """
 from __future__ import annotations
 
@@ -16,7 +18,8 @@ from langchain_core.messages import AIMessage
 
 logger = logging.getLogger(__name__)
 
-QWEN_MODEL = "Qwen/Qwen2.5-7B-Instruct"
+PRIMARY_MODEL = os.getenv("PRIMARY_LLM_MODEL") or os.getenv("GEMMA_MODEL") or "gemma-4-31b-it"
+QWEN_MODEL = os.getenv("QWEN_FALLBACK_MODEL", "Qwen/Qwen2.5-7B-Instruct")
 HF_ROUTER_URL = "https://router.huggingface.co/v1/chat/completions"
 HF_LEGACY_URL = f"https://api-inference.huggingface.co/models/{QWEN_MODEL}"
 HF_TIMEOUT_SECONDS = 60
@@ -27,6 +30,21 @@ def _terminal_log(message: str) -> None:
     """Print the required LLM fallback logs and also send them to logging."""
     print(message)
     logger.info(message)
+
+
+def _raise_or_return_safe_default(
+    safe_default: Optional[Any],
+    primary_error: Optional[BaseException],
+    gemini_error: Optional[BaseException],
+    qwen_error: Optional[BaseException],
+) -> Any:
+    _terminal_log("All LLM providers failed")
+    if safe_default is not None:
+        return safe_default
+    error = qwen_error or gemini_error or primary_error
+    if error is not None:
+        raise error
+    raise RuntimeError("All LLM providers failed")
 
 
 def _response_text(response: Any) -> str:
@@ -190,54 +208,80 @@ def call_qwen_fallback(
 
 def call_text_llm_with_fallback(
     prompt: Any,
+    primary_call: Callable[[Any], Any],
     gemini_call: Callable[[Any], Any],
     *,
-    safe_default: Optional[str] = None,
+    safe_default: Optional[Any] = None,
     temperature: float = 0.0,
+    qwen_as_message: bool = True,
 ) -> Any:
-    """Run a plain-text Gemini call, then Qwen only if Gemini fails."""
-    _terminal_log("[LLM] Trying Gemini 2.5 Flash...")
+    """Run primary Gemma, then Gemini, then Qwen if needed."""
+    primary_error: Optional[BaseException] = None
+    gemini_error: Optional[BaseException] = None
+    qwen_error: Optional[BaseException] = None
+
+    _terminal_log(f"Trying primary LLM: {PRIMARY_MODEL}")
+    try:
+        response = primary_call(prompt)
+        if _is_empty_response(response):
+            raise ValueError("Primary LLM returned an empty response")
+        _terminal_log("Primary LLM succeeded")
+        return response
+    except Exception as exc:
+        primary_error = exc
+        _terminal_log(f"Primary LLM failed: {exc}")
+
+    _terminal_log("Trying first fallback LLM: Gemini")
     try:
         response = gemini_call(prompt)
         if _is_empty_response(response):
             raise ValueError("Gemini returned an empty response")
-        _terminal_log("[LLM] Gemini succeeded.")
+        _terminal_log("Gemini fallback succeeded")
         return response
     except Exception as exc:
-        _terminal_log(f"[LLM] Gemini failed: {exc}")
-        _terminal_log("[LLM] Trying fallback LLM: Qwen2.5-7B...")
+        gemini_error = exc
+        _terminal_log(f"Gemini fallback failed: {exc}")
 
+    _terminal_log("Trying second fallback LLM: Qwen")
     try:
         text = call_qwen_fallback(prompt, temperature=temperature)
         if not text.strip():
             raise ValueError("Qwen returned an empty response")
-        _terminal_log("[LLM] Qwen fallback succeeded.")
-        return AIMessage(content=text)
+        _terminal_log("Qwen fallback succeeded")
+        return AIMessage(content=text) if qwen_as_message else text
     except Exception as exc:
-        _terminal_log(f"[LLM] Qwen fallback failed: {exc}")
-        _terminal_log("[LLM] Returning safe default response.")
-        return safe_default
+        qwen_error = exc
+        _terminal_log(f"Qwen fallback failed: {exc}")
+        return _raise_or_return_safe_default(
+            safe_default, primary_error, gemini_error, qwen_error
+        )
 
 
-class GeminiQwenFallbackLLM:
+class MultiProviderFallbackLLM:
     """Small adapter preserving the LangChain .invoke/.with_structured_output shape."""
 
-    def __init__(self, gemini_llm: Any, *, temperature: float = 0.0):
+    def __init__(self, primary_llm: Any, gemini_llm: Any, *, temperature: float = 0.0):
+        self.primary_llm = primary_llm
         self.gemini_llm = gemini_llm
         self.temperature = temperature
 
     def invoke(self, prompt: Any, *args: Any, **kwargs: Any) -> Any:
         return call_text_llm_with_fallback(
             prompt,
+            lambda value: self.primary_llm.invoke(value, *args, **kwargs),
             lambda value: self.gemini_llm.invoke(value, *args, **kwargs),
             temperature=self.temperature,
         )
 
-    def with_structured_output(self, schema: Any, *args: Any, **kwargs: Any) -> "GeminiQwenStructuredFallbackLLM":
+    def with_structured_output(self, schema: Any, *args: Any, **kwargs: Any) -> "MultiProviderStructuredFallbackLLM":
+        structured_primary = self.primary_llm.with_structured_output(
+            schema, *args, **kwargs
+        )
         structured_gemini = self.gemini_llm.with_structured_output(
             schema, *args, **kwargs
         )
-        return GeminiQwenStructuredFallbackLLM(
+        return MultiProviderStructuredFallbackLLM(
+            structured_primary,
             structured_gemini,
             schema,
             temperature=self.temperature,
@@ -247,27 +291,43 @@ class GeminiQwenFallbackLLM:
         return getattr(self.gemini_llm, name)
 
 
-class GeminiQwenStructuredFallbackLLM:
-    """Adapter for Gemini structured output with Qwen JSON fallback."""
+class MultiProviderStructuredFallbackLLM:
+    """Adapter for structured output with Gemma, Gemini, then Qwen JSON fallback."""
 
-    def __init__(self, gemini_llm: Any, schema: Any, *, temperature: float = 0.0):
+    def __init__(self, primary_llm: Any, gemini_llm: Any, schema: Any, *, temperature: float = 0.0):
+        self.primary_llm = primary_llm
         self.gemini_llm = gemini_llm
         self.schema = schema
         self.temperature = temperature
 
     def invoke(self, prompt: Any, *args: Any, **kwargs: Any) -> Any:
-        _terminal_log("[LLM] Trying Gemini 2.5 Flash...")
+        primary_error: Optional[BaseException] = None
+        gemini_error: Optional[BaseException] = None
+        qwen_error: Optional[BaseException] = None
+
+        _terminal_log(f"Trying primary LLM: {PRIMARY_MODEL}")
+        try:
+            response = self.primary_llm.invoke(prompt, *args, **kwargs)
+            if response is None:
+                raise ValueError("Primary LLM returned an empty response")
+            _terminal_log("Primary LLM succeeded")
+            return response
+        except Exception as exc:
+            primary_error = exc
+            _terminal_log(f"Primary LLM failed: {exc}")
+
+        _terminal_log("Trying first fallback LLM: Gemini")
         try:
             response = self.gemini_llm.invoke(prompt, *args, **kwargs)
             if response is None:
                 raise ValueError("Gemini returned an empty response")
-            _terminal_log("[LLM] Gemini succeeded.")
+            _terminal_log("Gemini fallback succeeded")
             return response
         except Exception as exc:
             gemini_error = exc
-            _terminal_log(f"[LLM] Gemini failed: {exc}")
-            _terminal_log("[LLM] Trying fallback LLM: Qwen2.5-7B...")
+            _terminal_log(f"Gemini fallback failed: {exc}")
 
+        _terminal_log("Trying second fallback LLM: Qwen")
         try:
             text = call_qwen_fallback(
                 prompt,
@@ -277,12 +337,28 @@ class GeminiQwenStructuredFallbackLLM:
             if not text.strip():
                 raise ValueError("Qwen returned an empty response")
             parsed = _parse_schema(self.schema, text)
-            _terminal_log("[LLM] Qwen fallback succeeded.")
+            _terminal_log("Qwen fallback succeeded")
             return parsed
         except Exception as exc:
-            _terminal_log(f"[LLM] Qwen fallback failed: {exc}")
-            _terminal_log("[LLM] Returning safe default response.")
-            raise gemini_error
+            qwen_error = exc
+            _terminal_log(f"Qwen fallback failed: {exc}")
+            return _raise_or_return_safe_default(
+                None, primary_error, gemini_error, qwen_error
+            )
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self.gemini_llm, name)
+
+
+class GeminiQwenFallbackLLM(MultiProviderFallbackLLM):
+    """Compatibility wrapper for older Gemini-first imports."""
+
+    def __init__(self, gemini_llm: Any, *, temperature: float = 0.0):
+        super().__init__(gemini_llm, gemini_llm, temperature=temperature)
+
+
+class GeminiQwenStructuredFallbackLLM(MultiProviderStructuredFallbackLLM):
+    """Compatibility wrapper for older Gemini-first structured imports."""
+
+    def __init__(self, gemini_llm: Any, schema: Any, *, temperature: float = 0.0):
+        super().__init__(gemini_llm, gemini_llm, schema, temperature=temperature)
