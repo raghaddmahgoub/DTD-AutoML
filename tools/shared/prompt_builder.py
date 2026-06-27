@@ -70,12 +70,11 @@ Available pipeline steps:
   3. Feature Engineering — feature synthesis, selection, dimensionality reduction
   4. Model Selection    — choose training backend and model families
   5. Model Training     — AutoGluon / XGBoost / sklearn + Optuna HPO
-  6. Evaluation         — metrics, SHAP explanations, diagnostics
   7. Deployment         — FastAPI endpoint + Dockerfile
 
 Routing rules:
   - "just preprocess" / "only clean"           → only preprocessing = true
-  - "train a model" / "build a model"          → preprocessing, model_selection, training, evaluation = true
+  - "train a model" / "build a model"          → preprocessing, model_selection, training = true
   - "full pipeline" / "end to end" / "all"     → all flags = true
   - "analyse" / "analysis" / "explore"         → eda = true
   - "deploy" / "serve" / "api"                 → deployment = true (+ training chain if no model yet)
@@ -95,7 +94,6 @@ Output schema:
   "feature_engineering":true | false,
   "model_selection":    true | false,
   "training":           true | false,
-  "evaluation":         true | false,
   "deployment":         true | false,
   "target_column":          "column_name" | null,
   "task_type":              "classification" | "regression" | "clustering" | "unknown"
@@ -471,62 +469,6 @@ def build_prompt_training(
     )
     return PromptPair(system=_TRAINING_SYSTEM, user=user)
 
-
-# ═════════════════════════════════════════════════════════════════════════════
-# Agent 6 — Evaluation Agent
-# ═════════════════════════════════════════════════════════════════════════════
-
-_EVALUATION_SYSTEM = """\
-You are a model evaluation and diagnostic expert.
-
-Compute:
-  - Classification : accuracy, precision, recall, F1 (macro + weighted), ROC-AUC, confusion matrix
-  - Regression     : RMSE, MAE, R², MAPE
-
-Generate SHAP summary plot for top-15 features.
-
-Diagnostic checks — flag and explain each issue found:
-  1. Overfitting   : train_score − test_score > 0.10
-  2. Class imbalance: per-class F1 variance > 0.15
-  3. Data leakage  : any feature correlation with target > 0.99
-
-For each issue, recommend a corrective action (re-route to responsible agent if needed).
-Save: evaluation_report.json, shap_summary.png, confusion_matrix.png, roc_curve.png.
-"""
-
-_EVALUATION_USER = """\
-Trained model  : {trained_model_path}
-Test features  : {X_test_path}
-Test labels    : {y_test_path}
-Task type      : {task_type}
-Training log   : {training_log}
-
-Feedback from user (if any): {feedback_context}
-
-Compute all metrics and diagnostics, then save the evaluation report.
-"""
-
-
-def build_prompt_evaluation(
-    trained_model_path: str,
-    X_test_path:        str,
-    y_test_path:        str,
-    task_type:          str,
-    training_log:       dict,
-    feedback_context:   str = "",
-) -> PromptPair:
-    import json
-    user = _EVALUATION_USER.format(
-        trained_model_path = trained_model_path,
-        X_test_path        = X_test_path,
-        y_test_path        = y_test_path,
-        task_type          = task_type,
-        training_log       = json.dumps(training_log, separators=(',', ':')) if training_log else "{}",
-        feedback_context   = feedback_context or "none",
-    )
-    return PromptPair(system=_EVALUATION_SYSTEM, user=user)
-
-
 # ═════════════════════════════════════════════════════════════════════════════
 # Agent 7 — Deployment Agent
 # ═════════════════════════════════════════════════════════════════════════════
@@ -559,7 +501,6 @@ Feedback from user (if any): {feedback_context}
 
 Generate the full deployment package.
 """
-
 
 def build_prompt_deployment(
     trained_model_path: str,

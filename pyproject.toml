@@ -1,0 +1,7 @@
+[tool.vercel]
+entrypoint = "api:app"
+
+[project]
+name = "dtd"
+version = "0.1.0"
+dependencies = []
