@@ -177,12 +177,7 @@ User prompt: {(str(prompt) or "")[:400]}
                 plt.tight_layout()
                 plt.savefig(plot_path)
                 plt.close()
-                
-                from utils.cloudinary_upload import upload_to_cloudinary
-                cloudinary_url = upload_to_cloudinary(plot_path, folder="output/eda")
-                if cloudinary_url:
-                    relative_plot_path = cloudinary_url
-                
+
                 generated_plots.append({
                     "title": title,
                     "reason": reason,
