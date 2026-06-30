@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from pathlib import Path
 from typing import Any
 
@@ -23,6 +24,33 @@ def _build_feedback_context(state: dict, agent_name: str = "feature_engineering"
         return "\n\nUser Feedback History for feature engineering:\n" + "\n".join(f"- {text}" for text in own)
     return ""
 
+def _feature_count_override_from_feedback(state: dict, agent_name: str = "feature_engineering") -> int | None:
+    """Return requested number of generated features from latest FE feedback, if explicit."""
+    history = state.get("feedback_history", []) or []
+    own_feedback = [
+        str(h.get("feedback_text", ""))
+        for h in history
+        if h.get("agent") == agent_name and h.get("feedback_text")
+    ]
+
+    for text in reversed(own_feedback):
+        normalized = text.lower().replace("_", " ")
+        if re.search(r"\b(?:no|zero|0)\b.{0,40}\b(?:generated|engineered|new)?\s*(?:columns?|features?)\b", normalized):
+            return 0
+        if re.search(r"\b(?:do not|don't|dont|stop|skip)\b.{0,30}\b(?:add|generate|create|engineer)\b", normalized):
+            return 0
+
+        patterns = (
+            r"\b(?:only|select|use|keep|generate|create|add|make|output|want)\b\D{0,50}(\d{1,2})\D{0,40}\b(?:generated|engineered|new)?\s*(?:columns?|features?)\b",
+            r"\b(\d{1,2})\s*(?:generated|engineered|new)\s*(?:columns?|features?)\b",
+        )
+        for pattern in patterns:
+            match = re.search(pattern, normalized)
+            if match:
+                return int(match.group(1))
+
+    return None
+
 
 class FeatureEngineeringAgent:
     """Run feature engineering after preprocessing using the execution tool."""
@@ -43,6 +71,9 @@ class FeatureEngineeringAgent:
             top_k = int(feature_plan.get("top_k", 4))
         except (TypeError, ValueError):
             top_k = 4
+        feedback_top_k = _feature_count_override_from_feedback(pipeline_state)
+        if feedback_top_k is not None:
+            top_k = feedback_top_k
         top_k = max(0, min(20, top_k))
         enabled = bool(feature_plan.get("enabled", top_k > 0)) and top_k > 0
 
@@ -73,16 +104,23 @@ class FeatureEngineeringAgent:
             update_agent_progress(run_id, "feature_engineering", agent_output)
 
         if not enabled:
-            update_step("Check Plan", "completed", "Feature engineering disabled by preprocessing plan.")
+            skip_reason = (
+                "Feature engineering skipped by user feedback."
+                if feedback_top_k == 0
+                else "Feature engineering disabled by preprocessing plan."
+            )
+            update_step("Check Plan", "completed", skip_reason)
             for node in sub_nodes[1:]:
                 node["status"] = "skipped"
             agent_output["status"] = "skipped"
+            agent_output["feedback_applied"] = bool(feedback_context)
             agent_output["sub_nodes"] = sub_nodes
             update_agent_progress(run_id, "feature_engineering", agent_output)
 
             output = {
                 "status": "skipped",
-                "message": "Feature engineering disabled by preprocessing plan.",
+                "message": skip_reason,
+                "feedback_applied": bool(feedback_context),
                 "top_k": top_k,
                 "sub_nodes": sub_nodes
             }
@@ -206,3 +244,4 @@ def route_after_feature_engineering(state: PipelineState) -> str:
     if flags.get("deployment"):
         return "deployment_agent"
     return "pipeline_done"
+
